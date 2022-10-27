@@ -10,6 +10,7 @@ async function main() {
     .setTitle('CRM example')
     .setDescription('The CRM API description')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
 
     app.useGlobalFilters(new HttpExceptionFilter())

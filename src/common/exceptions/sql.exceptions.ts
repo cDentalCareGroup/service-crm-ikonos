@@ -1,10 +1,9 @@
-import { BadRequestException, HttpCode, HttpStatus } from "@nestjs/common";
 
 export class SqlException {
 
-    static getExceptionMessage(exception: any): String {
+    static getExceptionMessage(exception: any): string {
         const ex = JSON.parse(JSON.stringify(exception));
-        let message: String = "Status: No status, Code: 0000"
+        let message: string = "NO_ERROR_REGISTER"
     
         if (ex.hasOwnProperty('sqlState')) {
            message = this.getExceptionMessageFromCode(ex['sqlState'])
@@ -12,11 +11,13 @@ export class SqlException {
        return message
     }
 
-    static getExceptionMessageFromCode(code: string): String {
+    static getExceptionMessageFromCode(code: string): string {
+        console.log(code)
         switch(code) {
             case '23000': {
-                return "Status: Duplicate Value, Code: 23000"
+                return "INSERT_DATA_ERROR"
             }
+       
         }
     }
 
