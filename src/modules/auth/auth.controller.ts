@@ -15,6 +15,7 @@ import { LoginDTO } from './models/dto/login.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { UserResponse } from './models/entities/user.entity';
 
+
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
@@ -35,6 +36,6 @@ export class AuthController {
   @Get('testauth')
   @UseGuards(JwtAuthGuard)
   async test() {
-    return 'working';
+    return "token works";
   }
 }
