@@ -27,12 +27,16 @@ export class ValidationException extends HttpException {
     if (type == ValidationExceptionType.WRONG_PASSWORD) {
       message = 'INCORRECT_PASSWORD';
     }
+
+    if (type == ValidationExceptionType.MISSING_VALUES) {
+      message = 'FIELDS_ARE_REQUIRED'
+    }
     super(message, HttpStatus.BAD_REQUEST);
   }
 }
 
 export enum ValidationExceptionType {
-  WRONG_PASSWORD,
+  WRONG_PASSWORD, MISSING_VALUES
 }
 
 export class HandleException {

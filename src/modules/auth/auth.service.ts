@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from './models/entities/user.entity';
+import { User, UserResponse } from './models/entities/user.entity';
 import { Repository } from 'typeorm';
 import { SignInDTO } from './models/dto/create-user.dto';
 import { SecurityUtil, TokenPayload } from 'src/utils/security.util';
@@ -21,22 +21,31 @@ export class AuthService {
     private jtwService: JwtService,
   ) {}
 
-  signin = async (data: SignInDTO): Promise<User> => {
+  signin = async (data: SignInDTO): Promise<UserResponse> => {
     try {
       const plainToHash = await SecurityUtil.encryptText(data.password);
       const newUSer = this.userRepository.create({
         ...data,
         password: plainToHash,
       });
-      return await this.userRepository.save(newUSer);
+      const queryResult =  await this.userRepository.save(newUSer);
+
+      const token = this.jtwService.sign(
+        new TokenPayload(queryResult.id, queryResult.name, queryResult.email).toPlainObject(),
+      );
+
+      return new UserResponse(queryResult, token);
     } catch (exception) {
       HandleException.exception(exception);
     }
   };
 
-  login = async (data: LoginDTO): Promise<any> => {
+  login = async (data: LoginDTO): Promise<UserResponse> => {
     try {
+      if (data.email == "" || data.password == "") throw new ValidationException(ValidationExceptionType.MISSING_VALUES);
+      
       const user = await this.userRepository.findOneBy({ email: data.email });
+      
       if (user == null) throw new NotFoundCustomException(NotFoundType.USER);
 
       const checkPassword = await SecurityUtil.compareText(
@@ -50,14 +59,8 @@ export class AuthService {
         new TokenPayload(user.id, user.name, user.email).toPlainObject(),
       );
 
-      const response = {
-        user: user,
-        token: token,
-      };
-
-      return response;
+      return new UserResponse(user, token);
     } catch (exception) {
-      console.log(exception);
       HandleException.exception(exception);
     }
   };

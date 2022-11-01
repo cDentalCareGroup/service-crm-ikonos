@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './models/entities/user.entity';
+import { Appointment, BranchOffice, Calls, Employees, Patient, Promotions, User } from './models/entities/user.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
@@ -10,7 +10,7 @@ import { JwtStrategy } from './jwt.strategy';
 @Module({
   imports: [
     ConfigModule.forRoot(),
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Patient, BranchOffice, Promotions, Employees, Calls, Appointment]),
     JwtModule.register({
       secret: process.env.CRM_TOKEN_SECRET,
       signOptions: { expiresIn: '18h' },
