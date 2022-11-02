@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  PrimaryGeneratedColumn,
+  Entity,
+  OneToOne,
+  JoinColumn,
+} from 'typeorm';
 
 @Entity('users')
 export class User {
@@ -21,9 +27,25 @@ export class User {
   token: string;
 
   @Column({
+    name: 'created_at',
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',
     nullable: true,
   })
   createdAt: Date;
 }
+
+export class UserResponse {
+  name: string;
+  lastname: string;
+  email: string;
+  token: string;
+  constructor(user: User, token: string) {
+    this.name = user.name;
+    this.lastname = user.lastname;
+    this.email = user.email;
+    this.token = token;
+  }
+}
+
+

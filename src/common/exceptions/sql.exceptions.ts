@@ -4,7 +4,6 @@ export class SqlException {
     static getExceptionMessage(exception: any): string {
         const ex = JSON.parse(JSON.stringify(exception));
         let message: string = "NO_ERROR_REGISTER"
-    
         if (ex.hasOwnProperty('sqlState')) {
            message = this.getExceptionMessageFromCode(ex['sqlState'])
        }
