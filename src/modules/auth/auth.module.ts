@@ -6,11 +6,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
 import { User } from './models/entities/user.entity';
+import { Patient } from '../patient/models/patient.entity';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Patient]),
     JwtModule.register({
       secret: process.env.CRM_TOKEN_SECRET,
       signOptions: { expiresIn: '18h' },
