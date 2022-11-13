@@ -47,6 +47,16 @@ export class Patient {
   state: string;
 
   @Column({
+    name: 'country',
+    type: 'varchar',
+    nullable: false,
+    length: 4,
+    default: "MX",
+    comment: 'iniciales del pais'
+  })
+  country: string;
+
+  @Column({
     name: 'zip',
     type: 'varchar',
     nullable: false,
@@ -54,6 +64,24 @@ export class Patient {
     comment: 'codigo postal',
   })
   zip: string;
+
+  @Column({ 
+    name: 'latitud', 
+    type: 'decimal',
+    precision: 10, 
+    scale: 7,
+    nullable: true 
+  })
+  latitud: number;
+
+  @Column({ 
+    name: 'longitud', 
+    type: 'decimal',
+    precision: 10, 
+    scale: 7,
+    nullable: true 
+  })
+  longitud: number;
 
   @Column({ 
     name: 'birth_day',
@@ -76,6 +104,7 @@ export class Patient {
     type: 'varchar',
     nullable: false,
     length: 20,
+    default: '52',
     comment: "codigo telefonico de pais",
   })
   cellCode: string;
@@ -93,7 +122,7 @@ export class Patient {
     name: 'email',
     type: 'varchar',
     nullable: false,
-    length: 100,
+    length: 50,
   })
   email: string;
 
@@ -198,6 +227,8 @@ export class Patient {
   @Column({ 
     name: 'pad_cost', 
     type: 'decimal',
+    precision: 10, 
+    scale: 2,
     nullable: true 
   })
   padCost: number;
