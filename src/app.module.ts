@@ -8,7 +8,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { mail } from './utils/mail.utils';
 import { EmailController } from './modules/email/email.controller';
 import { PatientModule } from './modules/patient/patient.module';
-import { BranchOfficeController } from './branch-office/branch-office.controller';
+import { BranchOfficeModule } from './modules/branch_office/branch.office.module';
 
 @Module({
   imports: [
@@ -26,9 +26,10 @@ import { BranchOfficeController } from './branch-office/branch-office.controller
         }
       }
     }),
-    PatientModule
+    PatientModule,
+    BranchOfficeModule
   ],
-  controllers: [AppController, EmailController, BranchOfficeController],
+  controllers: [AppController, EmailController],
   providers: [AppService],
 })
 export class AppModule {}
