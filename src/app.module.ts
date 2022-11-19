@@ -7,8 +7,8 @@ import { ConfigModule } from '@nestjs/config';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { mail } from './utils/mail.utils';
 import { EmailController } from './modules/email/email.controller';
-
-
+import { PatientModule } from './modules/patient/patient.module';
+import { BranchOfficeController } from './branch-office/branch-office.controller';
 
 @Module({
   imports: [
@@ -25,9 +25,10 @@ import { EmailController } from './modules/email/email.controller';
           pass: mail.auth.pass
         }
       }
-    })
+    }),
+    PatientModule
   ],
-  controllers: [AppController, EmailController],
+  controllers: [AppController, EmailController, BranchOfficeController],
   providers: [AppService],
 })
 export class AppModule {}

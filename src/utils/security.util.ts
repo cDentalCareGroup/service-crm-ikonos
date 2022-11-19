@@ -1,4 +1,5 @@
 import { hash, compare } from 'bcrypt';
+import * as md5 from 'md5';
 
 
 export class SecurityUtil {
@@ -11,6 +12,10 @@ export class SecurityUtil {
 
   static compareText = async (hash: string, text: string): Promise<boolean> => {
     return await compare(text, hash);
+  };
+
+  static validatePassword = async (hash: string, text: string): Promise<boolean> => {
+    return md5(hash) === text;
   };
 }
 

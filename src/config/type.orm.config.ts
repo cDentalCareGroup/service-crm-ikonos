@@ -8,7 +8,7 @@ const typeOrmConfig = TypeOrmModule.forRoot({
       database: process.env.DB_NAME,
       host: process.env.DB_HOST,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true,
+      synchronize: false,
       autoLoadEntities: true
 })
 

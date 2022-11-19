@@ -1,4 +1,3 @@
-import { type } from "os";
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('branch_office')
@@ -7,53 +6,68 @@ export class BranchOffice {
   id: number;
 
   @Column({
-    name: 'name',
+    name: 'nombre',
     type: 'varchar',
-    length: 45,
+    length: 255,
   })
   name: string;
 
-  @Column({
-    name: 'address',
-    type: 'varchar',
-    nullable: false,
-    length: 100,
-  })
-  address: string;
-
-  @Column({ 
-    name: 'latitud', 
-    type: 'decimal',
-    precision: 10, 
-    scale: 7,
-    nullable: true 
-  })
-  latitud: number;
-
-  @Column({ 
-    name: 'longitud', 
-    type: 'decimal',
-    precision: 10, 
-    scale: 7,
-    nullable: true 
-  })
-  longitud: number;
 
   @Column({
-    name: 'phone_number',
+    name: 'calle',
     type: 'varchar',
-    nullable: false,
-    length: 13,
-    comment: "telefono fijo a minimo a 10 digitos",
+    length: 255,
   })
-  cellular: string;
+  street: string;
+
+  @Column({
+    name: 'numero',
+    type: 'varchar',
+    length: 45,
+  })
+  number: string;
+
+
+  @Column({
+    name: 'colonia',
+    type: 'varchar',
+    length: 255,
+  })
+  colony: string;
+
+  @Column({
+    name: 'codigo_postal',
+    type: 'varchar',
+    length: 45,
+  })
+  cp: string;
+
+
+  @Column({
+    name: 'telefono_principal',
+    type: 'varchar',
+    length: 45,
+  })
+  primaryContact: string;
+
+  @Column({
+    name: 'telefono_sucursal',
+    type: 'varchar',
+    length: 45,
+  })
+  primaryBranchOfficeContact: string;
 
   @Column({
     name: 'email',
     type: 'varchar',
-    nullable: true,
-    length: 50,
+    length: 255,
   })
   email: string;
 
+  @Column({
+    name: 'idEstatusSucursal',
+    type: 'int',
+
+  })
+  status: number;
 }

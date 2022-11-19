@@ -13,14 +13,12 @@ import { EmailController } from '../email/email.controller';
 import { Employees } from '../employee/models/employee.entity';
 import { Promotions } from '../promotion/models/promotion.entity';
 import { Calls } from '../calls/models/calls.entity';
+import { Rol } from './models/entities/rol.entity';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
-    TypeOrmModule.forFeature([User, Patient,
-        Appointments,BranchOffice,Calls,
-        EmailController,Employees,Promotions]),
-
+    TypeOrmModule.forFeature([User,Rol]),
     JwtModule.register({
       secret: process.env.CRM_TOKEN_SECRET,
       signOptions: { expiresIn: '18h' },
