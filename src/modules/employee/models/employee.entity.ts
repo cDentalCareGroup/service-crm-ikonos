@@ -1,48 +1,133 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, PrimaryGeneratedColumn, Entity } from 'typeorm';
 
-@Entity('employees')
-export class Employees {
+@Entity('empleado')
+export class EmployeeEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({
-    name: 'name',
+    name: 'nombre',
     type: 'varchar',
-    length: 100,
-    nullable: false,
+    length: 150,
   })
   name: string;
 
   @Column({
-    name: 'license',
+    name: 'paterno',
+    type: 'varchar',
+    length: 150,
+  })
+  lastname: string;
+
+  @Column({
+    name: 'materno',
+    type: 'varchar',
+    length: 150,
+  })
+  secondLastname: string;
+
+  @Column({
+    name: 'idEstatus',
+    type: 'int',
+  })
+  status: number;
+
+  @Column({
+    name: 'idEstado',
+    type: 'int',
+  })
+  stateId: number;
+
+  @Column({
+    name: 'idMunicipio',
+    type: 'int',
+  })
+  municipalityId: number;
+
+  @Column({
+    name: 'idEsquemaLaboral',
+    type: 'int',
+  })
+  jobScheme: number;
+
+  @Column({
+    name: 'idTipoEmpleado',
+    type: 'int',
+  })
+  typeId: number;
+
+  @Column({
+    name: 'idSucursal',
+    type: 'int',
+  })
+  branchOfficeId: number;
+
+  @Column({
+    name: 'calle',
+    type: 'varchar',
+    length: 255,
+  })
+  street: string;
+
+  @Column({
+    name: 'numero',
     type: 'varchar',
     length: 45,
-    nullable: true,
   })
-  license: string;
-
-  @Column({ 
-    name: 'cellular',
-    type: 'varchar',
-    length: 13,
-    nullable: false,
-  })
-  cellular: string;
+  number: string;
 
   @Column({
-    name: 'email',
+    name: 'colonia',
     type: 'varchar',
-    nullable: false,
-    length: 50,
+    length: 255,
   })
-  email: string;
+  colony: string;
 
   @Column({
-    name: 'category',
+    name: 'codigo_postal',
     type: 'varchar',
-    nullable: false,
+    length: 10,
+  })
+  cp: string;
+
+  @Column({
+    name: 'telefono_principal',
+    type: 'varchar',
+    length: 45,
+  })
+  primaryContact: string;
+
+  @Column({
+    name: 'telefono_secundario',
+    type: 'varchar',
+    length: 45,
+  })
+  secondaryContact: string;
+
+  @Column({
+    name: 'curp',
+    type: 'varchar',
     length: 20,
-    comment: 'tipo de empleado: dentista, rececionista, admin, etc',
   })
-  type: string;
+  curp: string;
+
+  @Column({
+    name: 'fecha_nacimiento',
+    type: 'date',
+  })
+  birthDay: Date;
+
+  @Column({
+    name: 'rfc',
+    type: 'varchar',
+    length: 20,
+  })
+  rfc: string;
+
+  @Column({
+    name: 'nss',
+    type: 'varchar',
+    length: 20,
+  })
+  nss: string;
 }

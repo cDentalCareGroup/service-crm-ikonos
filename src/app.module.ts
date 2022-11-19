@@ -9,6 +9,7 @@ import { mail } from './utils/mail.utils';
 import { EmailController } from './modules/email/email.controller';
 import { PatientModule } from './modules/patient/patient.module';
 import { BranchOfficeModule } from './modules/branch_office/branch.office.module';
+import { EmployeeModule } from './modules/employee/employee.module';
 
 @Module({
   imports: [
@@ -27,7 +28,8 @@ import { BranchOfficeModule } from './modules/branch_office/branch.office.module
       }
     }),
     PatientModule,
-    BranchOfficeModule
+    BranchOfficeModule,
+    EmployeeModule
   ],
   controllers: [AppController, EmailController],
   providers: [AppService],

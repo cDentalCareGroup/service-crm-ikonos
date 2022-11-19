@@ -14,13 +14,15 @@ export class NotFoundCustomException extends HttpException {
       message = 'USER_NOT_FOUND';
     } else if(type == NotFoundType.BRANCH_OFFICE) {
       message = "BRANCH_OFFICE_NOT_FOUND";
+    } else if(type == NotFoundType.EMPLOYEE_TYPE) {
+      message = "EMPLOYEE_TYPE_NOT_FOUND";
     }
     super(message, HttpStatus.NOT_FOUND);
   }
 }
 
 export enum NotFoundType {
-  USER, BRANCH_OFFICE,
+  USER, BRANCH_OFFICE, EMPLOYEE_TYPE
 }
 
 export class ValidationException extends HttpException {

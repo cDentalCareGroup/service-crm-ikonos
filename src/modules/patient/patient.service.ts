@@ -4,6 +4,8 @@ import {
   HandleException,
   NotFoundCustomException,
   NotFoundType,
+  ValidationException,
+  ValidationExceptionType,
 } from 'src/common/exceptions/general.exception';
 import { isNumber } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
@@ -14,7 +16,8 @@ import { PatientEntity } from './models/patient.entity';
 @Injectable()
 export class PatientService {
   constructor(
-    @InjectRepository(PatientEntity) private patientRepository: Repository<PatientEntity>,
+    @InjectRepository(PatientEntity)
+    private patientRepository: Repository<PatientEntity>,
     @InjectRepository(BranchOfficeEntity)
     private branchOfficeRepository: Repository<BranchOfficeEntity>,
   ) {}
@@ -32,6 +35,9 @@ export class PatientService {
     branchOffice,
   }: GetPatientsByBranchOfficeDTO): Promise<PatientEntity[]> => {
     try {
+      if (branchOffice == null || branchOffice == '')
+        throw new ValidationException(ValidationExceptionType.MISSING_VALUES);
+
       let results: PatientEntity[] = [];
 
       if (isNumber(branchOffice)) {
