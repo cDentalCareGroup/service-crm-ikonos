@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { BranchOfficeService } from './branch.office.service';
-import { BranchOffice } from './models/branch.office.entity';
+import { BranchOfficeEntity } from './models/branch.office.entity';
 
 @ApiTags('Branch Office')
 @Controller('branchoffice')
@@ -10,7 +10,7 @@ export class BranchOfficeController {
 
 
     @Get('all')
-    async getAllBranchOffices(): Promise<BranchOffice[]> {
+    async getAllBranchOffices(): Promise<BranchOfficeEntity[]> {
         return this.branchOffice.getAllBranchOffices();
     }
 

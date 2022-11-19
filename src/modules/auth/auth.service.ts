@@ -11,12 +11,15 @@ import {
   ValidationExceptionType,
 } from 'src/common/exceptions/general.exception';
 import { JwtService } from '@nestjs/jwt';
-import { User, UserResponse } from './models/entities/user.entity';
+import { UserEntity, UserResponse } from './models/entities/user.entity';
+import { Rol, RolEntity, UserRolEntity } from './models/entities/rol.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User) private userRepository: Repository<User>,
+    @InjectRepository(UserEntity) private userRepository: Repository<UserEntity>,
+    @InjectRepository(RolEntity) private rolRepository: Repository<RolEntity>,
+    @InjectRepository(UserRolEntity) private userRolRepository: Repository<UserRolEntity>,
     private jtwService: JwtService,
   ) {}
 
@@ -35,11 +38,20 @@ export class AuthService {
       if (!checkPassword)
         throw new ValidationException(ValidationExceptionType.WRONG_PASSWORD);
 
+
+      const userRoles = await this.userRolRepository.find({ where: {userId: user.id}});
+      
+      const roles: Rol[] = [];
+      for (const userRol of userRoles) {
+        const role = await this.rolRepository.findOne({where: { id: userRol.rolId }});
+        roles.push(new Rol(role.id, role.name));
+      }
+
       const token = this.jtwService.sign(
         new TokenPayload(user.id, user.name, user.username).toPlainObject(),
       );
 
-      return new UserResponse(user, token);
+      return new UserResponse(user, token, roles);
     } catch (exception) {
       HandleException.exception(exception);
     }

@@ -7,19 +7,19 @@ import {
 } from 'src/common/exceptions/general.exception';
 import { isNumber } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
-import { BranchOffice } from '../branch_office/models/branch.office.entity';
+import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
 import { GetPatientsByBranchOfficeDTO } from './models/patient.dto';
-import { Patient } from './models/patient.entity';
+import { PatientEntity } from './models/patient.entity';
 
 @Injectable()
 export class PatientService {
   constructor(
-    @InjectRepository(Patient) private patientRepository: Repository<Patient>,
-    @InjectRepository(BranchOffice)
-    private branchOfficeRepository: Repository<BranchOffice>,
+    @InjectRepository(PatientEntity) private patientRepository: Repository<PatientEntity>,
+    @InjectRepository(BranchOfficeEntity)
+    private branchOfficeRepository: Repository<BranchOfficeEntity>,
   ) {}
 
-  getAllPatients = async (): Promise<Patient[]> => {
+  getAllPatients = async (): Promise<PatientEntity[]> => {
     try {
       const results = await this.patientRepository.find();
       return results;
@@ -30,9 +30,9 @@ export class PatientService {
 
   getPatientsByBranchOffice = async ({
     branchOffice,
-  }: GetPatientsByBranchOfficeDTO): Promise<Patient[]> => {
+  }: GetPatientsByBranchOfficeDTO): Promise<PatientEntity[]> => {
     try {
-      let results: Patient[] = [];
+      let results: PatientEntity[] = [];
 
       if (isNumber(branchOffice)) {
         results = await this.patientRepository.find({

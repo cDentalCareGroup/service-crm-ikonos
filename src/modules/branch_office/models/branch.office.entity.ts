@@ -1,7 +1,7 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('sucursal')
-export class BranchOffice {
+export class BranchOfficeEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

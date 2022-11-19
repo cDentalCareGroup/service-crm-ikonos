@@ -5,7 +5,7 @@ import {
   } from 'typeorm';
   
   @Entity('rol')
-  export class Rol {
+  export class RolEntity {
     @PrimaryGeneratedColumn()
     id: number;
   
@@ -17,6 +17,28 @@ import {
   
     @Column({name : 'orden', type:'tinyint'})
     order: number;
+  }
+
+  @Entity('empleado_rol')
+  export class UserRolEntity {
+    @PrimaryGeneratedColumn()
+    id: number;
+  
+    @Column({name : 'idRol', type:'int'})
+    rolId: number;
+  
+    @Column({name : 'idEmpleado', type:'int'})
+    userId: number;
+  }
+
+  export class Rol {
+    id: number;
+    name: string;
+
+    constructor(id: number, name: string){
+      this.id = id;
+      this.name = name;
+    }
   }
 
   

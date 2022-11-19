@@ -5,9 +5,10 @@ import {
   OneToOne,
   JoinColumn,
 } from 'typeorm';
+import { Rol, RolEntity } from './rol.entity';
 
 @Entity('empleado')
-export class User {
+export class UserEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -32,11 +33,13 @@ export class UserResponse {
   lastname: string;
   username: string;
   token: string;
-  constructor(user: User, token: string) {
+  roles?: Rol[] = [];
+  constructor(user: UserEntity, token: string, roles?: Rol[]) {
     this.name = user.name;
     this.lastname = user.lastname + ' ' + user.secondLastname;
     this.username = user.username;
     this.token = token;
+    this.roles = roles;
   }
 }
 
