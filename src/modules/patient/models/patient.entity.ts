@@ -1,245 +1,108 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
-@Entity('patient')
+@Entity('paciente')
 export class Patient {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({
-    name: 'name',
-    type: 'varchar',
-    nullable: false,
-    length: 100,
-  })
+  @Column({name:'nombre', type:'varchar', length: 150})
   name: string;
 
-  @Column({
-    name: 'address',
-    type: 'varchar',
-    nullable: false,
-    length: 100,
-  })
-  address: string;
+  @Column({name:'paterno', type:'varchar', length: 150})
+  lastname: string;
+
+  @Column({name:'materno', type:'varchar', length: 150})
+  secondLastname: string;
+
+
+  @Column({name:'fecha_nacimiento', type:'date',})
+  birthDay: Date;
+
+  @Column({name:'genero', type:'varchar', length: 20})
+  gender: string;
+
+  @Column({name:'estado_civil', type:'varchar', length: 20})
+  maritalStatus: string;
+
+  @Column({name:'ocupacion', type:'varchar', length: 20})
+  job: string;
 
   @Column({
-    name: 'colony',
+    name: 'calle',
     type: 'varchar',
-    nullable: false,
-    length: 100,
+    length: 255,
+  })
+  street: string;
+
+  @Column({
+    name: 'numero',
+    type: 'varchar',
+    length: 45,
+  })
+  number: string;
+
+
+  @Column({
+    name: 'colonia',
+    type: 'varchar',
+    length: 255,
   })
   colony: string;
 
   @Column({
-    name: 'city',
+    name: 'codigo_postal',
     type: 'varchar',
-    nullable: false,
-    length: 100,
+    length: 45,
   })
-  city: string;
+  cp: string;
+
 
   @Column({
-    name: 'state',
+    name: 'telefono_particular',
     type: 'varchar',
-    nullable: false,
-    length: 4,
-    comment: 'iniciales del estado a 3 o 4 digitos'
+    length: 45,
   })
-  state: string;
+  primaryContact: string;
 
   @Column({
-    name: 'country',
+    name: 'telefono_movil',
     type: 'varchar',
-    nullable: false,
-    length: 4,
-    default: "MX",
-    comment: 'iniciales del pais'
+    length: 45,
   })
-  country: string;
-
-  @Column({
-    name: 'zip',
-    type: 'varchar',
-    nullable: false,
-    length: 5,
-    comment: 'codigo postal',
-  })
-  zip: string;
-
-  @Column({ 
-    name: 'latitud', 
-    type: 'decimal',
-    precision: 10, 
-    scale: 7,
-    nullable: true 
-  })
-  latitud: number;
-
-  @Column({ 
-    name: 'longitud', 
-    type: 'decimal',
-    precision: 10, 
-    scale: 7,
-    nullable: true 
-  })
-  longitud: number;
-
-  @Column({ 
-    name: 'birth_day',
-    type: 'date',
-    nullable: false,
-  })
-  birthDate: Date;
-
-  @Column({
-    name: 'sex',
-    type: 'varchar',
-    nullable: false,
-    length: 20,
-    comment: "hombre, mujer, indefinio, otro",
-  })
-  sex: string;
-
-  @Column({
-    name: 'cell_code',
-    type: 'varchar',
-    nullable: false,
-    length: 20,
-    default: '52',
-    comment: "codigo telefonico de pais",
-  })
-  cellCode: string;
-
-  @Column({
-    name: 'cellular',
-    type: 'varchar',
-    nullable: false,
-    length: 20,
-    comment: "celular minimo a 10 digitos",
-  })
-  cellular: string;
+  secondaryContact: string;
 
   @Column({
     name: 'email',
     type: 'varchar',
-    nullable: false,
-    length: 50,
+    length: 45,
   })
   email: string;
 
   @Column({
-    name: 'next_date_appointment', 
-    //type: 'timestamptz',
-    type: 'datetime',
-    comment: 'fecha hora de la siguiente visita',
-  }) 
-  nextDateAppointdment: Date;
-
-  @Column({
-    name: 'status',
-    type: 'char',
-    nullable: false,
-    length: 10,
-    comment: 'activo, suspendido, fallecido',
-  })
-  status: string;
-
-  @Column({
-    name: 'home_branch',
-    type: 'varchar',
-    nullable: false,
-    length: 45,
-    comment: "sucursal en la que se atendio por primera vez",
-  })
-  homeBranch: string;
-
-  @Column({
-    name: 'current_branch',
-    type: 'varchar',
-    nullable: false,   
-    length: 45,
-    comment: "sucursal en la que se atiende actualmente, puede ser la misma que homeBranch",
-  })
-  currentBranch: string;
-
-  @Column({
-    name: 'start_date',
-    type: 'date',
-    nullable: false,
-    comment: 'fecha en la que se atendio el paciente por primera vez en la red de sucursales',
-  })
-  startDate: Date;
-
-  @Column({
-    name: 'last_visit_date',
-    type: 'datetime',
-    nullable: false,
-    comment: 'fecha en la que se atendio el paciente por primera vez en la red de sucursales',
-  })
-  lastVisitate: Date;
-
-  @Column({
-    name: 'customer_origin',
+    name: 'folio',
     type: 'varchar',
     length: 45,
-    nullable: false,
-    comment: 'de donde viene el cliente: recomendacion, escolar, redes, venta en sucursal, etc'
   })
-  customerOrigin: string;
+  folio: string;
 
   @Column({
-    name: 'pad',
-    type: 'boolean',
-    nullable: false,
-    comment: 'el paciente tiene o no tiene PAD contratado',
-  })
-  pad: string;
-
-  @Column({
-    name: 'pad_type',
-    type: 'varchar',
-    length: 20,
-    comment: 'familiar, individual, escolar',
-  })
-  pad_type: string;
-
-  @Column({
-    name: 'pad_acquisition_date',
-    type: 'datetime',
-    comment: 'fechaHora de aquisicion del pad si es que tiene',
-  })
-  padAcquisitonDate: Date;
-
-  @Column({
-    name: 'pad_expiration_date',
-    type: 'datetime',
-    comment: 'fechaHora de vencimiento del pad si es que tiene',
-  })
-  padExpirationDate: Date;
-
-  @Column({
-    name: 'pad_acquisition_branch',
+    name: 'folio_historico',
     type: 'varchar',
     length: 45,
-    comment: "sucursal en la que se adquirio el pad si es que tiene",
   })
-  padAcquisitionBranch: string;
-
-  @Column({ 
-    name: 'pad_cost', 
-    type: 'decimal',
-    precision: 10, 
-    scale: 2,
-    nullable: true 
-  })
-  padCost: number;
+  historicalFolio: string;
 
   @Column({
-    name: 'created_at',
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    nullable: true,
-    comment: 'fechaHora en la que se capturo el paciente en el sistema'
+    name: 'rfc',
+    type: 'varchar',
+    length: 45,
   })
-  createdAt: Date;
+  rfc: string;
+
+  @Column({
+    name: 'idSucursalOrigen',
+    type: 'int',
+  })
+  originBranchOfficeId: number;
 
 }

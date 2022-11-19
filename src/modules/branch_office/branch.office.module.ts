@@ -12,6 +12,7 @@ import { BranchOffice } from './models/branch.office.entity';
   ],
   controllers: [BranchOfficeController],
   providers: [BranchOfficeService],
+  exports: [BranchOfficeService]
 })
 export class BranchOfficeModule {}
 

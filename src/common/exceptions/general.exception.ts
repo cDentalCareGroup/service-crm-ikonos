@@ -12,13 +12,15 @@ export class NotFoundCustomException extends HttpException {
     let message: string = 'NOT_FOUND';
     if (type == NotFoundType.USER) {
       message = 'USER_NOT_FOUND';
+    } else if(type == NotFoundType.BRANCH_OFFICE) {
+      message = "BRANCH_OFFICE_NOT_FOUND";
     }
     super(message, HttpStatus.NOT_FOUND);
   }
 }
 
 export enum NotFoundType {
-  USER,
+  USER, BRANCH_OFFICE,
 }
 
 export class ValidationException extends HttpException {

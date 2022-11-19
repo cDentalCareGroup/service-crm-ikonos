@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { GetPatientsByBranchOfficeDTO } from './models/patient.dto';
 import { Patient } from './models/patient.entity';
 import { PatientService } from './patient.service';
 
@@ -7,10 +8,16 @@ import { PatientService } from './patient.service';
 @Controller('patient')
 export class PatientController {
 
-    // constructor(private patientService: PatientService) {}
+    constructor(private patientService: PatientService) {}
 
-    // @Post('filters')
-    // async filters(@Body() body: any): Promise<Patient[]> {
-    //     return this.patientService.getPatientsByFilter(body.branch_name);
-    // }
+    @Get('all')
+    async getAllPatients(): Promise<Patient[]> {
+        return this.patientService.getAllPatients();
+    }
+
+    @Post('byBranchOffice')
+    @ApiBody({ type: GetPatientsByBranchOfficeDTO })
+    async getPatientsByBranchOffice(@Body() body: GetPatientsByBranchOfficeDTO): Promise<Patient[]> {
+        return this.patientService.getPatientsByBranchOffice(body);
+    }
 }
