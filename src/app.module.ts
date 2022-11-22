@@ -10,6 +10,7 @@ import { EmailController } from './modules/email/email.controller';
 import { PatientModule } from './modules/patient/patient.module';
 import { BranchOfficeModule } from './modules/branch_office/branch.office.module';
 import { EmployeeModule } from './modules/employee/employee.module';
+import { StatisticModule } from './modules/statistic/statistic.module';
 
 @Module({
   imports: [
@@ -29,7 +30,8 @@ import { EmployeeModule } from './modules/employee/employee.module';
     }),
     PatientModule,
     BranchOfficeModule,
-    EmployeeModule
+    EmployeeModule,
+    StatisticModule
   ],
   controllers: [AppController, EmailController],
   providers: [AppService],
