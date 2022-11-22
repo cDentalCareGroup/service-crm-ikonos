@@ -105,4 +105,10 @@ export class PatientEntity {
   })
   originBranchOfficeId: number;
 
+  @Column({
+    name: 'idEstatus',
+    type: 'int',
+  })
+  status: number;
+
 }
