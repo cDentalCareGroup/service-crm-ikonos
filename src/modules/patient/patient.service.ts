@@ -10,10 +10,14 @@ import {
 import { isNumber } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
-import { GetPatientsByBranchOfficeDTO } from './models/patient.dto';
+import {
+  GetPatientsByBranchOfficeDTO,
+  GetPatientsByFilterDTO,
+} from './models/patient.dto';
 import { PatientEntity } from './models/patient.entity';
 import { HttpService } from '@nestjs/axios';
 import { catchError, lastValueFrom, map } from 'rxjs';
+import { GetPatientsByFilter } from './models/get.patients.by.filter';
 
 @Injectable()
 export class PatientService {
@@ -61,8 +65,9 @@ export class PatientService {
       }
 
       //await this.getLatLngFromPostalCode();
-      return results;
+      return results.filter((value, index) => value.id < 26);
     } catch (exception) {
+      console.log(exception);
       HandleException.exception(exception);
     }
   };
@@ -97,6 +102,31 @@ export class PatientService {
     } catch (exception) {
       console.log(exception);
       return { lat: 0, lng: 0, address: 'EMPTY' };
+    }
+  };
+
+  getPatientsByFilter = async ({
+    branchOffices,
+  }: GetPatientsByFilterDTO): Promise<GetPatientsByFilter[]> => {
+    try {
+      const results: GetPatientsByFilter[] = [];
+
+      for await (const item of branchOffices) {
+        const office = await this.branchOfficeRepository.findOneBy({
+          name: item,
+        });
+
+        if (office != null && office != undefined) {
+          const patients = await this.patientRepository.findBy({
+            originBranchOfficeId: office.id,
+          });
+          results.push(new GetPatientsByFilter(office, patients));
+        }
+      }
+      return results;
+    } catch (exception) {
+      console.log(exception);
+      HandleException.exception(exception);
     }
   };
 }

@@ -130,13 +130,13 @@ export class PatientEntity {
     precision:   10, 
     scale:       8, 
   })
-  lon: number;
+  lng: number;
 
   @Column({
-    name: 'fecha_proxima_cita',
+    name: 'fecha_hora_proxima_cita',
     type: 'datetime',
   })
-  next_date_appointment: Date; 
+  nextDateAppointment: Date; 
 
   @Column({
     name:     'estatus',
@@ -147,12 +147,18 @@ export class PatientEntity {
   status: string;
 
   @Column({
+    name:     'idEstatus',
+    comment:  '1 o 2 o 3',
+  })
+  patientStatus: number;
+
+  @Column({
     name:     'sucursal_origen',
     type:     'varchar',
     length:    45,
     comment:  'sucursal en la que se atendio por primera vez al paciente',
   })
-  source_branch: string;
+  sourceBranch: string;
 
   @Column({
     name:     'sucursal_actual',
@@ -160,21 +166,21 @@ export class PatientEntity {
     length:    45,
     comment:  'sucursal en la que se atiende actualmente al paciente',
   })
-  current_branch: string;
+  currentBranch: string;
 
   @Column({
     name:     'fecha_inicio',
     type:     'date',
     comment:  'fecha en la que se atendio el paciente por primera vez en alguna sucursal, no el dia que se capturo',
   })
-  start_date: Date;
+  startDate: Date;
 
-  @Column({
-    name:     'fecha_ultima_visita',
-    type:     'datetime',
-    comment:  'fechaHora en la que se atendio el paciente por ultima vez vez en alguna sucursal',
-  })
-  last_visit_date: Date;
+  // @Column({
+  //   name:     'fecha_ultima_visita',
+  //   type:     'datetime',
+  //   comment:  'fechaHora en la que se atendio el paciente por ultima vez vez en alguna sucursal',
+  // })
+  // last_visit_date: Date;
 
   @Column({
     name:     'origen_cliente',
@@ -182,7 +188,7 @@ export class PatientEntity {
     length:    45,
     comment:  'como se obtuvo este cliente: redes, recomendacion, escolar, convenio',
   })
-  source_client: string;
+  sourceClient: string;
 
   @Column({
     name:     'organizacion_cliente',
@@ -190,7 +196,7 @@ export class PatientEntity {
     length:    45,
     comment:  'por ejemplo: si es escolar, escuela a la que pertenece, esto nos permite medir la efectvidad de las campañas',
   })
-  organization_client: string;
+  organizationClient: string;
 
   @Column({
     name:     'pad',
@@ -204,7 +210,7 @@ export class PatientEntity {
     type:     'int',
     comment:  'ultimo numero de folio de pad contratado, pudiera ser que ya este vencido',
   })
-  current_pad_id: number;
+  currentPadId: number;
 
   @Column({
     name:     'tipo_pad',
@@ -212,19 +218,19 @@ export class PatientEntity {
     length:    20,
     comment:  'individual, familiar, escolar',
   })
-  pad_type: string;
+  padType: string;
 
   @Column({
     name: 'fecha_adquisicion_pad',
     type: 'date',
   })
-  pad_acquisition_date: Date;
+  padAcquisitionDate: Date;
 
   @Column({
     name: 'fecha_expiracion_pad',
     type: 'datetime',
   })
-  pad_expiration_date: Date;
+  padExpirationDate: Date;
 
   @Column({
     name:     'sucursal_adquisicion_pad',
@@ -232,7 +238,7 @@ export class PatientEntity {
     length:    45,
     comment:  'sucursal en la que se adquirio el pado',
   })
-  pad_acquisition_branch: string;
+  padAcquisitionBranch: string;
 
   @Column({
     name:       'precio_pad',
@@ -241,18 +247,18 @@ export class PatientEntity {
     scale:       2, 
     comment:    'precio al que se aquirio el pad',
   })
-  pad_price: number;
+  padPrice: number;
 
   @Column({
     name: 'created_at',
     type: 'datetime'
   })
-  created_at: Date;
+  createdAt: Date;
 
   @Column({
     name: 'updated_at',
     type: 'datetime'
   })
-  updated_at: Date;
+  updatedAt: Date;
 
 }

@@ -24,9 +24,9 @@ export class StatisticService {
             console.log("Offices", branchOffices);
 
             const patients = await this.patientsRepository.find();
-            const activePatients = patients.filter((value, _) => value.status == 1).length;
-            const suspendPatients = patients.filter((value, _) => value.status == 2).length;
-            const inactivePatients = patients.filter((value, _) => value.status == 3).length;
+            const activePatients = patients.filter((value, _) => value.patientStatus == 1).length;
+            const suspendPatients = patients.filter((value, _) => value.patientStatus == 2).length;
+            const inactivePatients = patients.filter((value, _) => value.patientStatus == 3).length;
 
             console.log("Active", activePatients);
             console.log("Inactive", inactivePatients);
