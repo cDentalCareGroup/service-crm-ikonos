@@ -27,5 +27,15 @@ export class BranchOfficeController {
         return this.branchOffice.registerBranchOfficeSchedule(body);
     }
 
+    @Post('schedules')
+    async getBranchOfficeSchedules(@Body() body: RegisterBranchOfficeScheduleDTO): Promise<GetBranchOfficeScheduleDTO> {
+        return this.branchOffice.getBranchOfficeSchedules();
+    }
+
+    @Get('schedule/employees')
+    async getEmployeeSchedules(): Promise<any> {
+        return this.branchOffice.getEmployeeSchedules();
+    }
+
 
 }

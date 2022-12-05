@@ -49,28 +49,31 @@ export class RegisterBranchOfficeScheduleDTO {
 
 
 
-const setFullDate = (object: BranchOfficeScheduleEntity): BranchOfficeScheduleEntity => {
+export const setFullDate = (object: BranchOfficeScheduleEntity): BranchOfficeScheduleEntity => {
 
   try {
     
     const today = getMonday(new Date());
 
-    let day = today.getDate();
+    let currentDay = today.getDate();
 
-    if (object.dayName == 'lunes') {
-      day = today.getDate();
-    } else if(object.dayName == 'martes') {
-      day = today.getDate() + 1;
-    }else if(object.dayName == 'miercoles') {
-      day = today.getDate() + 2;
-    }else if(object.dayName == 'jueves') {
-      day = today.getDate() + 3;
-    }else if(object.dayName == 'viernes') {
-      day = today.getDate() + 4;
-    }else if(object.dayName == 'sabado') {
-      day = today.getDate() + 5;
-    }else if(object.dayName == 'domingo') {
-      day = today.getDate() + 6;
+    const day = object.dayName.toLowerCase();
+    console.log("Day", day);
+
+    if (day == 'lunes') {
+      currentDay = today.getDate();
+    } else if(day == 'martes') {
+      currentDay = today.getDate() + 1;
+    }else if(day == 'miercoles') {
+      currentDay = today.getDate() + 2;
+    }else if(day == 'jueves') {
+      currentDay = today.getDate() + 3;
+    }else if(day == 'viernes') {
+      currentDay = today.getDate() + 4;
+    }else if(day == 'sabado') {
+      currentDay = today.getDate() + 5;
+    }else if(day == 'domingo') {
+      currentDay = today.getDate() + 6;
     }
 
 
@@ -80,7 +83,7 @@ const setFullDate = (object: BranchOfficeScheduleEntity): BranchOfficeScheduleEn
     const startMinutes = Number(startTimeArray[1]);
     const startSeconds = Number(startTimeArray[2]);
 
-    const startDate = new Date(Date.UTC(today.getFullYear(),today.getMonth(),day,startHour,startMinutes,startSeconds));
+    const startDate = new Date(Date.UTC(today.getFullYear(),today.getMonth(),currentDay,startHour,startMinutes,startSeconds));
    
     
 
@@ -90,7 +93,7 @@ const setFullDate = (object: BranchOfficeScheduleEntity): BranchOfficeScheduleEn
     const endMinutes = Number(endTimeArray[1]);
     const endSeconds = Number(endTimeArray[2]);
 
-    const endDate = new Date(Date.UTC(today.getFullYear(),today.getMonth(),day,endHour,endMinutes,endSeconds));
+    const endDate = new Date(Date.UTC(today.getFullYear(),today.getMonth(),currentDay,endHour,endMinutes,endSeconds));
 
 
     const newObject = object;
