@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { EmployeeService } from './employee.service';
-import { GetEmployeesByTypeDTO } from './models/employee.dto';
+import { GetEmployeesByTypeDTO, RegisterScheduleesEmployeesDTO } from './models/employee.dto';
 
 @ApiTags('Employees')
 @Controller('employee')
@@ -24,5 +24,11 @@ export class EmployeeController {
     @Get('getTypes')
     async getEmployeeTypes() {
         return this.employeeService.getEmployeeTypes();
+    }
+
+    @Post('schedules')
+    @ApiBody({ type: RegisterScheduleesEmployeesDTO })
+    async registerEmployeeSchedules(@Body() body: RegisterScheduleesEmployeesDTO) {
+        return this.employeeService.registerEmployeeSchedules(body);
     }
 }

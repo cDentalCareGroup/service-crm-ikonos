@@ -44,7 +44,14 @@ export class RegisterBranchOfficeScheduleDTO {
     })
     seat: string;
 
-    
+}
+
+export class BranchOfficeSchedulesDTO {
+  @ApiProperty({
+    description: 'name of the branch office',
+    example: 'Las palmas',
+  })
+  branchOfficeName: string;
 }
 
 
@@ -58,7 +65,7 @@ export const setFullDate = (object: BranchOfficeScheduleEntity): BranchOfficeSch
     let currentDay = today.getDate();
 
     const day = object.dayName.toLowerCase();
-    console.log("Day", day);
+
 
     if (day == 'lunes') {
       currentDay = today.getDate();

@@ -39,19 +39,19 @@ export class AuthService {
         throw new ValidationException(ValidationExceptionType.WRONG_PASSWORD);
 
 
-      const userRoles = await this.userRolRepository.find({ where: {userId: user.id}});
+      // const userRoles = await this.userRolRepository.find({ where: {userId: user.id}});
       
-      const roles: Rol[] = [];
-      for (const userRol of userRoles) {
-        const role = await this.rolRepository.findOne({where: { id: userRol.rolId }});
-        roles.push(new Rol(role.id, role.name));
-      }
+      // const roles: Rol[] = [];
+      // for (const userRol of userRoles) {
+      //   const role = await this.rolRepository.findOne({where: { id: userRol.rolId }});
+      //   roles.push(new Rol(role.id, role.name));
+      // }
 
       const token = this.jtwService.sign(
         new TokenPayload(user.id, user.name, user.username).toPlainObject(),
       );
 
-      return new UserResponse(user, token, roles);
+      return new UserResponse(user, token, []);
     } catch (exception) {
       HandleException.exception(exception);
     }

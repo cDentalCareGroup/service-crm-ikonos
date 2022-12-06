@@ -8,7 +8,9 @@ import {
   ValidationExceptionType,
 } from 'src/common/exceptions/general.exception';
 import { Repository } from 'typeorm';
-import { GetEmployeesByTypeDTO } from './models/employee.dto';
+import { BranchOfficeEmployeeSchedule } from '../branch_office/models/branch.office.employee.entity';
+import { registerScheduleEmployeeToEntity } from './extensions/employee.extensions';
+import { GetEmployeesByTypeDTO, RegisterScheduleesEmployeesDTO } from './models/employee.dto';
 import { EmployeeEntity } from './models/employee.entity';
 import { EmployeeTypeEntity } from './models/employee.type.entity';
 
@@ -19,6 +21,7 @@ export class EmployeeService {
     private employeeRepository: Repository<EmployeeEntity>,
     @InjectRepository(EmployeeTypeEntity)
     private employeeTypeRepository: Repository<EmployeeTypeEntity>,
+    @InjectRepository(BranchOfficeEmployeeSchedule) private branchOfficeEmployeeScheduleRepository: Repository<BranchOfficeEmployeeSchedule>,
   ) {}
 
   getAllEmployees = async (): Promise<EmployeeEntity[]> => {
@@ -62,4 +65,21 @@ export class EmployeeService {
       HandleException.exception(exception);
     }
   };
+
+  registerEmployeeSchedules = async ({data}: RegisterScheduleesEmployeesDTO) => {
+    try {
+      for await (const element of data) {
+        const exists = await this.branchOfficeEmployeeScheduleRepository.findOneBy({branchId: element.branchId, branchScheduleId: element.scheduleId, employeeId: element.employeeId});
+        if (exists == null) {
+          await this.branchOfficeEmployeeScheduleRepository.save(registerScheduleEmployeeToEntity(element));
+        } else {
+          console.log("Existing value", exists);
+        }
+      }
+      return 200;
+    } catch (exception) {
+      console.log(exception);
+      HandleException.exception(exception);
+    }
+  }
 }

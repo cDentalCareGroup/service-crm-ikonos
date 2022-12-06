@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { BranchOfficeService } from './branch.office.service';
-import { GetBranchOfficeScheduleDTO, RegisterBranchOfficeScheduleDTO } from './models/branch.office.dto';
+import { BranchOfficeSchedulesDTO, GetBranchOfficeScheduleDTO, RegisterBranchOfficeScheduleDTO } from './models/branch.office.dto';
 import { BranchOfficeEntity } from './models/branch.office.entity';
 
 @ApiTags('Branch Office')
@@ -28,8 +28,9 @@ export class BranchOfficeController {
     }
 
     @Post('schedules')
-    async getBranchOfficeSchedules(@Body() body: RegisterBranchOfficeScheduleDTO): Promise<GetBranchOfficeScheduleDTO> {
-        return this.branchOffice.getBranchOfficeSchedules();
+    @ApiBody({type: BranchOfficeSchedulesDTO})
+    async getBranchOfficeSchedules(@Body() body: BranchOfficeSchedulesDTO): Promise<GetBranchOfficeScheduleDTO> {
+        return this.branchOffice.getBranchOfficeSchedules(body);
     }
 
     @Get('schedule/employees')

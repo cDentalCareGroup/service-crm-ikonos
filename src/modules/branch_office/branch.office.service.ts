@@ -5,7 +5,7 @@ import { HandleException } from 'src/common/exceptions/general.exception';
 import { Repository } from 'typeorm';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { registerBranchOfficeScheduleToEntity } from './extensions/branch.office.extensions';
-import { GetBranchOfficeScheduleDTO, RegisterBranchOfficeScheduleDTO, setFullDate } from './models/branch.office.dto';
+import { BranchOfficeSchedulesDTO, GetBranchOfficeScheduleDTO, RegisterBranchOfficeScheduleDTO, setFullDate } from './models/branch.office.dto';
 import { BranchOfficeEmployeeSchedule } from './models/branch.office.employee.entity';
 import { BranchOfficeEntity } from './models/branch.office.entity';
 import { BranchOfficeScheduleEntity } from './models/branch.office.schedule.entity';
@@ -89,11 +89,11 @@ export class BranchOfficeService {
 
 
 
-  getBranchOfficeSchedules = async (): Promise<any> => {
+  getBranchOfficeSchedules = async ({branchOfficeName}: BranchOfficeSchedulesDTO): Promise<any> => {
     try {
 
       //1 for active, 2 for inactive, 3 unavailable 
-      const branchOffice = await this.branchOfficeRepository.findOneBy({ id: 1});
+      const branchOffice = await this.branchOfficeRepository.findOneBy({ name: branchOfficeName });
       const schedule = await this.branchOfficeScheduleRepository.find({ where: { branchId: branchOffice.id, status:'activo' } });
       
       return schedule;
