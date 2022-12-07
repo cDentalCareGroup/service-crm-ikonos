@@ -24,7 +24,8 @@ export class PatientController {
 
     @Post('filter')
     @ApiBody({ type: GetPatientsByFilterDTO })
-    async getPatientsByFilter(@Body() body: GetPatientsByFilterDTO): Promise<GetPatientsByFilter[]> {
+    async getPatientsByFilter(@Body() body: GetPatientsByFilterDTO): Promise<PatientEntity[]> {
         return this.patientService.getPatientsByFilter(body);
     }
+
 }

@@ -175,12 +175,13 @@ export class PatientEntity {
   })
   startDate: Date;
 
-  // @Column({
-  //   name:     'fecha_ultima_visita',
-  //   type:     'datetime',
-  //   comment:  'fechaHora en la que se atendio el paciente por ultima vez vez en alguna sucursal',
-  // })
-  // last_visit_date: Date;
+  @Column({
+    name:     'fecha_hora_ultima_visita',
+    type:     'datetime',
+    comment:  'fechaHora en la que se atendio el paciente por ultima vez vez en alguna sucursal',
+    default : null
+  })
+  lastVisitDate: Date;
 
   @Column({
     name:     'origen_cliente',

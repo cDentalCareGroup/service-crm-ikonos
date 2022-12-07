@@ -10,8 +10,8 @@ export class GetPatientsByBranchOfficeDTO {
 
   export class GetPatientsByFilterDTO {
     @ApiProperty({
-      description: 'branch office name',
+      description: 'query id ',
       example: '[1,2,3]',
     })
-    branchOffices?: string[];
+    query: number | string;
   }

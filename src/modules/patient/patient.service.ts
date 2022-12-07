@@ -105,24 +105,31 @@ export class PatientService {
     }
   };
 
-  getPatientsByFilter = async ({
-    branchOffices,
-  }: GetPatientsByFilterDTO): Promise<GetPatientsByFilter[]> => {
+  getPatientsByFilter = async ({query}: GetPatientsByFilterDTO): Promise<PatientEntity[]> => {
     try {
-      const results: GetPatientsByFilter[] = [];
 
-      for await (const item of branchOffices) {
-        const office = await this.branchOfficeRepository.findOneBy({
-          name: item,
+      let results: PatientEntity[] = [];
+      if (query == 1 || query == "1" || query == 2 || query == "2") {
+        const pad = (query == 1 || query == "1") ? 1 : 0
+        results = await this.patientRepository.find({
+          where: { pad: pad },
         });
-
-        if (office != null && office != undefined) {
-          const patients = await this.patientRepository.findBy({
-            originBranchOfficeId: office.id,
-          });
-          results.push(new GetPatientsByFilter(office, patients));
-        }
       }
+
+      if (query == 4 || query == "4") {
+        results = await this.patientRepository.find();
+      }
+
+      if (query == 5 || query == "5" || query == 3 || query == "3") {
+        const status = (query == 5 || query == "5") ? 'activo' : 'abandono'
+        results = await this.patientRepository.find({where: { status: status }});
+      }
+
+      if (query == 6 || query == "6" || query == 7 || query == "7") {
+        const gender = (query == 6 || query == "6") ? 'masculino' : 'femenino'
+        results = await this.patientRepository.find({where: {gender: gender }});
+      }
+    
       return results;
     } catch (exception) {
       console.log(exception);
