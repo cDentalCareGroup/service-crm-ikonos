@@ -7,8 +7,6 @@ export class GetEmployeesByTypeDTO {
     })
     type: string ;
   }
-
-
   export class RegisterScheduleesEmployeesDTO {
     @ApiProperty({
       description: 'data',
@@ -29,4 +27,13 @@ export class RegisterScheduleeEmployeeDTO{
             this.employeeId = employeeId;
             this.scheduleId = scheduleId;
     }
+}
+
+
+export class DeleteEmployeeScheduleDTO {
+  @ApiProperty({
+    description: 'schedule id',
+    example: '1,2',
+  })
+  scheduleId: number | string;
 }

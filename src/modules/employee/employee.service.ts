@@ -8,6 +8,7 @@ import {
   ValidationExceptionType,
 } from 'src/common/exceptions/general.exception';
 import { Repository } from 'typeorm';
+import { DeleteBranchOfficeScheduleDTO } from '../branch_office/models/branch.office.dto';
 import { BranchOfficeEmployeeSchedule } from '../branch_office/models/branch.office.employee.entity';
 import { registerScheduleEmployeeToEntity } from './extensions/employee.extensions';
 import { GetEmployeesByTypeDTO, RegisterScheduleesEmployeesDTO } from './models/employee.dto';
@@ -79,6 +80,16 @@ export class EmployeeService {
       return 200;
     } catch (exception) {
       console.log(exception);
+      HandleException.exception(exception);
+    }
+  }
+
+
+  deleteEmployeeSchedule = async ({scheduleId}: DeleteBranchOfficeScheduleDTO): Promise<any> => {
+    try {
+      const schedule = await this.branchOfficeEmployeeScheduleRepository.delete({id: Number(scheduleId)});
+      return schedule;
+    } catch (exception) {
       HandleException.exception(exception);
     }
   }

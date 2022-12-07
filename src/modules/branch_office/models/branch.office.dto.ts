@@ -54,6 +54,14 @@ export class BranchOfficeSchedulesDTO {
   branchOfficeName: string;
 }
 
+export class DeleteBranchOfficeScheduleDTO {
+  @ApiProperty({
+    description: 'schedule id',
+    example: '1,2',
+  })
+  scheduleId: number | string;
+}
+
 
 
 export const setFullDate = (object: BranchOfficeScheduleEntity): BranchOfficeScheduleEntity => {
