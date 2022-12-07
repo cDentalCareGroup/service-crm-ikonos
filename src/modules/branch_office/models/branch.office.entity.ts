@@ -70,4 +70,13 @@ export class BranchOfficeEntity {
 
   })
   status: number;
+
+  @Column({
+    name: 'latitud',
+  })
+  lat: number;
+  @Column({
+    name: 'longitud',
+  })
+  lng: number;
 }
