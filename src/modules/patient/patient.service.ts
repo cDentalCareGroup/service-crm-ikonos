@@ -109,24 +109,24 @@ export class PatientService {
     try {
 
       let results: PatientEntity[] = [];
-      if (query == 1 || query == "1" || query == 2 || query == "2") {
-        const pad = (query == 1 || query == "1") ? 1 : 0
+      if (query == 100 || query == "100" || query == 200 || query == "200") {
+        const pad = (query == 100 || query == "100") ? 1 : 0
         results = await this.patientRepository.find({
           where: { pad: pad },
         });
       }
 
-      if (query == 4 || query == "4") {
+      if (query == 400 || query == "400") {
         results = await this.patientRepository.find();
       }
 
-      if (query == 5 || query == "5" || query == 3 || query == "3") {
-        const status = (query == 5 || query == "5") ? 'activo' : 'abandono'
+      if (query == 500 || query == "500" || query == 300 || query == "300") {
+        const status = (query == 500 || query == "500") ? 'activo' : 'abandono'
         results = await this.patientRepository.find({where: { status: status }});
       }
 
-      if (query == 6 || query == "6" || query == 7 || query == "7") {
-        const gender = (query == 6 || query == "6") ? 'masculino' : 'femenino'
+      if (query == 600 || query == "600" || query == 700 || query == "700") {
+        const gender = (query == 600 || query == "600") ? 'masculino' : 'femenino'
         results = await this.patientRepository.find({where: {gender: gender }});
       }
     
