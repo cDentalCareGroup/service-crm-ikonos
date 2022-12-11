@@ -54,6 +54,19 @@ export class BranchOfficeSchedulesDTO {
   branchOfficeName: string;
 }
 
+export class BranchOfficeSchedulesByWeekDTO {
+  @ApiProperty({
+    description: 'name of the branch office',
+    example: 'Las palmas',
+  })
+  branchOfficeName: string;
+  @ApiProperty({
+    description: 'name of day',
+    example: 'Lunes, martes',
+  })
+  dayName: string;
+}
+
 export class DeleteBranchOfficeScheduleDTO {
   @ApiProperty({
     description: 'schedule id',

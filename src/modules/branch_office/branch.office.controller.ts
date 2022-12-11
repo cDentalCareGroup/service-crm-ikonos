@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { BranchOfficeService } from './branch.office.service';
-import { BranchOfficeSchedulesDTO, DeleteBranchOfficeScheduleDTO, GetBranchOfficeScheduleDTO, RegisterBranchOfficeScheduleDTO } from './models/branch.office.dto';
+import { BranchOfficeSchedulesByWeekDTO, BranchOfficeSchedulesDTO, DeleteBranchOfficeScheduleDTO, GetBranchOfficeScheduleDTO, RegisterBranchOfficeScheduleDTO } from './models/branch.office.dto';
 import { BranchOfficeEntity } from './models/branch.office.entity';
 
 @ApiTags('Branch Office')
@@ -42,6 +42,12 @@ export class BranchOfficeController {
     @ApiBody({type: DeleteBranchOfficeScheduleDTO})
     async deleteBranchOfficeSchedule(@Body() body: DeleteBranchOfficeScheduleDTO): Promise<any> {
         return this.branchOffice.deleteBranchOfficeSchedule(body);
+    }
+
+    @Post('schedules/week')
+    @ApiBody({type: BranchOfficeSchedulesByWeekDTO})
+    async getBranchOfficeSchedulesByWeek(@Body() body: BranchOfficeSchedulesByWeekDTO): Promise<GetBranchOfficeScheduleDTO> {
+        return this.branchOffice.getBranchOfficeSchedulesByWeek(body);
     }
 
 

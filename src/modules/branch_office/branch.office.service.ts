@@ -5,7 +5,7 @@ import { HandleException } from 'src/common/exceptions/general.exception';
 import { DataSource, Repository } from 'typeorm';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { registerBranchOfficeScheduleToEntity } from './extensions/branch.office.extensions';
-import { BranchOfficeSchedulesDTO, DeleteBranchOfficeScheduleDTO, GetBranchOfficeScheduleDTO, RegisterBranchOfficeScheduleDTO, setFullDate } from './models/branch.office.dto';
+import { BranchOfficeSchedulesByWeekDTO, BranchOfficeSchedulesDTO, DeleteBranchOfficeScheduleDTO, GetBranchOfficeScheduleDTO, RegisterBranchOfficeScheduleDTO, setFullDate } from './models/branch.office.dto';
 import { BranchOfficeEmployeeSchedule } from './models/branch.office.employee.entity';
 import { BranchOfficeEntity } from './models/branch.office.entity';
 import { BranchOfficeScheduleEntity } from './models/branch.office.schedule.entity';
@@ -105,7 +105,7 @@ export class BranchOfficeService {
             .where('branch_schedule_dentist.branch_id = :branchId', { branchId: item.s_id })
             .andWhere('branch_schedule_dentist.dentist_id = :dentistId', { dentistId: item.empleado_id })
             .getRawMany();
-            info.push(new ScheduleBranchOfficeInfo(this.branchOfficesToEntity(item), this.branchOfficeScheduleToEntity(employeeSchedules)));
+          info.push(new ScheduleBranchOfficeInfo(this.branchOfficesToEntity(item), this.branchOfficeScheduleToEntity(employeeSchedules)));
         }
 
         data.push(new SchedulesEmployee(employee, info));
@@ -143,6 +143,69 @@ export class BranchOfficeService {
 
 
 
+  getBranchOfficeSchedulesByWeek = async ({ branchOfficeName,dayName }: BranchOfficeSchedulesByWeekDTO): Promise<any> => {
+    try {
+
+      //1 for active, 2 for inactive, 3 unavailable 
+      const branchOffice = await this.branchOfficeRepository.findOneBy({ name: branchOfficeName });
+
+      const schedule = await this.branchOfficeScheduleRepository.find({ where: { branchId: branchOffice.id, status: 'activo', dayName: dayName } });
+
+      let availableHours = [];
+      const today = new Date();
+      let currentDay = today.getDate();
+
+      for await (const dayTime of schedule) {
+      
+        const startTime = dayTime.startTime.toString();
+        const startTimeArray = startTime.split(":");
+        const startHour = Number(startTimeArray[0]);
+        const startMinutes = Number(startTimeArray[1]);
+        const startSeconds = Number(startTimeArray[2]);
+        const startDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), currentDay, startHour, startMinutes, startSeconds))
+
+        const endTime = dayTime.endTime.toString();
+        const endTimeArray = endTime.split(":");
+        const endHour = Number(endTimeArray[0]);
+        const endMinutes = Number(endTimeArray[1]);
+        const endSeconds = Number(endTimeArray[2]);
+        const endDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), currentDay, endHour, endMinutes, endSeconds))
+
+        const dif = this.getDiff(startDate, endDate) + 1;
+
+        for (let index = 0; index < dif; index++) {
+          let hourToAdd = (startHour + index);
+          let hourResult = hourToAdd < 10 ? `0${hourToAdd}` : hourToAdd;
+          let amOrPm = hourToAdd < 12 ? 'AM' : 'PM';
+          if (hourToAdd <= endHour) {
+            availableHours.push(`${hourResult}:${startMinutes}0 ${amOrPm}`);
+          }
+        }
+      }
+      return availableHours;
+    } catch (exception) {
+      HandleException.exception(exception);
+    }
+  }
+
+
+  addHours = (date: Date, hour: number): Date => {
+    date.setTime(date.getTime() + (hour * 60 * 60 * 1000));
+    return date;
+  }
+
+  getDiff = (startDate: Date, endDate: Date): number => {
+    return Math.abs(startDate.getTime() - endDate.getTime()) / 36e5;
+  }
+
+
+
+
+
+
+
+
+
   employeeQueryToEntity = (data: any): EmployeeEntity => {
     const employee = new EmployeeEntity();
     employee.id = data.empleado_id;
@@ -171,22 +234,22 @@ export class BranchOfficeService {
     // const branchesOffices = [];
     // if (data != null) {
     //   data.forEach(element => {
-        
+
     //   });
     // }
     // return branchesOffices;
     const branchoffice = new BranchOfficeEntity();
-        branchoffice.id = element.s_id;
-        branchoffice.name = element.s_nombre;
-        branchoffice.street = element.s_calle;
-        branchoffice.number = element.s_numero;
-        branchoffice.colony = element.s_colonia;
-        branchoffice.cp = element.s_codigo_postal;
-        branchoffice.primaryContact = element.s_telefono_principal;
-        branchoffice.primaryBranchOfficeContact = element.s_telefono_sucursal;
-        branchoffice.email = element.s_email;
-        branchoffice.status = element.s_idEstatusSucursal;
-        return branchoffice;
+    branchoffice.id = element.s_id;
+    branchoffice.name = element.s_nombre;
+    branchoffice.street = element.s_calle;
+    branchoffice.number = element.s_numero;
+    branchoffice.colony = element.s_colonia;
+    branchoffice.cp = element.s_codigo_postal;
+    branchoffice.primaryContact = element.s_telefono_principal;
+    branchoffice.primaryBranchOfficeContact = element.s_telefono_sucursal;
+    branchoffice.email = element.s_email;
+    branchoffice.status = element.s_idEstatusSucursal;
+    return branchoffice;
   }
 
   branchOfficeScheduleToEntity = (data: any): BranchOfficeScheduleEntity[] => {
