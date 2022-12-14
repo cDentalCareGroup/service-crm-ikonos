@@ -2,7 +2,7 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { ApiBody } from '@nestjs/swagger';
 import { randomUUID } from 'crypto';
 import { AppointmentService } from './appointment.service';
-import { AppointmentAvailabilityDTO, AvailableHoursDTO, RegisterAppointmentRequestDTO } from './models/appointment.dto';
+import { AppointmentAvailabilityDTO, AppointmentDetailDTO, AvailableHoursDTO, GetAppointmentDetailDTO, RegisterAppointmentRequestDTO } from './models/appointment.dto';
 
 @Controller('appointment')
 export class AppointmentController {
@@ -20,8 +20,13 @@ export class AppointmentController {
     @Post('register')
     @ApiBody({type: RegisterAppointmentRequestDTO})
     async registerAppointment(@Body() body: RegisterAppointmentRequestDTO): Promise<any> {
-       // console.log(body);
         return this.appointmentService.registerAppointment(body);
+    }
+
+    @Post('detail')
+    @ApiBody({type: AppointmentDetailDTO})
+    async getAppointmentDetail(@Body() body: AppointmentDetailDTO): Promise<GetAppointmentDetailDTO> {
+        return this.appointmentService.getAppointmentDetail(body);
     }
 
 }

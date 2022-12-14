@@ -2,13 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { async } from 'rxjs';
-import { HandleException, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
+import { HandleException, NotFoundCustomException, NotFoundType, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
 import { getDiff, getRandomInt } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
 import { BranchOfficeScheduleEntity } from '../branch_office/models/branch.office.schedule.entity';
+import { AppointmentTemplateMail, EmailService } from '../email/email.service';
 import { PatientEntity } from '../patient/models/patient.entity';
-import { AppointmentAvailabilityDTO, AvailableHoursDTO, RegisterAppointmentRequestDTO } from './models/appointment.dto';
+import { AppointmentAvailabilityDTO, AppointmentDetailDTO, AvailableHoursDTO, GetAppointmentDetailDTO, RegisterAppointmentRequestDTO } from './models/appointment.dto';
 import { AppointmentEntity } from './models/appointment.entity';
 import { ProspectEntity } from './models/prospect.entity';
 
@@ -20,7 +21,8 @@ export class AppointmentService {
     @InjectRepository(BranchOfficeEntity) private branchOfficeRepository: Repository<BranchOfficeEntity>,
     @InjectRepository(BranchOfficeScheduleEntity) private branchOfficeScheduleRepository: Repository<BranchOfficeScheduleEntity>,
     @InjectRepository(PatientEntity) private patientRepository: Repository<PatientEntity>,
-    @InjectRepository(ProspectEntity) private prospectEntity: Repository<ProspectEntity>,
+    @InjectRepository(ProspectEntity) private prospectRepository: Repository<ProspectEntity>,
+    private emailService: EmailService
 
   ) { }
 
@@ -110,8 +112,6 @@ export class AppointmentService {
 
   registerAppointment = async ({ date, branchName, time, phone, email, name }: RegisterAppointmentRequestDTO) => {
     try {
-
-
       if (name == null || name == undefined || name == '' ||
         phone == null || phone == undefined || phone == '') throw new ValidationException(ValidationExceptionType.MISSING_VALUES);
 
@@ -127,19 +127,19 @@ export class AppointmentService {
       }
 
       if (patient == null || patient == undefined) {
-        prospect = await this.prospectEntity.findOneBy({ name: name, primaryContact: phone });
+        prospect = await this.prospectRepository.findOneBy({ name: name, primaryContact: phone });
         if (prospect == null || prospect == undefined) {
           const newProspect = new ProspectEntity();
           newProspect.name = name;
           newProspect.email = email;
           newProspect.primaryContact = phone;
           newProspect.createdAt = new Date();
-          prospect = await this.prospectEntity.save(newProspect);
+          prospect = await this.prospectRepository.save(newProspect);
         }
       }
 
       const exists = await this.appointmentRepository.findOneBy({
-        branchId: branchOffice.id, 
+        branchId: branchOffice.id,
         branchName: branchOffice.name,
         appointment: date.toString().split("T")[0],
         time: time.simpleTime,
@@ -155,27 +155,79 @@ export class AppointmentService {
       entity.scheduleBranchOfficeId = time.scheduleBranchOfficeId;
       entity.time = time.simpleTime;
       entity.scheduledAt = new Date();
-      const folio = randomUUID().replace(/-/g, getRandomInt()).substring(0, 20)
+      const folio = randomUUID().replace(/-/g, getRandomInt()).substring(0, 20).toUpperCase()
       entity.folio = folio;
       entity.prospectId = prospect?.id ?? null;
       entity.patientId = patient?.id ?? null;
 
 
       const response = await this.appointmentRepository.save(entity);
-      return {
-        'branchOffice': branchOffice,
-        'patientInfo': {
-          'name': name,
-          'phone': phone,
-          'email': email
-        },
-        'appointment': {
-          'date': response.appointment,
-          'time': response.time,
-          'folio': response.folio,
-          'status': response.status
-        }
+
+      if (email != null && email != undefined) {
+        await this.emailService.sendAppointmentEmail(
+          new AppointmentTemplateMail(
+             name,
+            `${date.toString().split("T")[0]} ${time.simpleTime}`,
+            `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
+            `${branchOffice.name}`,
+            `${branchOffice.primaryContact}`,
+            `${folio}`,
+            `${phone ?? '-'}`
+          ),
+          email);
       }
+
+      // return {
+      //   'branchOffice': branchOffice,
+      //   'patientInfo': {
+      //     'name': name,
+      //     'phone': phone,
+      //     'email': email
+      //   },
+      //   'appointment': {
+      //     'date': response.appointment,
+      //     'time': response.time,
+      //     'folio': response.folio,
+      //     'status': response.status
+      //   }
+      // }
+      return response.folio;
+    } catch (exception) {
+      console.log(exception);
+      HandleException.exception(exception);
+    }
+  }
+
+
+  getAppointmentDetail = async (body: AppointmentDetailDTO): Promise<GetAppointmentDetailDTO> => {
+    try {
+      const appointment = await this.appointmentRepository.findOneBy({ folio: body.folio });
+
+      if (appointment == null) throw new NotFoundCustomException(NotFoundType.APPOINTMENT_NOT_FOUND);
+
+      const branchOffice = await this.branchOfficeRepository.findOneBy({ id: appointment.branchId });
+      let prospect: ProspectEntity;
+      let patient: PatientEntity;
+
+      if (appointment.patientId == null) {
+        prospect = await this.prospectRepository.findOneBy({ id: appointment.prospectId });
+      } else {
+        patient = await this.patientRepository.findOneBy({ id: appointment.patientId });
+      }
+
+      // await this.emailService.sendAppointmentEmail(
+      //   new AppointmentTemplateMail(
+      //      prospect?.name ?? patient?.name ?? '',
+      //     `${appointment.appointment} ${appointment.time}`,
+      //     `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
+      //     `${branchOffice.name}`,
+      //     `${branchOffice.primaryContact}`,
+      //     `${appointment.folio.toUpperCase()}`,
+      //     `${prospect.primaryContact ?? patient.primaryContact ?? '-'}`
+      //   ),
+      //   "imanueld22@gmail.com")
+
+      return new GetAppointmentDetailDTO(appointment, branchOffice, patient, prospect);
     } catch (exception) {
       console.log(exception);
       HandleException.exception(exception);

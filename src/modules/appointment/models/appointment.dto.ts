@@ -1,4 +1,9 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { BranchOfficeEntity } from "src/modules/branch_office/models/branch.office.entity";
+import { BranchOfficeScheduleEntity } from "src/modules/branch_office/models/branch.office.schedule.entity";
+import { PatientEntity } from "src/modules/patient/models/patient.entity";
+import { AppointmentEntity } from "./appointment.entity";
+import { ProspectEntity } from "./prospect.entity";
 
 export class AvailableHoursDTO {
   id: number;
@@ -48,4 +53,25 @@ export class RegisterAppointmentRequestDTO {
     this.email = email;
     this.branchName = branchName;
   }
+}
+
+export class GetAppointmentDetailDTO {
+  appointment: AppointmentEntity;
+  branchOffice: BranchOfficeEntity;
+  patient?: PatientEntity;
+  prospect?: ProspectEntity;
+
+  constructor( appointment: AppointmentEntity,
+    branchOffice: BranchOfficeEntity,
+    patient?: PatientEntity,
+    prospect?: ProspectEntity) {
+      this.appointment = appointment;
+      this.branchOffice = branchOffice;
+      this.patient = patient;
+      this.prospect = prospect;
+  }
+}
+
+export class AppointmentDetailDTO {
+  folio: string;
 }

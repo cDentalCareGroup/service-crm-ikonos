@@ -14,6 +14,8 @@ import { StatisticModule } from './modules/statistic/statistic.module';
 import { AppointmentController } from './modules/appointment/appointment.controller';
 import { AppointmentService } from './modules/appointment/appointment.service';
 import { AppointmentModule } from './modules/appointment/appointment.module';
+import { EmailService } from './modules/email/email.service';
+import { EmailModule } from './modules/email/email.module';
 
 @Module({
   imports: [
@@ -35,9 +37,12 @@ import { AppointmentModule } from './modules/appointment/appointment.module';
     BranchOfficeModule,
     EmployeeModule,
     StatisticModule,
-    AppointmentModule
+    AppointmentModule,
+    EmailModule
   ],
-  controllers: [AppController, EmailController],
+  controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
+
+
