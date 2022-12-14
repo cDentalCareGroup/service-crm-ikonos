@@ -1,26 +1,120 @@
 // import { BranchOffice } from "src/modules/branch_office/models/branch.office.entity";
 // import { Employees } from "src/modules/employee/models/employee.entity";
 // import { Patient } from "src/modules/patient/models/patient.entity";
-// import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
-// @Entity('appointments')
-// export class Appointments {
-//   @PrimaryGeneratedColumn()
-//   id: number;
+ @Entity('appointment2')
+ export class AppointmentEntity {
+  @PrimaryGeneratedColumn({name:'ID'})
+  id: number;
 
-//   @Column({
-//     name: 'branch_id',
-//     type: 'int',
-//     comment: 'id de la sucursal donde es la cita',
-//   })
-//   branchID: number;
+  @Column({
+    name: 'appointment',
+    type: 'date',
+  })
+  appointment: string;
   
-//   @Column({
-//     name: 'patient_id',
-//     type: 'int',
-//     comment: 'id del paciente',
-//   })
-//   patientID: number;
+  @Column({
+    name: 'branch_id',
+    type: 'int',
+  })
+  branchId: number;
+
+  @Column({
+    name: 'branch_name',
+    type: 'varchar',
+  })
+  branchName: string;
+
+
+  @Column({
+    name: 'schedule_branch_office_id',
+    type: 'int',
+  })
+  scheduleBranchOfficeId: number;
+
+  @Column({
+    name: 'time',
+    type: 'varchar',
+  })
+  time: string;
+
+  @Column({
+    name: 'dentist_id',
+    type: 'int',
+    nullable: true
+  })
+  dentistId: number;
+
+  @Column({
+    name: 'receptionist_id',
+    type: 'int',
+    nullable: true
+  })
+  receptionistId: number;
+
+  @Column({
+    name: 'status',
+    type: 'varchar',
+  })
+  status: string;
+
+  @Column({
+    name: 'cost_amount',
+    type: 'decimal',
+    nullable: true,
+  })
+  costAmount: number;
+
+  @Column({
+    name: 'price_amount',
+    type: 'decimal',
+    nullable: true
+  })
+  priceAmount: number;
+
+
+  @Column({
+    name: 'prospect_id',
+    type: 'int',
+    nullable: true
+  })
+  prospectId: number;
+
+  @Column({
+    name: 'patient_id',
+    type: 'int',
+    nullable: true
+  })
+  patientId: number;
+
+  @Column({
+    name: 'scheduled_at',
+    type: 'datetime',
+    nullable: true,
+  })
+  scheduledAt: Date;
+
+  @Column({
+    name: 'treatment_category_id',
+    type: 'int',
+    nullable: true,
+  })
+  treatmentCategoryId: number;
+
+  @Column({
+    name: 'treatment_category',
+    type: 'varchar',
+    nullable: true,
+  })
+  treatmentCategory: string;
+
+  @Column({
+    name: 'folio',
+    type: 'varchar',
+    nullable: true,
+  })
+  folio: string;
 
 //   @Column({
 //     name: 'dentist_id',
@@ -107,4 +201,4 @@
 //   // @OneToOne(() => Employees)
 //   // @JoinColumn({ name: 'receptionist_id' })
 //   // receptionist: Employees;
-// }
+ }

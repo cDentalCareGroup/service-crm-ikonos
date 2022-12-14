@@ -27,7 +27,7 @@ export class PatientService {
     @InjectRepository(BranchOfficeEntity)
     private branchOfficeRepository: Repository<BranchOfficeEntity>,
     private http: HttpService,
-  ) {}
+  ) { }
 
   getAllPatients = async (): Promise<PatientEntity[]> => {
     try {
@@ -105,35 +105,48 @@ export class PatientService {
     }
   };
 
-  getPatientsByFilter = async ({query}: GetPatientsByFilterDTO): Promise<PatientEntity[]> => {
+  getPatientsByFilter = async ({ queries }: GetPatientsByFilterDTO): Promise<PatientEntity[]> => {
     try {
 
       let results: PatientEntity[] = [];
-      if (query == 100 || query == "100" || query == 200 || query == "200") {
-        const pad = (query == 100 || query == "100") ? 1 : 0
-        results = await this.patientRepository.find({
-          where: { pad: pad },
-        });
+
+      for await (const query of queries) {
+        if (query == 100 || query == "100" || query == 200 || query == "200") {
+          const pad = (query == 100 || query == "100") ? 1 : 0
+          const data = await this.patientRepository.find({
+            where: { pad: pad },
+          });
+          results = results.concat(data);
+        }
+
+        if (query == 400 || query == "400") {
+          const data = await this.patientRepository.find();
+          results = results.concat(data);
+        }
+
+        if (query == 500 || query == "500" || query == 300 || query == "300") {
+          const status = (query == 500 || query == "500") ? 'activo' : 'abandono'
+          const data = await this.patientRepository.find({ where: { status: status } });
+          results = results.concat(data);
+        }
+
+        if (query == 600 || query == "600" || query == 700 || query == "700") {
+          const gender = (query == 600 || query == "600") ? 'masculino' : 'femenino'
+          const data  = await this.patientRepository.find({ where: { gender: gender } });
+          results = results.concat(data);
+        }
       }
 
-      if (query == 400 || query == "400") {
-        results = await this.patientRepository.find();
-      }
-
-      if (query == 500 || query == "500" || query == 300 || query == "300") {
-        const status = (query == 500 || query == "500") ? 'activo' : 'abandono'
-        results = await this.patientRepository.find({where: { status: status }});
-      }
-
-      if (query == 600 || query == "600" || query == 700 || query == "700") {
-        const gender = (query == 600 || query == "600") ? 'masculino' : 'femenino'
-        results = await this.patientRepository.find({where: {gender: gender }});
-      }
-    
-      return results;
+      return this.removeDuplicates(results);
     } catch (exception) {
       console.log(exception);
       HandleException.exception(exception);
     }
   };
+
+  removeDuplicates = (arr: any[]):PatientEntity[]  => {
+    return arr.filter(function(elem, index, self) {
+      return index === self.indexOf(elem);
+  });
+  }
 }

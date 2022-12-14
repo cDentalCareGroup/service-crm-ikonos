@@ -54,18 +54,7 @@ export class BranchOfficeSchedulesDTO {
   branchOfficeName: string;
 }
 
-export class BranchOfficeSchedulesByWeekDTO {
-  @ApiProperty({
-    description: 'name of the branch office',
-    example: 'Las palmas',
-  })
-  branchOfficeName: string;
-  @ApiProperty({
-    description: 'name of day',
-    example: 'Lunes, martes',
-  })
-  dayName: string;
-}
+
 
 export class DeleteBranchOfficeScheduleDTO {
   @ApiProperty({
@@ -139,4 +128,5 @@ function getMonday(d) {
       diff = d.getDate() - day + (day == 0 ? -6:1); // adjust when day is sunday
   return new Date(d.setDate(diff));
 }
+
 

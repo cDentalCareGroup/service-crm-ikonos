@@ -11,6 +11,9 @@ import { PatientModule } from './modules/patient/patient.module';
 import { BranchOfficeModule } from './modules/branch_office/branch.office.module';
 import { EmployeeModule } from './modules/employee/employee.module';
 import { StatisticModule } from './modules/statistic/statistic.module';
+import { AppointmentController } from './modules/appointment/appointment.controller';
+import { AppointmentService } from './modules/appointment/appointment.service';
+import { AppointmentModule } from './modules/appointment/appointment.module';
 
 @Module({
   imports: [
@@ -31,7 +34,8 @@ import { StatisticModule } from './modules/statistic/statistic.module';
     PatientModule,
     BranchOfficeModule,
     EmployeeModule,
-    StatisticModule
+    StatisticModule,
+    AppointmentModule
   ],
   controllers: [AppController, EmailController],
   providers: [AppService],

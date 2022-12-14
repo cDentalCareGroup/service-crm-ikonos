@@ -13,5 +13,5 @@ export class GetPatientsByBranchOfficeDTO {
       description: 'query id ',
       example: '[1,2,3]',
     })
-    query: number | string;
+    queries: number[] | string[];
   }

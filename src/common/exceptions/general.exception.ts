@@ -35,12 +35,15 @@ export class ValidationException extends HttpException {
     if (type == ValidationExceptionType.MISSING_VALUES) {
       message = 'FIELDS_ARE_REQUIRED'
     }
+    if (type == ValidationExceptionType.APPOINTMENT_EXISTS) {
+      message = 'APPOINTMENT_EXISTS'
+    }
     super(message, HttpStatus.BAD_REQUEST);
   }
 }
 
 export enum ValidationExceptionType {
-  WRONG_PASSWORD, MISSING_VALUES
+  WRONG_PASSWORD, MISSING_VALUES, APPOINTMENT_EXISTS
 }
 
 export class HandleException {
