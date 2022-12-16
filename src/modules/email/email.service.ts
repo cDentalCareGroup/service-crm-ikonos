@@ -1,6 +1,6 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
-import { getAppointmentTemplate } from './templates';
+import { getAppointmentConfirmationTemplate, getAppointmentRescheduleTemplate, getAppointmentTemplate } from './templates';
 
 @Injectable()
 export class EmailService {
@@ -12,11 +12,65 @@ export class EmailService {
         try {
 
             const template = getAppointmentTemplate(data);
-
             await this.mailService.sendMail({
                 to: email,
-                from: 'NareJoyasSupport@narejoyas.com',
+                from: process.env.MAIL,
                 subject: `C Dental Care Group - Cita Folio: ${data.folio}`,
+                html: template
+            });
+
+            return 1
+        } catch (error) {
+            console.log("error", error);
+            return 0;
+        }
+    }
+
+
+
+    sendAppointmentConfirmationEmail = async (data: AppointmentTemplateMail, email: string): Promise<number> => {
+        try {
+
+            const template = getAppointmentConfirmationTemplate(data);
+            await this.mailService.sendMail({
+                to: email,
+                from: process.env.MAIL,
+                subject: `C Dental Care Group - Confirmación de cita`,
+                html: template
+            });
+
+            return 1
+        } catch (error) {
+            console.log("error", error);
+            return 0;
+        }
+    }
+
+    sendAppointmentRescheduleEmail = async (data: AppointmentTemplateMail, email: string): Promise<number> => {
+        try {
+
+            const template = getAppointmentRescheduleTemplate(data);
+            await this.mailService.sendMail({
+                to: email,
+                from: process.env.MAIL,
+                subject: `C Dental Care Group - Cita Reagendada`,
+                html: template
+            });
+
+            return 1
+        } catch (error) {
+            console.log("error", error);
+            return 0;
+        }
+    }
+
+    test = async (): Promise<number> => {
+        try {
+            const template = getAppointmentConfirmationTemplate(new AppointmentTemplateMail('Imma','2022/12/12','Av Las palmas','Palmas','777123123123','ASDASDASD','777123123'));
+            await this.mailService.sendMail({
+                to: 'imanueld22@gmail.com',
+                from: process.env.MAIL,
+                subject: `C Dental Care Group - Confirmación de cita`,
                 html: template
             });
 

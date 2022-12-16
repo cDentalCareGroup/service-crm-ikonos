@@ -16,6 +16,8 @@ import { AppointmentService } from './modules/appointment/appointment.service';
 import { AppointmentModule } from './modules/appointment/appointment.module';
 import { EmailService } from './modules/email/email.service';
 import { EmailModule } from './modules/email/email.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TaskServiceService } from './task-service/task-service.service';
 
 @Module({
   imports: [
@@ -33,15 +35,16 @@ import { EmailModule } from './modules/email/email.module';
         }
       }
     }),
+    ScheduleModule.forRoot(),
     PatientModule,
     BranchOfficeModule,
     EmployeeModule,
     StatisticModule,
     AppointmentModule,
-    EmailModule
+    EmailModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, TaskServiceService],
 })
 export class AppModule {}
 

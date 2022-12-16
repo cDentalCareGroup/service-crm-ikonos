@@ -11,6 +11,6 @@ export class EmailController {
 
     @Get('testemail')
     async testEmail (){
-        return 200;
+        return this.mailService.test();
     }
 }

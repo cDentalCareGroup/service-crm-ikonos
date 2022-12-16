@@ -116,6 +116,28 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
   })
   folio: string;
 
+  @Column({
+    name: 'started_at',
+    type: 'datetime',
+    nullable: true,
+  })
+  startedAt: string;
+
+
+  @Column({
+    name: 'finished_at',
+    type: 'datetime',
+    nullable: true,
+  })
+  finishedAt: string;
+
+  @Column({
+    name: 'comments',
+    type: 'varchar',
+    nullable: true,
+  })
+  comments: string;
+
 //   @Column({
 //     name: 'dentist_id',
 //     type: 'int',

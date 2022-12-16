@@ -1,15 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
-import { async } from 'rxjs';
+import { formatISO } from 'date-fns';
 import { HandleException, NotFoundCustomException, NotFoundType, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
 import { getDiff, getRandomInt } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
+import { UserEntity } from '../auth/models/entities/user.entity';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
 import { BranchOfficeScheduleEntity } from '../branch_office/models/branch.office.schedule.entity';
 import { AppointmentTemplateMail, EmailService } from '../email/email.service';
+import { EmployeeEntity } from '../employee/models/employee.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
-import { AppointmentAvailabilityDTO, AppointmentDetailDTO, AvailableHoursDTO, GetAppointmentDetailDTO, RegisterAppointmentRequestDTO } from './models/appointment.dto';
+import { AppointmentAvailabilityDTO, AppointmentDetailDTO, AvailableHoursDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RescheduleAppointmentDTO, UpdateAppointmentStatusDTO } from './models/appointment.dto';
 import { AppointmentEntity } from './models/appointment.entity';
 import { ProspectEntity } from './models/prospect.entity';
 
@@ -22,8 +24,9 @@ export class AppointmentService {
     @InjectRepository(BranchOfficeScheduleEntity) private branchOfficeScheduleRepository: Repository<BranchOfficeScheduleEntity>,
     @InjectRepository(PatientEntity) private patientRepository: Repository<PatientEntity>,
     @InjectRepository(ProspectEntity) private prospectRepository: Repository<ProspectEntity>,
+    @InjectRepository(EmployeeEntity) private employeeRepository: Repository<EmployeeEntity>,
+    @InjectRepository(UserEntity) private userRepository: Repository<UserEntity>,
     private emailService: EmailService
-
   ) { }
 
   getAppointmentsAvailability = async ({ branchOfficeName, dayName }: AppointmentAvailabilityDTO): Promise<AvailableHoursDTO[]> => {
@@ -37,7 +40,7 @@ export class AppointmentService {
       const today = new Date();
       let currentDay = today.getDate();
       const formatedDate = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`
-      const halfMinutes = '30';
+
       for await (const dayTime of schedule) {
 
         const startTime = dayTime.startTime.toString();
@@ -110,7 +113,7 @@ export class AppointmentService {
     }
   }
 
-  registerAppointment = async ({ date, branchName, time, phone, email, name }: RegisterAppointmentRequestDTO) => {
+  registerAppointment = async ({ date, branchName, time, phone, email, name }: RegisterAppointmentDTO): Promise<string> => {
     try {
       if (name == null || name == undefined || name == '' ||
         phone == null || phone == undefined || phone == '') throw new ValidationException(ValidationExceptionType.MISSING_VALUES);
@@ -160,13 +163,12 @@ export class AppointmentService {
       entity.prospectId = prospect?.id ?? null;
       entity.patientId = patient?.id ?? null;
 
-
       const response = await this.appointmentRepository.save(entity);
 
       if (email != null && email != undefined) {
         await this.emailService.sendAppointmentEmail(
           new AppointmentTemplateMail(
-             name,
+            name,
             `${date.toString().split("T")[0]} ${time.simpleTime}`,
             `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
             `${branchOffice.name}`,
@@ -176,21 +178,6 @@ export class AppointmentService {
           ),
           email);
       }
-
-      // return {
-      //   'branchOffice': branchOffice,
-      //   'patientInfo': {
-      //     'name': name,
-      //     'phone': phone,
-      //     'email': email
-      //   },
-      //   'appointment': {
-      //     'date': response.appointment,
-      //     'time': response.time,
-      //     'folio': response.folio,
-      //     'status': response.status
-      //   }
-      // }
       return response.folio;
     } catch (exception) {
       console.log(exception);
@@ -201,36 +188,171 @@ export class AppointmentService {
 
   getAppointmentDetail = async (body: AppointmentDetailDTO): Promise<GetAppointmentDetailDTO> => {
     try {
-      const appointment = await this.appointmentRepository.findOneBy({ folio: body.folio });
-
+      const appointment = await this.appointmentRepository.findOneBy({ folio: body.folio, status: 'activa' });
       if (appointment == null) throw new NotFoundCustomException(NotFoundType.APPOINTMENT_NOT_FOUND);
-
-      const branchOffice = await this.branchOfficeRepository.findOneBy({ id: appointment.branchId });
-      let prospect: ProspectEntity;
-      let patient: PatientEntity;
-
-      if (appointment.patientId == null) {
-        prospect = await this.prospectRepository.findOneBy({ id: appointment.prospectId });
-      } else {
-        patient = await this.patientRepository.findOneBy({ id: appointment.patientId });
-      }
-
-      // await this.emailService.sendAppointmentEmail(
-      //   new AppointmentTemplateMail(
-      //      prospect?.name ?? patient?.name ?? '',
-      //     `${appointment.appointment} ${appointment.time}`,
-      //     `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
-      //     `${branchOffice.name}`,
-      //     `${branchOffice.primaryContact}`,
-      //     `${appointment.folio.toUpperCase()}`,
-      //     `${prospect.primaryContact ?? patient.primaryContact ?? '-'}`
-      //   ),
-      //   "imanueld22@gmail.com")
-
-      return new GetAppointmentDetailDTO(appointment, branchOffice, patient, prospect);
+      return this.getAppointment(appointment);
     } catch (exception) {
       console.log(exception);
       HandleException.exception(exception);
     }
+  }
+
+
+  getAllAppointmentByBranchOffice = async (body: GetAppointmentsByBranchOfficeDTO): Promise<GetAppointmentDetailDTO[]> => {
+    try {
+      const data: GetAppointmentDetailDTO[] = [];
+
+      const date = new Date();
+      const nextDate = date.toISOString().split("T")[0];
+
+      const appointments = await this.appointmentRepository.findBy({branchId: Number(body.id), appointment: nextDate });
+      for await (const appointment of appointments) {
+        const result = await this.getAppointment(appointment)
+        data.push(result);
+      }
+      return data;
+    } catch (exception) {
+      console.log(exception);
+      HandleException.exception(exception);
+    }
+  }
+
+
+  appointmentReminders = async () => {
+    try {
+      const date = new Date();
+      //date.setDate(date.getDate() + 1);
+
+      const nextDate = date.toISOString().split("T")[0];
+      const result = await this.appointmentRepository.find({ where: { appointment: nextDate, status: 'activa' } });
+      let failureEmails = [];
+      for await (const appointment of result) {
+        let prospect: ProspectEntity;
+        let patient: PatientEntity;
+
+        if (appointment.patientId == null) {
+          prospect = await this.prospectRepository.findOneBy({ id: appointment.prospectId });
+        } else {
+          patient = await this.patientRepository.findOneBy({ id: appointment.patientId });
+        }
+        const branchOffice = await this.branchOfficeRepository.findOneBy({ id: appointment.branchId });
+
+        if (prospect?.email || patient?.email) {
+          const name = prospect?.name ?? `${patient?.name} ${patient?.lastname} ${patient?.secondLastname}`;
+          const email = prospect?.email ?? patient?.email;
+          const isSuccess = await this.emailService.sendAppointmentConfirmationEmail(
+            new AppointmentTemplateMail(
+              name,
+              `${appointment.appointment} ${appointment.time}`,
+              `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
+              `${branchOffice.name}`,
+              `${branchOffice.primaryContact}`,
+              `${appointment.folio}`,
+              `${prospect?.primaryContact ?? patient?.primaryContact}`,
+            ),
+            email
+          );
+          if (isSuccess != 1) {
+            failureEmails.push(appointment);
+          }
+        }
+      }
+      return failureEmails;
+    } catch (exception) {
+      console.log(exception);
+    }
+  }
+
+  registerAppointmentDentist = async ({ id, appointmentId, username }: RegisterAppointmentDentistDTO) => {
+    try {
+      const appointment = await this.appointmentRepository.findOneBy({ id: Number(appointmentId) });
+      const receptionist = await this.userRepository.findOneBy({ username: username });
+      appointment.dentistId = Number(id);
+      appointment.receptionistId = receptionist.id;
+      const updatedAppointment = await this.appointmentRepository.save(appointment);
+      return this.getAppointment(updatedAppointment);
+    } catch (exception) {
+      console.log(exception);
+      HandleException.exception(exception);
+    }
+  }
+
+  updateAppointmentStatus = async ({ id, status }: UpdateAppointmentStatusDTO) => {
+    try {
+      const appointment = await this.appointmentRepository.findOneBy({ id: Number(id) });
+      if (status == 'proceso'){
+        appointment.startedAt = formatISO(new Date())
+        appointment.status = 'proceso';
+      }
+      if (status == 'finalizada'){
+        appointment.finishedAt = formatISO(new Date())
+        appointment.status = 'finalizada';
+      }
+      const updatedAppointment = await this.appointmentRepository.save(appointment);
+      return this.getAppointment(updatedAppointment);
+    } catch (exception) {
+      console.log(exception);
+      HandleException.exception(exception);
+    }
+  }
+
+  rescheduleAppointmentDentist = async ({ id, date, time, branchName }: RescheduleAppointmentDTO): Promise<GetAppointmentDetailDTO> => {
+    try {
+      const appointment = await this.appointmentRepository.findOneBy({ id: Number(id) });
+      const branchOffice = await this.branchOfficeRepository.findOneBy({ name: branchName });
+
+      appointment.appointment = date.toString().split("T")[0];
+      appointment.time = time.simpleTime;
+      appointment.branchId = branchOffice.id;
+      appointment.branchName = branchOffice.name;
+      appointment.status = 'activa';
+      appointment.dentistId = null;
+      appointment.receptionistId = null;
+      appointment.comments = `Cita reagendada de ${appointment.appointment} ${appointment.time} para ${date.toString().split("T")[0]} ${time}`
+      const updatedAppointment = await this.appointmentRepository.save(appointment);
+
+      const response = await this.getAppointment(updatedAppointment);
+      if (response.patient?.email != null || response.prospect?.email != null) {
+        const name = response.prospect?.name ?? `${response.patient?.name} ${response.patient?.lastname} ${response.patient?.secondLastname}`;
+        const email = response.prospect?.email ?? response.patient?.email;
+        await this.emailService.sendAppointmentRescheduleEmail(
+          new AppointmentTemplateMail(
+            name,
+            `${appointment.appointment} ${appointment.time}`,
+            `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
+            `${branchOffice.name}`,
+            `${branchOffice.primaryContact}`,
+            `${appointment.folio}`,
+            `${response.prospect?.primaryContact ?? response.patient?.primaryContact}`,
+          ),
+          email
+        );
+      }
+
+      return response;
+    } catch (exception) {
+      console.log(exception);
+      HandleException.exception(exception);
+    }
+  }
+
+
+  private getAppointment = async (appointment: AppointmentEntity): Promise<GetAppointmentDetailDTO> => {
+    const branchOffice = await this.branchOfficeRepository.findOneBy({ id: appointment.branchId });
+
+    let prospect: ProspectEntity;
+    let patient: PatientEntity;
+    let dentist: EmployeeEntity;
+
+    if (appointment.patientId == null || appointment.patientId == undefined) {
+      prospect = await this.prospectRepository.findOneBy({ id: appointment.prospectId });
+    } else {
+      patient = await this.patientRepository.findOneBy({ id: appointment.patientId });
+    }
+
+    if (appointment.dentistId != null && appointment.dentistId != undefined) {
+      dentist = await this.employeeRepository.findOneBy({ id: appointment.dentistId });
+    }
+    return new GetAppointmentDetailDTO(appointment, branchOffice, patient, prospect, dentist);
   }
 }
