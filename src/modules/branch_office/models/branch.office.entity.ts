@@ -79,4 +79,6 @@ export class BranchOfficeEntity {
     name: 'longitud',
   })
   lng: number;
+
+  appointmens?: number;
 }

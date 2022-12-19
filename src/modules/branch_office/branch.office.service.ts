@@ -4,6 +4,7 @@ import e from 'express';
 import { HandleException } from 'src/common/exceptions/general.exception';
 import { getDiff } from 'src/utils/general.functions.utils';
 import { DataSource, Repository } from 'typeorm';
+import { AppointmentEntity } from '../appointment/models/appointment.entity';
 import { ScheduleBranchOfficeInfoDTO, SchedulesEmployeeDTO } from '../employee/models/employee.dto';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { branchOfficeScheduleToEntity, branchOfficesToEntity, registerBranchOfficeScheduleToEntity } from './extensions/branch.office.extensions';
@@ -19,6 +20,7 @@ export class BranchOfficeService {
     @InjectRepository(EmployeeEntity) private employeeRepository: Repository<EmployeeEntity>,
     @InjectRepository(BranchOfficeScheduleEntity) private branchOfficeScheduleRepository: Repository<BranchOfficeScheduleEntity>,
     @InjectRepository(BranchOfficeEmployeeSchedule) private branchOfficeEmployeeScheduleRepository: Repository<BranchOfficeEmployeeSchedule>,
+    @InjectRepository(AppointmentEntity) private appointmentRepository: Repository<AppointmentEntity>
   ) { }
 
 
@@ -26,7 +28,17 @@ export class BranchOfficeService {
     try {
       //1 for active, 2 for inactive, 3 unavailable 
       const data = await this.branchOfficeRepository.find({ where: { status: 1 } });
-      return data;
+      
+      let branchOffices: BranchOfficeEntity[] = [];
+      for await (const branchOffice of data) {
+        const numOfAppointments = await this.appointmentRepository.findBy({branchId: branchOffice.id, status:'activa'});
+        const item = branchOffice;
+        item.appointmens = numOfAppointments.length;
+        branchOffices.push(item);
+      }
+      
+      
+      return branchOffices;
     } catch (exception) {
       HandleException.exception(exception);
     }

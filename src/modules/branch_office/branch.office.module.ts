@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import { AppointmentEntity } from '../appointment/models/appointment.entity';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { BranchOfficeController } from './branch.office.controller';
 import { BranchOfficeService } from './branch.office.service';
@@ -12,7 +13,7 @@ import { BranchOfficeScheduleEntity } from './models/branch.office.schedule.enti
 @Module({
     imports: [
     ConfigModule.forRoot(),
-    TypeOrmModule.forFeature([BranchOfficeEntity, BranchOfficeScheduleEntity,BranchOfficeEmployeeSchedule,EmployeeEntity]),
+    TypeOrmModule.forFeature([BranchOfficeEntity, BranchOfficeScheduleEntity,BranchOfficeEmployeeSchedule,EmployeeEntity, AppointmentEntity]),
   ],
   controllers: [BranchOfficeController],
   providers: [BranchOfficeService],

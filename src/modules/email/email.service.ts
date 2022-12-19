@@ -66,11 +66,13 @@ export class EmailService {
 
     test = async (): Promise<number> => {
         try {
-            const template = getAppointmentConfirmationTemplate(new AppointmentTemplateMail('Imma','2022/12/12','Av Las palmas','Palmas','777123123123','ASDASDASD','777123123'));
+
+            const data = new AppointmentTemplateMail('Immanuel','2022-12-19','Calle 15 de Agosto','Palmas','77712312312','asdasdasdasd','777123123');
+            const template = getAppointmentTemplate(data);
             await this.mailService.sendMail({
                 to: 'imanueld22@gmail.com',
                 from: process.env.MAIL,
-                subject: `C Dental Care Group - Confirmación de cita`,
+                subject: `C Dental Care Group - Cita Folio: ${data.folio}`,
                 html: template
             });
 

@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { formatISO } from 'date-fns';
 import { HandleException, NotFoundCustomException, NotFoundType, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
-import { getDiff, getRandomInt } from 'src/utils/general.functions.utils';
+import { getDiff, getRandomInt, getTodayDate } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { UserEntity } from '../auth/models/entities/user.entity';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
@@ -157,11 +157,12 @@ export class AppointmentService {
       entity.branchName = branchOffice.name;
       entity.scheduleBranchOfficeId = time.scheduleBranchOfficeId;
       entity.time = time.simpleTime;
-      entity.scheduledAt = new Date();
+      entity.scheduledAt = getTodayDate()
       const folio = randomUUID().replace(/-/g, getRandomInt()).substring(0, 20).toUpperCase()
       entity.folio = folio;
       entity.prospectId = prospect?.id ?? null;
       entity.patientId = patient?.id ?? null;
+      entity.comments = `Cita registrada ${date.toString().split("T")[0]} ${time.simpleTime}`
 
       const response = await this.appointmentRepository.save(entity);
 
@@ -201,11 +202,8 @@ export class AppointmentService {
   getAllAppointmentByBranchOffice = async (body: GetAppointmentsByBranchOfficeDTO): Promise<GetAppointmentDetailDTO[]> => {
     try {
       const data: GetAppointmentDetailDTO[] = [];
-
-      const date = new Date();
-      const nextDate = date.toISOString().split("T")[0];
-
-      const appointments = await this.appointmentRepository.findBy({branchId: Number(body.id), appointment: nextDate });
+     
+      const appointments = await this.appointmentRepository.findBy({branchId: Number(body.id)});
       for await (const appointment of appointments) {
         const result = await this.getAppointment(appointment)
         data.push(result);
@@ -269,6 +267,7 @@ export class AppointmentService {
       const receptionist = await this.userRepository.findOneBy({ username: username });
       appointment.dentistId = Number(id);
       appointment.receptionistId = receptionist.id;
+      appointment.comments = `${appointment.comments} \n Dentista asignado ${id} \n Recepcionista ${receptionist.name}`
       const updatedAppointment = await this.appointmentRepository.save(appointment);
       return this.getAppointment(updatedAppointment);
     } catch (exception) {
@@ -283,10 +282,12 @@ export class AppointmentService {
       if (status == 'proceso'){
         appointment.startedAt = formatISO(new Date())
         appointment.status = 'proceso';
+        appointment.comments = `${appointment.comments} \n Estatus: proceso ${formatISO(new Date())}`
       }
       if (status == 'finalizada'){
         appointment.finishedAt = formatISO(new Date())
         appointment.status = 'finalizada';
+        appointment.comments = `${appointment.comments} \n Estatus: finalizada ${formatISO(new Date())}`
       }
       const updatedAppointment = await this.appointmentRepository.save(appointment);
       return this.getAppointment(updatedAppointment);
@@ -308,7 +309,7 @@ export class AppointmentService {
       appointment.status = 'activa';
       appointment.dentistId = null;
       appointment.receptionistId = null;
-      appointment.comments = `Cita reagendada de ${appointment.appointment} ${appointment.time} para ${date.toString().split("T")[0]} ${time}`
+      appointment.comments = `${appointment.comments} \n Cita reagendada de ${appointment.appointment} ${appointment.time} para ${date.toString().split("T")[0]} ${time}`
       const updatedAppointment = await this.appointmentRepository.save(appointment);
 
       const response = await this.getAppointment(updatedAppointment);

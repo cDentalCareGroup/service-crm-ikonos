@@ -90,10 +90,10 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
 
   @Column({
     name: 'scheduled_at',
-    type: 'datetime',
+    type: 'varchar',
     nullable: true,
   })
-  scheduledAt: Date;
+  scheduledAt: string;
 
   @Column({
     name: 'treatment_category_id',
@@ -118,7 +118,7 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
 
   @Column({
     name: 'started_at',
-    type: 'datetime',
+    type: 'varchar',
     nullable: true,
   })
   startedAt: string;
@@ -126,7 +126,7 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
 
   @Column({
     name: 'finished_at',
-    type: 'datetime',
+    type: 'varchar',
     nullable: true,
   })
   finishedAt: string;

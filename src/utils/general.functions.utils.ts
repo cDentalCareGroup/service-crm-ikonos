@@ -1,3 +1,5 @@
+import { formatInTimeZone } from "date-fns-tz";
+
 const isNumber = (value: string | number): boolean => {
         return ((value != null) &&
                 (value !== '') &&
@@ -23,5 +25,25 @@ const getRandomInt = (): string => {
         }
 }
 
+// const getDate = () => {
+//   const result = formatInTimeZone(new Date(), 'America/Mexico_City', 'yyyy-MM-dd HH:mm:ss');
+//   const arrayResult = result.split(" ");
+//   const arrayDate = arrayResult[0].split("-");
+//   const year = Number(arrayDate[0]);
+//   const month = Number(arrayDate[1]);
+//   const day = Number(arrayDate[2]);
 
-export { isNumber, addHours, getDiff,getRandomInt };
+//   const arrayTime = arrayResult[1].split(":");
+//   const hour = Number(arrayTime[0]);
+//   const minute = Number(arrayTime[1]);
+//   const second = Number(arrayTime[2]);
+//   return new Date(year,month - 1, day, hour, minute, second);
+// }
+
+
+const getTodayDate = (): string => {
+        return formatInTimeZone(new Date(), 'America/Mexico_city', 'yyyy-MM-dd HH:mm:ss') // 2014-10-25 06:46:20-04:00
+
+}
+
+export { isNumber, addHours, getDiff, getRandomInt,getTodayDate };
