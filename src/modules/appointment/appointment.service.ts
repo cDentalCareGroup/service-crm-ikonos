@@ -276,13 +276,18 @@ export class AppointmentService {
     }
   }
 
-  updateAppointmentStatus = async ({ id, status }: UpdateAppointmentStatusDTO) => {
+  updateAppointmentStatus = async ({ id, status, patientId }: UpdateAppointmentStatusDTO) => {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ id: Number(id) });
+
       if (status == 'proceso'){
         appointment.startedAt = formatISO(new Date())
         appointment.status = 'proceso';
-        appointment.comments = `${appointment.comments} \n Estatus: proceso ${formatISO(new Date())}`
+        appointment.comments = `${appointment.comments} \n Estatus: proceso ${formatISO(new Date())}`;
+        if (patientId != null && Number(patientId) > 0) {
+          appointment.patientId = Number(patientId);
+          appointment.prospectId = null;
+        }
       }
       if (status == 'finalizada'){
         appointment.finishedAt = formatISO(new Date())

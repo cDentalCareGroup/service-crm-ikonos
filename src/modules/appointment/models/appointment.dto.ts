@@ -91,6 +91,7 @@ export class UpdateAppointmentStatusDTO {
   id: string | number;
   status: string;
   date: string;
+  patientId?: string | number;
 }
 
 

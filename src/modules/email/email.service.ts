@@ -67,16 +67,29 @@ export class EmailService {
     test = async (): Promise<number> => {
         try {
 
-            const data = new AppointmentTemplateMail('Immanuel','2022-12-19','Calle 15 de Agosto','Palmas','77712312312','asdasdasdasd','777123123');
-            const template = getAppointmentTemplate(data);
-            await this.mailService.sendMail({
-                to: 'imanueld22@gmail.com',
-                from: process.env.MAIL,
-                subject: `C Dental Care Group - Cita Folio: ${data.folio}`,
-                html: template
-            });
+            // const data = new AppointmentTemplateMail('Immanuel','2022-12-19','Calle 15 de Agosto','Palmas','77712312312','asdasdasdasd','777123123');
+            // const template = getAppointmentTemplate(data);
+            // await this.mailService.sendMail({
+            //     to: 'imanueld22@gmail.com',
+            //     from: process.env.MAIL,
+            //     subject: `C Dental Care Group - Cita Folio: ${data.folio}`,
+            //     html: template
+            // });
 
-            return 1
+            // return 1
+
+            const accountSid = 'ACc50cbd98d5f41e5265bae6ef44d2cf05';
+            const authToken = '50f5615d511d4d3b36ce62ef988610e1';
+            const client = require('twilio')(accountSid, authToken);
+
+            client.messages
+                .create({
+                    body: 'Your appointment is coming up on July 21 at 3PM',
+                    from: 'whatsapp:+14155238886',
+                    to: 'whatsapp:+527773510031'
+                })
+                .then(message => console.log(message.sid))
+                .done();
         } catch (error) {
             console.log("error", error);
             return 0;
