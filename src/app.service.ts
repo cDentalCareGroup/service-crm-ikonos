@@ -9,7 +9,7 @@ export class AppService {
   getHello(): any {
 
     return {
-      'version': 'Version 1.0.6',
+      'version': 'Version 1.0.7',
       'date': getTodayDate(),
     }
   }
