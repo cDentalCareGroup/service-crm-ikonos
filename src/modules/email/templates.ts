@@ -284,15 +284,20 @@ const getAppointmentTemplate = ({ name, date, address, branchoffice, phoneNumber
           </td>
         </tr>
         <tr>
-          <td class="v-container-padding-padding"  style="overflow-wrap:break-word;word-break:break-word;padding:10px;">
-          <p style="font-size: 14px; line-height: 140%;"><span style="font-size: 15px; line-height: 14px;color: #1e40af;">Reagendar cita</span></p>
-          </td>
-        </tr>
-        <tr>
-          <td class="v-container-padding-padding"  style="overflow-wrap:break-word;word-break:break-word;padding:10px;">
-          <p style="font-size: 14px; line-height: 140%;"><span style="font-size: 15px; line-height: 14px;color: #1e40af;">Cancelar cita</span></p>
-          </td>
-        </tr>
+        <td class="v-container-padding-padding"  style="overflow-wrap:break-word;word-break:break-word;padding:10px;">
+        <a href="https://cdentalcaregroup-fcdc9.firebaseapp.com/appointment/reschedule/${folio}" target="_blank">
+        <p style="font-size: 14px; line-height: 140%;"><span style="font-size: 15px; line-height: 14px;color: #1e40af;">Reagendar cita</span></p>
+        </a>
+        </td>
+      </tr>
+      <tr>
+        <td class="v-container-padding-padding"  style="overflow-wrap:break-word;word-break:break-word;padding:10px;">
+        <a href="https://cdentalcaregroup-fcdc9.firebaseapp.com/appointment/cancel/${folio}" target="_blank">
+        <p style="font-size: 14px; line-height: 140%;"><span style="font-size: 15px; line-height: 14px;color: #1e40af;">Cancelar cita</span></p>
+        </a>
+        </td>
+      </tr>
+        
       </tbody>
     </table>
     
@@ -965,7 +970,9 @@ const getAppointmentRescheduleTemplate = ({ name, date, address, branchoffice, p
       </tr>
       <tr>
         <td class="v-container-padding-padding"  style="overflow-wrap:break-word;word-break:break-word;padding:10px;">
+        <a href="https://cdentalcaregroup-fcdc9.firebaseapp.com/appointment/reschedule/${folio}" target="_blank">
         <p style="font-size: 14px; line-height: 140%;"><span style="font-size: 15px; line-height: 14px;color: #1e40af;">Reagendar cita</span></p>
+        </a>
         </td>
       </tr>
       <tr>
