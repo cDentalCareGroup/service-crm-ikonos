@@ -324,11 +324,6 @@ export class AppointmentService {
   getAppointmentAvailbilityByDentist = async (
     { dentistId, dayname, branchOfficeId, date }: AppointmentAvailbilityByDentistDTO): Promise<any> => {
     try {
-      console.log(dentistId)
-      console.log(dayname)
-      console.log(branchOfficeId)
-      console.log(date)
-
 
       const employeeSchedules = await this.branchOfficeEmployeeScheduleRepository.createQueryBuilder('branch_schedule_dentist')
         .innerJoinAndSelect('branch_schedule', 'bs', 'branch_schedule_dentist.branch_schedule_id = bs.ID')

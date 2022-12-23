@@ -39,7 +39,7 @@ export class BranchOfficeService {
       }
 
 
-      return branchOffices;
+      return branchOffices.reverse();
     } catch (exception) {
       HandleException.exception(exception);
     }
