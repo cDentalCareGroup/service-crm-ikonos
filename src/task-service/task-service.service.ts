@@ -14,7 +14,7 @@ export class TaskServiceService {
     // @Cron(CronExpression.EVERY_30_SECONDS,{name:'email-reminders'})
     // //0 0 6 * * 1-6
     async handleRemiderAppointment() {
-        const data = await this.appointmentService.appointmentReminders();
-        console.log(data);
+        //const data = await this.appointmentService.appointmentReminders();
+       // console.log(data);
     }
 }

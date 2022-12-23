@@ -85,13 +85,13 @@ export class RegisterAppointmentDentistDTO {
   id: string | number;
   appointmentId: string | number;
   username: string;
+  patientId: string;
 }
 
 export class UpdateAppointmentStatusDTO {
   id: string | number;
   status: string;
   date: string;
-  patientId?: string | number;
 }
 
 
@@ -100,4 +100,32 @@ export class RescheduleAppointmentDTO {
   date?: Date;
   time?: AvailableHoursDTO;
   branchName?: string;
+}
+
+
+export class CancelAppointmentDTO {
+  folio: string;
+  reason: string;
+}
+
+
+export class AppointmentAvailbilityByDentistDTO {
+  dentistId: string;
+  dayname: string;
+  branchOfficeId: string;
+  date: string;
+}
+
+export class RegisterNextAppointmentDTO {
+  date?: Date;
+  time?: AvailableHoursDTO;
+  patientId: number;
+  branchOfficeId: string;
+  dentistId: string;
+  hasLabs: boolean;
+}
+
+export class UpdateHasLabsAppointmentDTO {
+  id: number;
+  hasLabs: boolean;
 }

@@ -110,6 +110,7 @@ export class PatientService {
 
       let results: PatientEntity[] = [];
 
+
       for await (const query of queries) {
         if (query == 100 || query == "100" || query == 200 || query == "200") {
           const pad = (query == 100 || query == "100") ? 1 : 0

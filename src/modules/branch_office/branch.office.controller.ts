@@ -34,9 +34,9 @@ export class BranchOfficeController {
     }
 
     @Get('schedule/employees')
-    async getEmployeeSchedules(): Promise<any> {
-        return this.branchOffice.getEmployeeSchedules();
-    }
+    async getEmployeesSchedules(): Promise<any> {
+        return this.branchOffice.getEmployeesSchedules();
+    }    
 
     @Post('delete/schedule')
     @ApiBody({type: DeleteBranchOfficeScheduleDTO})

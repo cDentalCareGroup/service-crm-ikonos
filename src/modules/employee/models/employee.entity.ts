@@ -130,4 +130,7 @@ export class EmployeeEntity {
     length: 20,
   })
   nss: string;
+
+
+  typeName?: string;
 }

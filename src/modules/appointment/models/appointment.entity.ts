@@ -17,12 +17,14 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
   @Column({
     name: 'branch_id',
     type: 'int',
+    nullable: true,
   })
   branchId: number;
 
   @Column({
     name: 'branch_name',
     type: 'varchar',
+    nullable: true,
   })
   branchName: string;
 
@@ -137,6 +139,13 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
     nullable: true,
   })
   comments: string;
+
+  @Column({
+    name: 'has_labs',
+    type: 'int',
+    nullable: true,
+  })
+  hasLabs: number;
 
 //   @Column({
 //     name: 'dentist_id',

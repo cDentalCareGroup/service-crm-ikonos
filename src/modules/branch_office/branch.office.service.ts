@@ -4,11 +4,12 @@ import e from 'express';
 import { HandleException } from 'src/common/exceptions/general.exception';
 import { getDiff } from 'src/utils/general.functions.utils';
 import { DataSource, Repository } from 'typeorm';
+import { AvailableHoursDTO } from '../appointment/models/appointment.dto';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';
 import { ScheduleBranchOfficeInfoDTO, SchedulesEmployeeDTO } from '../employee/models/employee.dto';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { branchOfficeScheduleToEntity, branchOfficesToEntity, registerBranchOfficeScheduleToEntity } from './extensions/branch.office.extensions';
-import {  BranchOfficeSchedulesDTO, DeleteBranchOfficeScheduleDTO, GetBranchOfficeScheduleDTO, RegisterBranchOfficeScheduleDTO, setFullDate } from './models/branch.office.dto';
+import { BranchOfficeSchedulesDTO, DeleteBranchOfficeScheduleDTO, GetBranchOfficeScheduleDTO, RegisterBranchOfficeScheduleDTO, setFullDate } from './models/branch.office.dto';
 import { BranchOfficeEmployeeSchedule } from './models/branch.office.employee.entity';
 import { BranchOfficeEntity } from './models/branch.office.entity';
 import { BranchOfficeScheduleEntity } from './models/branch.office.schedule.entity';
@@ -28,16 +29,16 @@ export class BranchOfficeService {
     try {
       //1 for active, 2 for inactive, 3 unavailable 
       const data = await this.branchOfficeRepository.find({ where: { status: 1 } });
-      
+
       let branchOffices: BranchOfficeEntity[] = [];
       for await (const branchOffice of data) {
-        const numOfAppointments = await this.appointmentRepository.findBy({branchId: branchOffice.id, status:'activa'});
+        const numOfAppointments = await this.appointmentRepository.findBy({ branchId: branchOffice.id, status: 'activa' });
         const item = branchOffice;
         item.appointmens = numOfAppointments.length;
         branchOffices.push(item);
       }
-      
-      
+
+
       return branchOffices;
     } catch (exception) {
       HandleException.exception(exception);
@@ -95,7 +96,7 @@ export class BranchOfficeService {
     }
     return result;
   }
-  getEmployeeSchedules = async (): Promise<SchedulesEmployeeDTO[]> => {
+  getEmployeesSchedules = async (): Promise<SchedulesEmployeeDTO[]> => {
     try {
 
       const data: SchedulesEmployeeDTO[] = [];
@@ -132,6 +133,7 @@ export class BranchOfficeService {
 
   }
 
+
   getBranchOfficeSchedules = async ({ branchOfficeName }: BranchOfficeSchedulesDTO): Promise<any> => {
     try {
 
@@ -155,65 +157,65 @@ export class BranchOfficeService {
     }
   }
 
-  test = async() => {
+  test = async () => {
     // const diff = 6;
 
     // const date = new Date(Date.UTC(2022,11,12,8,0,0));
 
 
     //   for (let index = 0; index < 5; index++) {
-        
+
     //     date.setDate(date.getDate() + 1);
     //     for (let j = 0; j < 6; j++) {
     //       date.setHours(date.getHours() + 1);
     //       console.log(date)
     //     }
-        
+
     //   }
 
     //   console.log(date);
     //   return "ok"
-     //1 for active, 2 for inactive, 3 unavailable 
-     const branchOffice = await this.branchOfficeRepository.findOneBy({ name: 'Palmas' });
+    //1 for active, 2 for inactive, 3 unavailable 
+    const branchOffice = await this.branchOfficeRepository.findOneBy({ name: 'Palmas' });
 
-     const schedule = await this.branchOfficeScheduleRepository.find({ where: { branchId: branchOffice.id, status: 'activo' } });
+    const schedule = await this.branchOfficeScheduleRepository.find({ where: { branchId: branchOffice.id, status: 'activo' } });
 
-      let availableHours = [];
-      const today = new Date();
-      let currentDay = today.getDate();
+    let availableHours = [];
+    const today = new Date();
+    let currentDay = today.getDate();
 
-     for await (const dayTime of schedule) {
-     
-       const startTime = dayTime.startTime.toString();
-       const startTimeArray = startTime.split(":");
-       const startHour = Number(startTimeArray[0]);
-       const startMinutes = Number(startTimeArray[1]);
-       const startSeconds = Number(startTimeArray[2]);
-       const startDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), currentDay, startHour, startMinutes, startSeconds))
+    for await (const dayTime of schedule) {
 
-       const endTime = dayTime.endTime.toString();
-       const endTimeArray = endTime.split(":");
-       const endHour = Number(endTimeArray[0]);
-       const endMinutes = Number(endTimeArray[1]);
-       const endSeconds = Number(endTimeArray[2]);
-       const endDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), currentDay, endHour, endMinutes, endSeconds))
+      const startTime = dayTime.startTime.toString();
+      const startTimeArray = startTime.split(":");
+      const startHour = Number(startTimeArray[0]);
+      const startMinutes = Number(startTimeArray[1]);
+      const startSeconds = Number(startTimeArray[2]);
+      const startDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), currentDay, startHour, startMinutes, startSeconds))
 
-       const dif = getDiff(startDate, endDate) + 1;
+      const endTime = dayTime.endTime.toString();
+      const endTimeArray = endTime.split(":");
+      const endHour = Number(endTimeArray[0]);
+      const endMinutes = Number(endTimeArray[1]);
+      const endSeconds = Number(endTimeArray[2]);
+      const endDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), currentDay, endHour, endMinutes, endSeconds))
 
-       for (let index = 0; index < dif; index++) {
-         let hourToAdd = (startHour + index);
-         let hourResult = hourToAdd < 10 ? `0${hourToAdd}` : hourToAdd;
-         let amOrPm = hourToAdd < 12 ? 'AM' : 'PM';
-         if (hourToAdd <= endHour) {
-           availableHours.push(`${hourResult}:${startMinutes}0 ${amOrPm}`);
-         }
-       }
-       console.log(`${dayTime.dayName} -- ${availableHours}`);
-       availableHours = [];
-     }
+      const dif = getDiff(startDate, endDate) + 1;
 
-     
-     //console.log(schedule);
+      for (let index = 0; index < dif; index++) {
+        let hourToAdd = (startHour + index);
+        let hourResult = hourToAdd < 10 ? `0${hourToAdd}` : hourToAdd;
+        let amOrPm = hourToAdd < 12 ? 'AM' : 'PM';
+        if (hourToAdd <= endHour) {
+          availableHours.push(`${hourResult}:${startMinutes}0 ${amOrPm}`);
+        }
+      }
+      console.log(`${dayTime.dayName} -- ${availableHours}`);
+      availableHours = [];
+    }
+
+
+    //console.log(schedule);
   }
 }
 

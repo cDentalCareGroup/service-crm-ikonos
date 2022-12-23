@@ -2,11 +2,13 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from '../auth/models/entities/user.entity';
+import { BranchOfficeEmployeeSchedule } from '../branch_office/models/branch.office.employee.entity';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
 import { BranchOfficeScheduleEntity } from '../branch_office/models/branch.office.schedule.entity';
 import { EmailModule } from '../email/email.module';
 import { EmailService } from '../email/email.service';
 import { EmployeeEntity } from '../employee/models/employee.entity';
+import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { AppointmentController } from './appointment.controller';
 import { AppointmentService } from './appointment.service';
@@ -23,7 +25,9 @@ import { ProspectEntity } from './models/prospect.entity';
       PatientEntity, 
       ProspectEntity, 
       EmployeeEntity,
-      UserEntity
+      UserEntity,
+      BranchOfficeEmployeeSchedule,
+      EmployeeTypeEntity
     ]),
     EmailModule
   ],
