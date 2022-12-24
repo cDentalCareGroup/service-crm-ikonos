@@ -126,19 +126,19 @@ export class AppointmentService {
         phone == null || phone == undefined || phone == '') throw new ValidationException(ValidationExceptionType.MISSING_VALUES);
 
       const branchOffice = await this.branchOfficeRepository.findOneBy({ name: branchName });
-      let patient: PatientEntity;
+      // let patient: PatientEntity;
       let prospect: ProspectEntity;
 
-      if (phone != null && phone != '') {
-        patient = await this.patientRepository.findOneBy({ primaryContact: phone });
-      }
-      if (email != null && email != '' && patient == null) {
-        patient = await this.patientRepository.findOneBy({ email: email });
-      }
+      // if (phone != null && phone != '') {
+      //   patient = await this.patientRepository.findOneBy({ primaryContact: phone });
+      // }
+      // if (email != null && email != '' && patient == null) {
+      //   patient = await this.patientRepository.findOneBy({ email: email });
+      // }
 
-      if (patient == null || patient == undefined) {
-        prospect = await this.prospectRepository.findOneBy({ name: name, primaryContact: phone });
-        if (prospect == null || prospect == undefined) {
+      // if (patient == null || patient == undefined) {
+        prospect = await this.prospectRepository.findOneBy({ name: name });
+         if (prospect == null || prospect == undefined) {
           const newProspect = new ProspectEntity();
           newProspect.name = name;
           newProspect.email = email;
@@ -146,17 +146,16 @@ export class AppointmentService {
           newProspect.createdAt = new Date();
           prospect = await this.prospectRepository.save(newProspect);
         }
-      }
+      //}
 
-      const exists = await this.appointmentRepository.findOneBy({
-        branchId: branchOffice.id,
-        branchName: branchOffice.name,
-        appointment: date.toString().split("T")[0],
-        time: time.simpleTime,
-        prospectId: prospect?.id,
-      });
+      // const exists = await this.appointmentRepository.findOneBy({
+      //   branchId: branchOffice.id,
+      //   branchName: branchOffice.name,
+      //   appointment: date.toString().split("T")[0],
+      //   time: time.simpleTime,
+      // });
 
-      if (exists != null) throw new ValidationException(ValidationExceptionType.APPOINTMENT_EXISTS);
+     // if (exists != null) throw new ValidationException(ValidationExceptionType.APPOINTMENT_EXISTS);
 
       const entity = new AppointmentEntity();
       entity.appointment = date.toString().split("T")[0]
@@ -167,8 +166,8 @@ export class AppointmentService {
       entity.scheduledAt = getTodayDate()
       const folio = randomUUID().replace(/-/g, getRandomInt()).substring(0, 20).toUpperCase()
       entity.folio = folio;
-      entity.prospectId = prospect?.id ?? null;
-      entity.patientId = patient?.id ?? null;
+      entity.prospectId = prospect.id;
+     // entity.patientId = patient?.id ?? null;
       entity.comments = `Cita registrada ${date.toString().split("T")[0]} ${time.simpleTime}`
 
       const response = await this.appointmentRepository.save(entity);
