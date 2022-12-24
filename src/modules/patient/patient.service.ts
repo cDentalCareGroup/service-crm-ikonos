@@ -42,6 +42,7 @@ export class PatientService {
     branchOffice,
   }: GetPatientsByBranchOfficeDTO): Promise<PatientEntity[]> => {
     try {
+  
       if (branchOffice == null || branchOffice == '')
         throw new ValidationException(ValidationExceptionType.MISSING_VALUES);
 
@@ -65,7 +66,7 @@ export class PatientService {
       }
 
       //await this.getLatLngFromPostalCode();
-      return results.filter((value, index) => value.id < 26);
+      return results;
     } catch (exception) {
       console.log(exception);
       HandleException.exception(exception);
