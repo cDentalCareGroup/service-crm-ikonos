@@ -2,7 +2,7 @@ import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiBody } from '@nestjs/swagger';
 import { randomUUID } from 'crypto';
 import { AppointmentService } from './appointment.service';
-import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, UpdateAppointmentStatusDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
+import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, UpdateAppointmentStatusDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 
 @Controller('appointment')
 export class AppointmentController {
@@ -23,8 +23,14 @@ export class AppointmentController {
 
     @Post('detail')
     @ApiBody({ type: AppointmentDetailDTO })
-    async getAppointmentDetail(@Body() body: AppointmentDetailDTO): Promise<GetAppointmentDetailDTO> {
+    async getAppointmentDetail(@Body() body: AppointmentDetailDTO): Promise<GetNextAppointmentDetailDTO> {
         return this.appointmentService.getAppointmentDetail(body);
+    }
+
+    @Post('detail/patient')
+    @ApiBody({ type: AppointmentDetailDTO })
+    async getAppointmentDetailPatienti(@Body() body: AppointmentDetailDTO): Promise<GetAppointmentDetailDTO> {
+        return this.appointmentService.getAppointmentDetailPatient(body);
     }
 
     // @Get('ttttt')
@@ -72,7 +78,7 @@ export class AppointmentController {
 
     @Post('resgiter/nextappointment')
     @ApiBody({type: RegisterNextAppointmentDTO})
-    async registerNextAppointment(@Body() body: any) {
+    async registerNextAppointment(@Body() body: RegisterNextAppointmentDTO) {
         return this.appointmentService.registerNextAppointment(body);
     }
 
@@ -81,4 +87,12 @@ export class AppointmentController {
     async updateHasLabs(@Body() body: UpdateHasLabsAppointmentDTO) {
         return this.appointmentService.updateHasLabs(body);
     }
+
+
+  @Post('notification')
+  @ApiBody({type: SendNotificationDTO})
+  async sendAppointmentNotification(@Body() body: SendNotificationDTO) {
+    return this.appointmentService.sendAppointmentNotification(body);
+  }
+
 }

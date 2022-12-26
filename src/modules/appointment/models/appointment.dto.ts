@@ -73,6 +73,16 @@ export class GetAppointmentDetailDTO {
   }
 }
 
+export class GetNextAppointmentDetailDTO {
+  appointment: GetAppointmentDetailDTO;
+  nextAppointments?: GetAppointmentDetailDTO[];
+
+  constructor(appointment: GetAppointmentDetailDTO, nextAppointments?: GetAppointmentDetailDTO[]) {
+      this.appointment = appointment;
+      this.nextAppointments = nextAppointments;
+  }
+}
+
 export class AppointmentDetailDTO {
   folio: string;
 }
@@ -128,4 +138,8 @@ export class RegisterNextAppointmentDTO {
 export class UpdateHasLabsAppointmentDTO {
   id: number;
   hasLabs: boolean;
+}
+
+export class SendNotificationDTO {
+  folio: string;
 }

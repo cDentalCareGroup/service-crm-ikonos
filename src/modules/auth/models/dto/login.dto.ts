@@ -14,3 +14,18 @@ export class LoginDTO {
   })
   password: string;
 }
+
+
+export class SaveTokenDTO {
+  @ApiProperty({
+    description: 'Username',
+    example: 'username',
+  })
+  username: string;
+
+  @ApiProperty({
+    description: 'token',
+    example: 'ASDASDAS',
+  })
+  token: string;
+}

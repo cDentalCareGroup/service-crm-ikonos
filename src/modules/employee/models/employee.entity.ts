@@ -131,6 +131,8 @@ export class EmployeeEntity {
   })
   nss: string;
 
-
   typeName?: string;
+
+  @Column({name:'token', type:'text'})
+  token?: string;
 }

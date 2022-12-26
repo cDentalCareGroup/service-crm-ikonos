@@ -18,6 +18,7 @@ import { EmailService } from './modules/email/email.service';
 import { EmailModule } from './modules/email/email.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TaskServiceService } from './task-service/task-service.service';
+import { FirebaseModule } from 'nestjs-firebase';
 
 @Module({
   imports: [
@@ -34,6 +35,9 @@ import { TaskServiceService } from './task-service/task-service.service';
           pass: mail.auth.pass
         }
       }
+    }),
+    FirebaseModule.forRoot({
+      googleApplicationCredential: './cdentalcaregroupfirebase.json'
     }),
     ScheduleModule.forRoot(),
     PatientModule,
