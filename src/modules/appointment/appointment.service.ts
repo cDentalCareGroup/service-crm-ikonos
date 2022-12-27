@@ -517,8 +517,11 @@ export class AppointmentService {
 
   sendAppointmentNotification = async ({ folio }: SendNotificationDTO) => {
     try {
+      console.log(`Folio : ${folio}`);
       const appointment = await this.appointmentRepository.findOneBy({ folio: folio });
       const employee = await this.employeeRepository.findOneBy({ branchOfficeId: appointment.branchId, typeId:10  });
+      console.log(`Appointment: ${appointment}`);
+      console.log(`Employee : ${employee}`);
       const message = {
         notification: {
           title: `Cita Folio: ${appointment.folio}`,
