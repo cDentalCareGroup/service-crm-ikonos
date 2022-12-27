@@ -20,8 +20,6 @@ export class AuthController {
     return this.authService.login(body);
   }
 
-
-
   @Post('token')
   async saveToken(@Body() body: SaveTokenDTO) {
     return this.authService.saveToken(body);

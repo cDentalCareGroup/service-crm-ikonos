@@ -29,6 +29,9 @@ export class UserEntity {
 
   @Column({name:'token', type:'text'})
   token?: string;
+
+  @Column({name:'idSucursal', type:'int'})
+  branchId?: number;
 }
 
 export class UserResponse {
@@ -37,6 +40,7 @@ export class UserResponse {
   username: string;
   token: string;
   roles?: string;
+  branchId?: number;
   constructor(user: UserEntity, token: string, roles?: Rol[]) {
     this.name = user.name;
     this.lastname = user.lastname + ' ' + user.secondLastname;
@@ -52,6 +56,7 @@ export class UserResponse {
       }
     }
     this.roles = rolesStr;
+    this.branchId = user.branchId;
   }
 }
 

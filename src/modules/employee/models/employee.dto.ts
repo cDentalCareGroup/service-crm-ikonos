@@ -65,3 +65,11 @@ export class ScheduleBranchOfficeInfoDTO {
     this.schedules = schedules.map((value, _) => setFullDate(value));
   }
 }
+
+export class GetEmployeesByScheduleDTO {
+  @ApiProperty({
+    description: 'data',
+    example: 'array of schedules see RegisterScheduleeEmployeeDTO',
+  })
+  id: string;
+}

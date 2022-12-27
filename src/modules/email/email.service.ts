@@ -1,6 +1,6 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
-import { getAppointmentConfirmationTemplate, getAppointmentRescheduleTemplate, getAppointmentTemplate } from './templates';
+import { getAppointmentConfirmationTemplate, getAppointmentNotAttendedTemplate, getAppointmentRescheduleTemplate, getAppointmentTemplate } from './templates';
 
 @Injectable()
 export class EmailService {
@@ -46,6 +46,24 @@ export class EmailService {
         }
     }
 
+    sendAppointmentCancelEmail = async (data: AppointmentTemplateMail, email: string): Promise<number> => {
+        try {
+
+            const template = getAppointmentNotAttendedTemplate(data);
+            await this.mailService.sendMail({
+                to: email,
+                from: process.env.MAIL,
+                subject: `C Dental Care Group - Cita Cancelada`,
+                html: template
+            });
+
+            return 1
+        } catch (error) {
+            console.log("error", error);
+            return 0;
+        }
+    }
+
     sendAppointmentRescheduleEmail = async (data: AppointmentTemplateMail, email: string): Promise<number> => {
         try {
 
@@ -68,7 +86,7 @@ export class EmailService {
         try {
 
             const data = new AppointmentTemplateMail('Immanuel','2022-12-19','Calle 15 de Agosto','Palmas','77712312312','asdasdasdasd','777123123');
-            const template = getAppointmentTemplate(data);
+            const template = getAppointmentNotAttendedTemplate(data);
             await this.mailService.sendMail({
                 to: 'imanueld22@gmail.com',
                 from: process.env.MAIL,

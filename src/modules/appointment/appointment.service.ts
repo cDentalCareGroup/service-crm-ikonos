@@ -225,7 +225,7 @@ export class AppointmentService {
   }
   getAppointmentDetailPatient = async (body: AppointmentDetailDTO): Promise<GetAppointmentDetailDTO> => {
     try {
-      const appointment = await this.appointmentRepository.findOneBy({ folio: body.folio});
+      const appointment = await this.appointmentRepository.findOneBy({ folio: body.folio, status:'activa'});
       if (appointment == null) throw new NotFoundCustomException(NotFoundType.APPOINTMENT_NOT_FOUND);
       return this.getAppointment(appointment);
     } catch (exception) {
@@ -238,6 +238,7 @@ export class AppointmentService {
   getAllAppointmentByBranchOffice = async (body: GetAppointmentsByBranchOfficeDTO): Promise<GetAppointmentDetailDTO[]> => {
     try {
       const data: GetAppointmentDetailDTO[] = [];
+      console.log(`Body ${body}`);
 
       const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id) });
       for await (const appointment of appointments) {
@@ -340,7 +341,26 @@ export class AppointmentService {
       if (appointment.status == 'activa') {
         appointment.status = 'cancelada-paciente';
         appointment.comments = `${appointment.comments} \n Cita cancelada por usuario ${formatISO(new Date())} \n Motivo ${reason}`
-        await this.appointmentRepository.save(appointment);
+        const updatedAppointment = await this.appointmentRepository.save(appointment);
+        const response = await this.getAppointment(updatedAppointment);
+        const branchOffice = await this.branchOfficeRepository.findOneBy({ id: appointment.branchId });
+
+        if (response.patient?.email != null || response.prospect?.email != null) {
+          const name = response.prospect?.name ?? `${response.patient?.name} ${response.patient?.lastname} ${response.patient?.secondLastname}`;
+          const email = response.prospect?.email ?? response.patient?.email;
+          await this.emailService.sendAppointmentCancelEmail(
+            new AppointmentTemplateMail(
+              name,
+              `${appointment.appointment} ${appointment.time}`,
+              `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
+              `${branchOffice.name}`,
+              `${branchOffice.primaryContact}`,
+              `${appointment.folio}`,
+              `${response.prospect?.primaryContact ?? response.patient?.primaryContact}`,
+            ),
+            email
+          );
+        }
       }
       return 200;
     } catch (exception) {
@@ -492,7 +512,7 @@ export class AppointmentService {
             `${folio}`,
             `${patient.primaryContact ?? '-'}`
           ),
-          'imanueld22@gmail.com');
+          patient.email);
       }
       let updatedAppointment = await this.getAppointment(response);
       let nextAppointments = await this.getNextAppointments(response.patientId);
@@ -517,11 +537,8 @@ export class AppointmentService {
 
   sendAppointmentNotification = async ({ folio }: SendNotificationDTO) => {
     try {
-      console.log(`Folio : ${folio}`);
       const appointment = await this.appointmentRepository.findOneBy({ folio: folio });
       const employee = await this.employeeRepository.findOneBy({ branchOfficeId: appointment.branchId, typeId:10  });
-      console.log(`Appointment: ${appointment}`);
-      console.log(`Employee : ${employee}`);
       const message = {
         notification: {
           title: `Cita Folio: ${appointment.folio}`,
@@ -566,64 +583,96 @@ export class AppointmentService {
 
 
 
-  // appointmentReminders = async () => {
-  //   try {
-  //     const date = new Date();
-  //     //date.setDate(date.getDate() + 1);
-
-  //     const nextDate = date.toISOString().split("T")[0];
-  //     const result = await this.appointmentRepository.find({ where: { appointment: nextDate, status: 'activa' } });
-  //     let failureEmails = [];
-  //     for await (const appointment of result) {
-  //       let prospect: ProspectEntity;
-  //       let patient: PatientEntity;
-
-  //       if (appointment.patientId == null) {
-  //         prospect = await this.prospectRepository.findOneBy({ id: appointment.prospectId });
-  //       } else {
-  //         patient = await this.patientRepository.findOneBy({ id: appointment.patientId });
-  //       }
-  //       const branchOffice = await this.branchOfficeRepository.findOneBy({ id: appointment.branchId });
-
-  //       if (prospect?.email || patient?.email) {
-  //         const name = prospect?.name ?? `${patient?.name} ${patient?.lastname} ${patient?.secondLastname}`;
-  //         const email = prospect?.email ?? patient?.email;
-  //         const isSuccess = await this.emailService.sendAppointmentConfirmationEmail(
-  //           new AppointmentTemplateMail(
-  //             name,
-  //             `${appointment.appointment} ${appointment.time}`,
-  //             `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
-  //             `${branchOffice.name}`,
-  //             `${branchOffice.primaryContact}`,
-  //             `${appointment.folio}`,
-  //             `${prospect?.primaryContact ?? patient?.primaryContact}`,
-  //           ),
-  //           email
-  //         );
-  //         if (isSuccess != 1) {
-  //           failureEmails.push(appointment);
-  //         }
-  //       }
-  //     }
-  //     return failureEmails;
-  //   } catch (exception) {
-  //     console.log(exception);
-  //   }
-  // }
-
-  setNotAttendedAppointmentStatus = async () => {
+  appointmentReminders = async () => {
     try {
       const date = new Date();
+      date.setDate(date.getDate() + 1);
+
       const nextDate = date.toISOString().split("T")[0];
       const result = await this.appointmentRepository.find({ where: { appointment: nextDate, status: 'activa' } });
+      let failureEmails = [];
+      for await (const appointment of result) {
+        let prospect: ProspectEntity;
+        let patient: PatientEntity;
+
+        if (appointment.patientId == null) {
+          prospect = await this.prospectRepository.findOneBy({ id: appointment.prospectId });
+        } else {
+          patient = await this.patientRepository.findOneBy({ id: appointment.patientId });
+        }
+        const branchOffice = await this.branchOfficeRepository.findOneBy({ id: appointment.branchId });
+
+        if (prospect?.email || patient?.email) {
+          const name = prospect?.name ?? `${patient?.name} ${patient?.lastname} ${patient?.secondLastname}`;
+          const email = prospect?.email ?? patient?.email;
+          const isSuccess = await this.emailService.sendAppointmentConfirmationEmail(
+            new AppointmentTemplateMail(
+              name,
+              `${appointment.appointment} ${appointment.time}`,
+              `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
+              `${branchOffice.name}`,
+              `${branchOffice.primaryContact}`,
+              `${appointment.folio}`,
+              `${prospect?.primaryContact ?? patient?.primaryContact}`,
+            ),
+            email
+          );
+          if (isSuccess != 1) {
+            failureEmails.push(appointment);
+          }
+        }
+      }
+      return failureEmails;
+    } catch (exception) {
+      console.log(exception);
+    }
+  }
+
+  appointmentNotAttended = async () => {
+    try {
+      const date = new Date();
+      date.setDate(date.getDate() - 1);
+      const nextDate = date.toISOString().split("T")[0];
+      const result = await this.appointmentRepository.find({ where: { appointment: nextDate, status: 'activa' } });
+      let failureEmails = [];
 
       for await (const appointment of result) {
         const item = appointment;
         item.status = 'no-atendida';
         item.comments = `${item.comments} \n Cita no atendida ${formatISO(new Date())}`
         await this.appointmentRepository.save(item);
+
+        let prospect: ProspectEntity;
+        let patient: PatientEntity;
+
+        if (appointment.patientId == null) {
+          prospect = await this.prospectRepository.findOneBy({ id: appointment.prospectId });
+        } else {
+          patient = await this.patientRepository.findOneBy({ id: appointment.patientId });
+        }
+        const branchOffice = await this.branchOfficeRepository.findOneBy({ id: appointment.branchId });
+
+        if (prospect?.email || patient?.email) {
+          const name = prospect?.name ?? `${patient?.name} ${patient?.lastname} ${patient?.secondLastname}`;
+          const email = prospect?.email ?? patient?.email;
+          const isSuccess = await this.emailService.sendAppointmentCancelEmail(
+            new AppointmentTemplateMail(
+              name,
+              `${appointment.appointment} ${appointment.time}`,
+              `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
+              `${branchOffice.name}`,
+              `${branchOffice.primaryContact}`,
+              `${appointment.folio}`,
+              `${prospect?.primaryContact ?? patient?.primaryContact}`,
+            ),
+            email
+          );
+          if (isSuccess != 1) {
+            failureEmails.push(appointment);
+          }
+        }
       }
-      return [];
+      return failureEmails;
     } catch (exception) {
       console.log(exception);
     }

@@ -11,7 +11,7 @@ import { Repository } from 'typeorm';
 import { DeleteBranchOfficeScheduleDTO } from '../branch_office/models/branch.office.dto';
 import { BranchOfficeEmployeeSchedule } from '../branch_office/models/branch.office.employee.entity';
 import { registerScheduleEmployeeToEntity } from './extensions/employee.extensions';
-import { GetEmployeesByTypeDTO, RegisterScheduleesEmployeesDTO } from './models/employee.dto';
+import { GetEmployeesByScheduleDTO, GetEmployeesByTypeDTO, RegisterScheduleesEmployeesDTO } from './models/employee.dto';
 import { EmployeeEntity } from './models/employee.entity';
 import { EmployeeTypeEntity } from './models/employee.type.entity';
 
@@ -52,9 +52,9 @@ export class EmployeeService {
         const results = await this.employeeRepository.find({
           where: [{ typeId: employeeTypeMedical.id }, { typeId: employeeTypeSpecialist.id }]
         });
-        return results.map((value: EmployeeEntity,_) => {
+        return results.map((value: EmployeeEntity, _) => {
           const item = value;
-          item.typeName = employeeTypeMedical.id == value.typeId ? 'Medico': 'Especialista'
+          item.typeName = employeeTypeMedical.id == value.typeId ? 'Medico' : 'Especialista'
           return item
         })
       } else {
@@ -108,6 +108,25 @@ export class EmployeeService {
       const schedule = await this.branchOfficeEmployeeScheduleRepository.delete({ id: Number(scheduleId) });
       return schedule;
     } catch (exception) {
+      HandleException.exception(exception);
+    }
+  }
+
+
+  getEmployeesBySchedule = async ({id}: GetEmployeesByScheduleDTO) => {
+    try {
+      const schedules = await this.branchOfficeEmployeeScheduleRepository.findBy({ branchScheduleId: Number(id) });
+      let employeesArray: string[] = [];
+      for await (const schedule of schedules) {
+        const employees = await this.employeeRepository.findBy({ id: schedule.employeeId });
+        const res = employees.map((element, _) =>
+          `${element.name} ${element.lastname} ${element.secondLastname}`
+        );
+        employeesArray.push(res.toString());
+      }
+      return employeesArray;
+    } catch (exception) {
+      console.log(exception);
       HandleException.exception(exception);
     }
   }

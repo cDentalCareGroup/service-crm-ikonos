@@ -9,12 +9,17 @@ export class TaskServiceService {
 
     constructor(private appointmentService: AppointmentService) {}
 
-
-
-    // @Cron(CronExpression.EVERY_30_SECONDS,{name:'email-reminders'})
-    // //0 0 6 * * 1-6
+    @Cron('0 30 11 * * 0-6')
     async handleRemiderAppointment() {
-        //const data = await this.appointmentService.appointmentReminders();
-       // console.log(data);
+      console.log(`Executing job handleRemiderAppointmentat ${new Date()}`);
+       const data = await this.appointmentService.appointmentReminders();
+       console.log(`Failure emails ${data}`);
     }
+
+    @Cron('0 30 21 * * 0-6')
+    async handleRemiderNotAttendedAppointment() {
+      console.log(`Executing job handleRemiderNotAttendedAppointment at ${new Date()}`);
+        const data = await this.appointmentService.appointmentNotAttended();
+        console.log(`Failure emails ${data}`);
+     }
 }
