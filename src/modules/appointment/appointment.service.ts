@@ -534,6 +534,7 @@ export class AppointmentService {
       console.log(`Notification sent`);
       return 200;
     } catch (exception) {
+      console.log(`Error sending notification ${exception}`);
       HandleException.exception(exception);
     }
   }
