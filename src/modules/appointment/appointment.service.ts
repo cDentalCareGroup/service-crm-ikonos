@@ -38,7 +38,7 @@ export class AppointmentService {
     private emailService: EmailService
   ) { }
 
-  getAppointmentsAvailability = async ({ branchOfficeName, dayName }: AppointmentAvailabilityDTO): Promise<AvailableHoursDTO[]> => {
+  getAppointmentsAvailability = async ({ branchOfficeName, dayName, date }: AppointmentAvailabilityDTO): Promise<AvailableHoursDTO[]> => {
     try {
 
       const branchOffice = await this.branchOfficeRepository.findOneBy({ name: branchOfficeName });
@@ -48,7 +48,6 @@ export class AppointmentService {
       const data: AvailableHoursDTO[] = [];
       const today = new Date();
       let currentDay = today.getDate();
-      const formatedDate = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`
 
       for await (const dayTime of schedule) {
 
@@ -67,12 +66,13 @@ export class AppointmentService {
         const endDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), currentDay, endHour, endMinutes, endSeconds))
 
         const dif = getDiff(startDate, endDate) + 1;
+       
 
-        for (let index = 0; index < dif; index++) {
+        for (let index = 0; index < Number(dif.toFixed()); index++) {
           let hourToAdd = (startHour + index);
           let hourResult = hourToAdd < 10 ? `0${hourToAdd}` : hourToAdd;
           let amOrPm = hourToAdd < 12 ? 'AM' : 'PM';
-          if (hourToAdd < endHour) {
+          if (hourToAdd <= endHour && endMinutes < 59) {
             if (startMinutes == 0) {
               availableHours.push(
                 new AvailableHoursDTO(
@@ -104,11 +104,11 @@ export class AppointmentService {
         }
 
       }
-
+      const dateSended = date.split("T")[0];
       for await (const hour of availableHours) {
         const appointments = await this.appointmentRepository.findBy({
           branchId: branchOffice.id,
-          appointment: formatedDate,
+          appointment: dateSended,
           time: hour.simpleTime
         });
         if (appointments.length < hour.seat) {
@@ -238,11 +238,9 @@ export class AppointmentService {
   getAllAppointmentByBranchOffice = async (body: GetAppointmentsByBranchOfficeDTO): Promise<GetAppointmentDetailDTO[]> => {
     try {
       const data: GetAppointmentDetailDTO[] = [];
-      console.log(`Body ${body}`);
-
       const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id) });
       for await (const appointment of appointments) {
-        const result = await this.getAppointment(appointment)
+        const result = await this.getAppointment(appointment);
         data.push(result);
       }
       return data;
@@ -538,7 +536,8 @@ export class AppointmentService {
   sendAppointmentNotification = async ({ folio }: SendNotificationDTO) => {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ folio: folio });
-      const employee = await this.employeeRepository.findOneBy({ branchOfficeId: appointment.branchId, typeId:10  });
+      //const employee = await this.employeeRepository.findOneBy({ branchOfficeId: appointment.branchId, typeId:10  });
+      const employee = await this.employeeRepository.findOneBy({ id:21  });
       const message = {
         notification: {
           title: `Cita Folio: ${appointment.folio}`,
@@ -572,7 +571,8 @@ export class AppointmentService {
       patient = await this.patientRepository.findOneBy({ id: appointment.patientId });
     }
 
-    if (appointment.dentistId != null && appointment.dentistId != undefined) {
+    if (appointment.dentistId != null && appointment.dentistId != undefined && appointment.dentistId != 0) {
+      
       const previewDentist = await this.employeeRepository.findOneBy({ id: appointment.dentistId });
       const type = await this.employeeTypeRepository.findOneBy({ id: previewDentist.typeId });
       previewDentist.typeName = type.name;

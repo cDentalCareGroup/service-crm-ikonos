@@ -32,6 +32,12 @@ export class AppointmentAvailabilityDTO {
     example: 'Lunes, martes',
   })
   dayName: string;
+
+  @ApiProperty({
+    description: 'name of day',
+    example: 'Lunes, martes',
+  })
+  date: string;
 }
 
 export class RegisterAppointmentDTO {

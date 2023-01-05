@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Res } from '@nestjs/common';
 import { ApiBody } from '@nestjs/swagger';
 import { randomUUID } from 'crypto';
 import { AppointmentService } from './appointment.service';
@@ -60,7 +60,6 @@ export class AppointmentController {
     @Post('reschedule')
     @ApiBody({ type: RescheduleAppointmentDTO })
     async rescheduleAppointment(@Body() body: RescheduleAppointmentDTO): Promise<GetAppointmentDetailDTO> {
-        console.log(body);
         return this.appointmentService.rescheduleAppointmentDentist(body);
     }
 
@@ -93,6 +92,19 @@ export class AppointmentController {
   @ApiBody({type: SendNotificationDTO})
   async sendAppointmentNotification(@Body() body: SendNotificationDTO) {
     return this.appointmentService.sendAppointmentNotification(body);
+  }
+
+  @Get('webhooks')
+  async hook(@Query() query: any) {
+    return query['hub.challenge'];
+  }
+
+  @Post('webhooks')
+  async post(@Body() body: any) {
+    for  (const entry of body.entry) {
+        console.log(entry.changes[0].value.messages[0]);
+    }
+    return 200;
   }
 
 }
