@@ -11,13 +11,19 @@ import { isNumber } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
 import {
+  GetPatientByIdDTO,
   GetPatientsByBranchOfficeDTO,
   GetPatientsByFilterDTO,
+  RegisterPatientDTO,
+  UpdatePatientStatus,
 } from './models/patient.dto';
 import { PatientEntity } from './models/patient.entity';
 import { HttpService } from '@nestjs/axios';
-import { catchError, lastValueFrom, map } from 'rxjs';
+import { async, catchError, lastValueFrom, map } from 'rxjs';
 import { GetPatientsByFilter } from './models/get.patients.by.filter';
+import { StateEntity } from './models/state.entity';
+import { MunicipalitiesEntity } from './models/municipalities';
+import { PatientOriginEntity } from './models/patient.origin.entity';
 
 @Injectable()
 export class PatientService {
@@ -27,6 +33,12 @@ export class PatientService {
     @InjectRepository(BranchOfficeEntity)
     private branchOfficeRepository: Repository<BranchOfficeEntity>,
     private http: HttpService,
+    @InjectRepository(StateEntity)
+    private stateRepository: Repository<StateEntity>,
+    @InjectRepository(MunicipalitiesEntity)
+    private municipalityRepository: Repository<MunicipalitiesEntity>,
+    @InjectRepository(PatientOriginEntity)
+    private patientOriginRepository: Repository<PatientOriginEntity>,
   ) { }
 
   getAllPatients = async (): Promise<PatientEntity[]> => {
@@ -42,7 +54,7 @@ export class PatientService {
     branchOffice,
   }: GetPatientsByBranchOfficeDTO): Promise<PatientEntity[]> => {
     try {
-  
+
       if (branchOffice == null || branchOffice == '')
         throw new ValidationException(ValidationExceptionType.MISSING_VALUES);
 
@@ -108,10 +120,7 @@ export class PatientService {
 
   getPatientsByFilter = async ({ queries }: GetPatientsByFilterDTO): Promise<PatientEntity[]> => {
     try {
-
       let results: PatientEntity[] = [];
-
-
       for await (const query of queries) {
         if (query == 100 || query == "100" || query == 200 || query == "200") {
           const pad = (query == 100 || query == "100") ? 1 : 0
@@ -134,7 +143,7 @@ export class PatientService {
 
         if (query == 600 || query == "600" || query == 700 || query == "700") {
           const gender = (query == 600 || query == "600") ? 'masculino' : 'femenino'
-          const data  = await this.patientRepository.find({ where: { gender: gender } });
+          const data = await this.patientRepository.find({ where: { gender: gender } });
           results = results.concat(data);
         }
       }
@@ -146,9 +155,79 @@ export class PatientService {
     }
   };
 
-  removeDuplicates = (arr: any[]):PatientEntity[]  => {
-    return arr.filter(function(elem, index, self) {
+  removeDuplicates = (arr: any[]): PatientEntity[] => {
+    return arr.filter(function (elem, index, self) {
       return index === self.indexOf(elem);
-  });
+    });
+  }
+
+
+  registerPatient = async (body: RegisterPatientDTO) => {
+    try {
+      const state = await this.stateRepository.findOneBy({name: body.state });
+      const county = await this.municipalityRepository.findOneBy({name: body.city});
+
+      const exists = await this.patientRepository.findOneBy({name: body.name, lastname: body.lastname, secondLastname: body.secondLastname});
+      if (exists) {
+        throw new ValidationException(ValidationExceptionType.PATIENT_EXISTS);
+      }
+      
+      const patient = new PatientEntity();
+      patient.name = body.name;
+      patient.lastname = body.lastname;
+      patient.secondLastname = body.secondLastname;
+      patient.birthDay = new Date(body.birthDate);
+      patient.gender = body.gender;
+      patient.maritalStatus = body.civilStatus;
+      patient.street = body.street;
+      patient.number =body.streetNumber;
+      patient.colony = body.colony;
+      patient.cp = body.zipCode;
+      patient.primaryContact = body.phone;
+      patient.email = body.email;
+      patient.originBranchOfficeId = body.branchOfficeId;
+      patient.state = 'MX';
+      patient.lat = body.lat;
+      patient.lng = body.lon;
+      patient.cityId = state.id;
+      patient.countyId = county.id;
+      patient.sourceClient = body.originId;
+      patient.stateId = state.id
+     //console.log(body.originId)
+
+      return await this.patientRepository.save(patient);
+    } catch (error) {
+      console.log(error);
+      HandleException.exception(error);
+    }
+  }
+
+  getPatientsOrigin = async(): Promise<PatientOriginEntity[]> => {
+    try {
+      const result = await this.patientOriginRepository.find();
+      return result;
+    } catch (exception) {
+      HandleException.exception(exception);
+    }
+  }
+
+  updatePatientStatus = async(body: UpdatePatientStatus): Promise<any> => {
+    try {
+      const result = await this.patientRepository.findOneBy({id: Number(body.patientId)});
+      result.status = body.status;
+      return await this.patientRepository.save(result);
+    } catch (exception) {
+      HandleException.exception(exception);
+    }
+  }
+
+  getPatientById = async(body: GetPatientByIdDTO): Promise<PatientEntity> => {
+    try {
+      const result = await this.patientRepository.findOneBy({id: Number(body.patientId)});
+      return result;
+    } catch (exception) {
+      console.log(exception);
+      HandleException.exception(exception);
+    }
   }
 }

@@ -24,13 +24,13 @@ export class StatisticService {
             console.log("Offices", branchOffices);
 
             const patients = await this.patientsRepository.find();
-            const activePatients = patients.filter((value, _) => value.patientStatus == 1).length;
-            const suspendPatients = patients.filter((value, _) => value.patientStatus == 2).length;
-            const inactivePatients = patients.filter((value, _) => value.patientStatus == 3).length;
+            // const activePatients = patients.filter((value, _) => value.patientStatus == 1).length;
+            // const suspendPatients = patients.filter((value, _) => value.patientStatus == 2).length;
+            // const inactivePatients = patients.filter((value, _) => value.patientStatus == 3).length;
 
-            console.log("Active", activePatients);
-            console.log("Inactive", inactivePatients);
-            console.log("Suspend", suspendPatients);
+            // console.log("Active", activePatients);
+            // console.log("Inactive", inactivePatients);
+            // console.log("Suspend", suspendPatients);
 
 
             const employees = await this.employeeRepository.find({where:{status: 1}});
@@ -57,9 +57,9 @@ export class StatisticService {
               return {
                 'branch_offices': branchOffices,
                 'patients': {
-                    'active':activePatients,
-                    'inactive': inactivePatients,
-                    'suspend':suspendPatients
+                    'active':0,
+                    'inactive': 0,
+                    'suspend':0
                 },
                 'employees':{
                     'dental_doctor': dentalDoctor,

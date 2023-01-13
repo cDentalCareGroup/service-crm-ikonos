@@ -1,56 +1,68 @@
 import { Column, Double, Entity, PrimaryGeneratedColumn } from "typeorm";
 
-@Entity('paciente')
+@Entity('patient')
 export class PatientEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({name:'nombre', type:'varchar', length: 150})
+  @Column({name:'name', type:'varchar', length: 150})
   name: string;
 
-  @Column({name:'paterno', type:'varchar', length: 150})
+  @Column({name:'last_name1', type:'varchar', length: 150})
   lastname: string;
 
-  @Column({name:'materno', type:'varchar', length: 150})
+  @Column({name:'last_name2', type:'varchar', length: 150})
   secondLastname: string;
 
 
-  @Column({name:'fecha_nacimiento', type:'date',})
+  @Column({name:'birth_date', type:'date',})
   birthDay: Date;
 
-  @Column({name:'genero', type:'varchar', length: 20})
+  @Column({name:'sex', type:'varchar', length: 20})
   gender: string;
 
-  @Column({name:'estado_civil', type:'varchar', length: 20})
+  @Column({name:'civil_status', type:'varchar', length: 20})
   maritalStatus: string;
 
-  @Column({name:'ocupacion', type:'varchar', length: 20})
+  @Column({name:'occupation', type:'varchar', length: 20})
   job: string;
 
   @Column({
-    name: 'calle',
+    name: 'street',
     type: 'varchar',
     length: 255,
   })
   street: string;
 
   @Column({
-    name: 'numero',
+    name: 'street_number',
     type: 'varchar',
     length: 45,
   })
   number: string;
 
+  @Column({
+    name: 'city_id',
+    type: 'int',
+  })
+  cityId: number;
 
   @Column({
-    name: 'colonia',
+    name: 'county_id',
+    type: 'int',
+  })
+  countyId: number;
+
+
+  @Column({
+    name: 'colony',
     type: 'varchar',
     length: 255,
   })
   colony: string;
 
   @Column({
-    name: 'codigo_postal',
+    name: 'zip_code',
     type: 'varchar',
     length: 45,
   })
@@ -58,18 +70,18 @@ export class PatientEntity {
 
 
   @Column({
-    name: 'telefono_particular',
+    name: 'phone',
     type: 'varchar',
     length: 45,
   })
   primaryContact: string;
 
-  @Column({
-    name: 'telefono_movil',
-    type: 'varchar',
-    length: 45,
-  })
-  secondaryContact: string;
+  // @Column({
+  //   name: 'telefono_movil',
+  //   type: 'varchar',
+  //   length: 45,
+  // })
+  // secondaryContact: string;
 
   @Column({
     name: 'email',
@@ -100,7 +112,7 @@ export class PatientEntity {
   rfc: string;
 
   @Column({
-    name: 'idSucursalOrigen',
+    name: 'home_branch_id',
     type: 'int',
   })
   originBranchOfficeId: number;
@@ -109,7 +121,7 @@ export class PatientEntity {
   // FCV 22Nov22 se agregan campos para analisis de datos
 
   @Column({
-    name:     'estado',
+    name:     'country',
     type:     'char',
     length:    4,
     comment:  'siglas del estado seleccionado, ej: mor, cdmx, bcs, etc',
@@ -117,7 +129,15 @@ export class PatientEntity {
   state: string;
 
   @Column({
-    name:       'latitud',
+    name:     'state_id',
+    type:     'int',
+   
+    comment:  'siglas del estado seleccionado, ej: mor, cdmx, bcs, etc',
+  })
+  stateId: number;
+
+  @Column({
+    name:       'lat',
     type:       'decimal',
     precision:   10, 
     scale:       8, 
@@ -125,7 +145,7 @@ export class PatientEntity {
   lat: number;
 
   @Column({
-    name:       'longitud',
+    name:       'lon',
     type:       'decimal',
     precision:   10, 
     scale:       8, 
@@ -133,50 +153,36 @@ export class PatientEntity {
   lng: number;
 
   @Column({
-    name: 'fecha_hora_proxima_cita',
+    name: 'next_appointment_date',
     type: 'datetime',
   })
   nextDateAppointment: Date; 
 
   @Column({
-    name:     'estatus',
+    name:     'status',
     type:     'char',
     length:    10,
     comment:  'ejemplo: activo, perdido, fallecio, noMolestar',
   })
   status: string;
 
-  @Column({
-    name:     'idEstatus',
-    comment:  '1 o 2 o 3',
-  })
-  patientStatus: number;
+  // @Column({
+  //   name:     'idEstatus',
+  //   comment:  '1 o 2 o 3',
+  // })
+  // patientStatus: number;
+
+
 
   @Column({
-    name:     'sucursal_origen',
-    type:     'varchar',
-    length:    45,
-    comment:  'sucursal en la que se atendio por primera vez al paciente',
-  })
-  sourceBranch: string;
-
-  @Column({
-    name:     'sucursal_actual',
-    type:     'varchar',
-    length:    45,
-    comment:  'sucursal en la que se atiende actualmente al paciente',
-  })
-  currentBranch: string;
-
-  @Column({
-    name:     'fecha_inicio',
+    name:     'start_date',
     type:     'date',
     comment:  'fecha en la que se atendio el paciente por primera vez en alguna sucursal, no el dia que se capturo',
   })
   startDate: Date;
 
   @Column({
-    name:     'fecha_hora_ultima_visita',
+    name:     'last_appointment_date',
     type:     'datetime',
     comment:  'fechaHora en la que se atendio el paciente por ultima vez vez en alguna sucursal',
     default : null
@@ -184,20 +190,19 @@ export class PatientEntity {
   lastVisitDate: Date;
 
   @Column({
-    name:     'origen_cliente',
-    type:     'varchar',
-    length:    45,
+    name:     'patient_origin_id',
+    type:     'int',
     comment:  'como se obtuvo este cliente: redes, recomendacion, escolar, convenio',
   })
-  sourceClient: string;
+  sourceClient: number;
 
   @Column({
-    name:     'organizacion_cliente',
+    name:     'patient_organization_id',
     type:     'varchar',
     length:    45,
     comment:  'por ejemplo: si es escolar, escuela a la que pertenece, esto nos permite medir la efectvidad de las campañas',
   })
-  organizationClient: string;
+  organizationClient: number;
 
   @Column({
     name:     'pad',
@@ -207,14 +212,14 @@ export class PatientEntity {
   pad: number;
 
   @Column({
-    name:     'actual_pad_id',
+    name:     'current_pad_id',
     type:     'int',
     comment:  'ultimo numero de folio de pad contratado, pudiera ser que ya este vencido',
   })
   currentPadId: number;
 
   @Column({
-    name:     'tipo_pad',
+    name:     'pad_type',
     type:     'varchar',
     length:    20,
     comment:  'individual, familiar, escolar',
@@ -222,27 +227,27 @@ export class PatientEntity {
   padType: string;
 
   @Column({
-    name: 'fecha_adquisicion_pad',
-    type: 'date',
+    name: 'pad_acquisiton_date',
+    type: 'char',
   })
-  padAcquisitionDate: Date;
+  padAcquisitionDate: string;
 
   @Column({
-    name: 'fecha_expiracion_pad',
-    type: 'datetime',
+    name: 'pad_expiration_date',
+    type: 'char',
   })
-  padExpirationDate: Date;
+  padExpirationDate: string;
 
   @Column({
-    name:     'sucursal_adquisicion_pad',
+    name:     'pad_acquisition_brach_id',
     type:     'varchar',
     length:    45,
     comment:  'sucursal en la que se adquirio el pado',
   })
-  padAcquisitionBranch: string;
+  padAcquisitionBranch: number;
 
   @Column({
-    name:       'precio_pad',
+    name:       'pad_price',
     type:       'decimal',
     precision:   10, 
     scale:       2, 

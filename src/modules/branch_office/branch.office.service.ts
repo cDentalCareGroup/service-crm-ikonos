@@ -104,12 +104,12 @@ export class BranchOfficeService {
       const employees = await this.employeeRepository.findBy({ typeId: 11 });
 
       for await (const employee of employees) {
-        const result = await this.employeeRepository.createQueryBuilder('empleado')
-          .innerJoin('branch_schedule_dentist', 'bsd', 'empleado.id = bsd.dentist_id')
+        const result = await this.employeeRepository.createQueryBuilder('employee')
+          .innerJoin('branch_schedule_dentist', 'bsd', 'employee.id = bsd.dentist_id')
           .innerJoin('branch_schedule', 'bs', 'bsd.branch_schedule_id = bs.ID')
-          .innerJoinAndSelect('sucursal', 's', 's.id = bs.branch_id ')
-          .where("empleado.id = :employeeId", { employeeId: employee.id })
-          .groupBy("empleado.id")
+          .innerJoinAndSelect('branch', 's', 's.id = bs.branch_id ')
+          .where("employee.id = :employeeId", { employeeId: employee.id })
+          .groupBy("employee.id")
           .addGroupBy('s.id')
           .getRawMany();
 

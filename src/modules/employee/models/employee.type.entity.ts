@@ -4,15 +4,15 @@ import {
     Entity,
   } from 'typeorm';
   
-  @Entity('tipo_empleado')
+  @Entity('employee_type')
   export class EmployeeTypeEntity {
     @PrimaryGeneratedColumn()
     id: number;
   
-    @Column({name : 'nombre', type:'varchar', length: 150})
+    @Column({name : 'name', type:'varchar', length: 150})
     name: string;
   
-    @Column({name : 'descripcion', type:'varchar', length: 255, nullable: true})
+    @Column({name : 'description', type:'varchar', length: 255, nullable: true})
     description: string;
   
   }

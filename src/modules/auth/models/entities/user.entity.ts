@@ -7,30 +7,30 @@ import {
 } from 'typeorm';
 import { Rol, RolEntity } from './rol.entity';
 
-@Entity('empleado')
+@Entity('employee')
 export class UserEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({name:'usuario', type:'varchar', length: 45})
+  @Column({name:'user', type:'varchar', length: 45})
   username: string;
 
-  @Column({name:'contrasena', type:'varchar', length: 45})
+  @Column({name:'password', type:'varchar', length: 45})
   password: string;
 
-  @Column({name:'nombre', type:'varchar', length: 150})
+  @Column({name:'name', type:'varchar', length: 150})
   name: string;
 
-  @Column({name:'paterno', type:'varchar', length: 150})
+  @Column({name:'last_name1', type:'varchar', length: 150})
   lastname: string;
 
-  @Column({name:'materno', type:'varchar', length: 150})
+  @Column({name:'last_name2', type:'varchar', length: 150})
   secondLastname: string;
 
   @Column({name:'token', type:'text'})
   token?: string;
 
-  @Column({name:'idSucursal', type:'int'})
+  @Column({name:'branch_id', type:'int'})
   branchId?: number;
 }
 

@@ -1,26 +1,26 @@
 import { Column, PrimaryGeneratedColumn, Entity } from 'typeorm';
 
-@Entity('empleado')
+@Entity('employee')
 export class EmployeeEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({
-    name: 'nombre',
+    name: 'name',
     type: 'varchar',
     length: 150,
   })
   name: string;
 
   @Column({
-    name: 'paterno',
+    name: 'last_name1',
     type: 'varchar',
     length: 150,
   })
   lastname: string;
 
   @Column({
-    name: 'materno',
+    name: 'last_name2',
     type: 'varchar',
     length: 150,
   })
@@ -33,86 +33,86 @@ export class EmployeeEntity {
   status: number;
 
   @Column({
-    name: 'idEstado',
+    name: 'state_id',
     type: 'int',
   })
   stateId: number;
 
   @Column({
-    name: 'idMunicipio',
+    name: 'city_id',
     type: 'int',
   })
   municipalityId: number;
 
   @Column({
-    name: 'idEsquemaLaboral',
+    name: 'contract_type_id',
     type: 'int',
   })
   jobScheme: number;
 
   @Column({
-    name: 'idTipoEmpleado',
+    name: 'employee_type_id',
     type: 'int',
   })
   typeId: number;
 
   @Column({
-    name: 'idSucursal',
+    name: 'branch_id',
     type: 'int',
   })
   branchOfficeId: number;
 
   @Column({
-    name: 'calle',
+    name: 'street',
     type: 'varchar',
     length: 255,
   })
   street: string;
 
   @Column({
-    name: 'numero',
+    name: 'number',
     type: 'varchar',
     length: 45,
   })
   number: string;
 
   @Column({
-    name: 'colonia',
+    name: 'colony',
     type: 'varchar',
     length: 255,
   })
   colony: string;
 
   @Column({
-    name: 'codigo_postal',
+    name: 'zip_code',
     type: 'varchar',
     length: 10,
   })
   cp: string;
 
   @Column({
-    name: 'telefono_principal',
+    name: 'phone',
     type: 'varchar',
     length: 45,
   })
   primaryContact: string;
 
-  @Column({
-    name: 'telefono_secundario',
-    type: 'varchar',
-    length: 45,
-  })
-  secondaryContact: string;
+  // @Column({
+  //   name: 'telefono_secundario',
+  //   type: 'varchar',
+  //   length: 45,
+  // })
+  // secondaryContact: string;
+
+  // @Column({
+  //   name: 'curp',
+  //   type: 'varchar',
+  //   length: 20,
+  // })
+  // curp: string;
 
   @Column({
-    name: 'curp',
-    type: 'varchar',
-    length: 20,
-  })
-  curp: string;
-
-  @Column({
-    name: 'fecha_nacimiento',
+    name: 'birth_date',
     type: 'date',
   })
   birthDay: Date;

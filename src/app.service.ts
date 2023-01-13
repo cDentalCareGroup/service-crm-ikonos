@@ -19,7 +19,7 @@ export class AppService {
 
 
     return {
-      'version': 'Version 1.0.12 - Firebase v1',
+      'version': 'Version 1.0.13 - Firebase v1',
       'date': getTodayDate(),
       'currentDate': new Date(),
       'currentDate+1': date,

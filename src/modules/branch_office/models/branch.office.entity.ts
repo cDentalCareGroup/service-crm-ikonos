@@ -1,12 +1,12 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
-@Entity('sucursal')
+@Entity('branch')
 export class BranchOfficeEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({
-    name: 'nombre',
+    name: 'name',
     type: 'varchar',
     length: 255,
   })
@@ -14,14 +14,14 @@ export class BranchOfficeEntity {
 
 
   @Column({
-    name: 'calle',
+    name: 'street',
     type: 'varchar',
     length: 255,
   })
   street: string;
 
   @Column({
-    name: 'numero',
+    name: 'number',
     type: 'varchar',
     length: 45,
   })
@@ -29,14 +29,14 @@ export class BranchOfficeEntity {
 
 
   @Column({
-    name: 'colonia',
+    name: 'colony',
     type: 'varchar',
     length: 255,
   })
   colony: string;
 
   @Column({
-    name: 'codigo_postal',
+    name: 'zip_code',
     type: 'varchar',
     length: 45,
   })
@@ -44,14 +44,14 @@ export class BranchOfficeEntity {
 
 
   @Column({
-    name: 'telefono_principal',
+    name: 'phone_branch',
     type: 'varchar',
     length: 45,
   })
   primaryContact: string;
 
   @Column({
-    name: 'telefono_sucursal',
+    name: 'cel_branch',
     type: 'varchar',
     length: 45,
   })
@@ -65,18 +65,18 @@ export class BranchOfficeEntity {
   email: string;
 
   @Column({
-    name: 'idEstatusSucursal',
+    name: 'idStatusBranch',
     type: 'int',
 
   })
   status: number;
 
   @Column({
-    name: 'latitud',
+    name: 'lat',
   })
   lat: number;
   @Column({
-    name: 'longitud',
+    name: 'lon',
   })
   lng: number;
 

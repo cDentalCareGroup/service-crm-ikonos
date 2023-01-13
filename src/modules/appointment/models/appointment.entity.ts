@@ -3,7 +3,7 @@
 // import { Patient } from "src/modules/patient/models/patient.entity";
 import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
- @Entity('appointment2')
+ @Entity('appointment')
  export class AppointmentEntity {
   @PrimaryGeneratedColumn({name:'ID'})
   id: number;

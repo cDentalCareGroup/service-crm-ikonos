@@ -9,17 +9,17 @@ import {
     @PrimaryGeneratedColumn()
     id: number;
   
-    @Column({name : 'nombre', type:'varchar', length: 150})
+    @Column({name : 'name', type:'varchar', length: 150})
     name: string;
   
-    @Column({name : 'descripcion', type:'varchar', length: 255, nullable: true})
+    @Column({name : 'description', type:'varchar', length: 255, nullable: true})
     description: string;
   
-    @Column({name : 'orden', type:'tinyint'})
+    @Column({name : 'order', type:'tinyint'})
     order: number;
   }
 
-  @Entity('empleado_rol')
+  @Entity('employee_role')
   export class UserRolEntity {
     @PrimaryGeneratedColumn()
     id: number;
@@ -27,7 +27,7 @@ import {
     @Column({name : 'idRol', type:'int'})
     rolId: number;
   
-    @Column({name : 'idEmpleado', type:'int'})
+    @Column({name : 'idEmployee', type:'int'})
     userId: number;
   }
 

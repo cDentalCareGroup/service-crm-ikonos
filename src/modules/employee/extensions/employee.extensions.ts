@@ -32,8 +32,8 @@ const employeeQueryToEntity = (data: any): EmployeeEntity => {
     employee.colony = data.empleado_colonia;
     employee.cp = data.empleado_codigo_postal;
     employee.primaryContact = data.empleado_telefono_principal;
-    employee.secondaryContact = data.empleado_telefono_secundario;
-    employee.curp = data.empleado_curp;
+   // employee.secondaryContact = data.empleado_telefono_secundario;
+   // employee.curp = data.empleado_curp;
     employee.birthDay = data.empleado_fecha_nacimiento;
     employee.rfc = data.empleado_rfc;
     employee.nss = data.empleado_nss;

@@ -407,7 +407,7 @@ export class AppointmentService {
           let hourToAdd = (startHour + index);
           let hourResult = hourToAdd < 10 ? `0${hourToAdd}` : hourToAdd;
           let amOrPm = hourToAdd < 12 ? 'AM' : 'PM';
-          if (hourToAdd < endHour) {
+          if (hourToAdd <= endHour && endMinutes < 59) {
             if (startMinutes == 0) {
               availableHours.push(
                 new AvailableHoursDTO(

@@ -54,6 +54,7 @@ export class AuthService {
 
       return new UserResponse(user, token, roles);
     } catch (exception) {
+      console.log(exception);
       HandleException.exception(exception);
     }
   };
