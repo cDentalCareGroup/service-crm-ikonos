@@ -97,19 +97,19 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
   })
   scheduledAt: string;
 
-  @Column({
-    name: 'treatment_category_id',
-    type: 'int',
-    nullable: true,
-  })
-  treatmentCategoryId: number;
+  // @Column({
+  //   name: 'treatment_category_id',
+  //   type: 'int',
+  //   nullable: true,
+  // })
+  // treatmentCategoryId: number;
 
-  @Column({
-    name: 'treatment_category',
-    type: 'varchar',
-    nullable: true,
-  })
-  treatmentCategory: string;
+  // @Column({
+  //   name: 'treatment_category',
+  //   type: 'varchar',
+  //   nullable: true,
+  // })
+  // treatmentCategory: string;
 
   @Column({
     name: 'folio',

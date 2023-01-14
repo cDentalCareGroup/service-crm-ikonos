@@ -40,6 +40,12 @@ export class DeleteEmployeeScheduleDTO {
     example: '1,2',
   })
   scheduleId: number | string;
+
+  @ApiProperty({
+    description: 'sentist id',
+    example: '1,2',
+  })
+  dentistId: number | string;
 }
 
 
@@ -72,4 +78,29 @@ export class GetEmployeesByScheduleDTO {
     example: 'array of schedules see RegisterScheduleeEmployeeDTO',
   })
   id: string;
+}
+
+
+
+export class RegisterEmployeeDTO {
+  user: string;
+  password: string;
+  name: string;
+  lastname: string;
+  secondLastname: string;
+  street: string;
+  number: string;
+  colony: string;
+  cp: string;
+  state: string;
+  phone: string;
+  brithday: string;
+  rfc: string;
+  nss: string;
+  status: number;
+  branchOfficeId: number;
+  jobSchemeId: number;
+  typeId: number;
+  email: string;
+  gender: string;
 }

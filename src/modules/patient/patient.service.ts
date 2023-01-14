@@ -252,4 +252,19 @@ export class PatientService {
       HandleException.exception(exception);
     }
   }
+
+  getColoniesFromPostalCode = async(body: GetColoniesDTO) => {
+    try {
+      
+      const response = await fetch(`https://www.walmart.com.mx/api/wmx/service/v1/common/neighborhood/details?zipcode=${body.cp}&channel=4&shipping=1`,)
+      .then(response => response.json());
+      return response
+    } catch (error) {
+      HandleException.exception(error);
+    }
+  }
+}
+
+export class GetColoniesDTO {
+  cp: string;
 }

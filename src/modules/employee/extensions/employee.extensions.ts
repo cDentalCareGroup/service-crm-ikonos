@@ -22,8 +22,8 @@ const employeeQueryToEntity = (data: any): EmployeeEntity => {
     employee.lastname = data.empleado_paterno;
     employee.secondLastname = data.empleado_materno;
     employee.status = data.empleado_idEstatus;
-    employee.stateId = data.empleado_idEstado;
-    employee.municipalityId = data.empleado_idMunicipio;
+    //employee.stateId = data.empleado_idEstado;
+    //employee.municipalityId = data.empleado_idMunicipio;
     employee.jobScheme = data.empleado_idEsquemaLaboral;
     employee.typeId = data.empleado_idTipoEmpleado;
     employee.branchOfficeId = data.empleado_idSucursal;

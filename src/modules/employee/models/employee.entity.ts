@@ -33,16 +33,16 @@ export class EmployeeEntity {
   status: number;
 
   @Column({
-    name: 'state_id',
-    type: 'int',
+    name: 'state',
+    type: 'varchar',
   })
-  stateId: number;
+  state: string;
 
-  @Column({
-    name: 'city_id',
-    type: 'int',
-  })
-  municipalityId: number;
+  // @Column({
+  //   name: 'city_id',
+  //   type: 'int',
+  // })
+  // municipalityId: number;
 
   @Column({
     name: 'contract_type_id',
@@ -104,12 +104,16 @@ export class EmployeeEntity {
   // })
   // secondaryContact: string;
 
-  // @Column({
-  //   name: 'curp',
-  //   type: 'varchar',
-  //   length: 20,
-  // })
-  // curp: string;
+  @Column({
+    name: 'user',
+    type: 'varchar',
+  })
+  user: string;
+  @Column({
+    name: 'password',
+    type: 'varchar',
+  })
+  password: string;
 
   @Column({
     name: 'birth_date',
@@ -131,8 +135,22 @@ export class EmployeeEntity {
   })
   nss: string;
 
+
+  @Column({
+    name: 'start_date',
+    type: 'varchar',
+  })
+  startDate: string;
+
   typeName?: string;
 
   @Column({name:'token', type:'text'})
   token?: string;
+
+
+  @Column({name:'email', type:'varchar'})
+  email: string;
+
+  @Column({name:'sex', type:'varchar'})
+  gender: string;
 }

@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import e from 'express';
 import { HandleException } from 'src/common/exceptions/general.exception';
 import { getDiff } from 'src/utils/general.functions.utils';
@@ -9,7 +11,7 @@ import { AppointmentEntity } from '../appointment/models/appointment.entity';
 import { ScheduleBranchOfficeInfoDTO, SchedulesEmployeeDTO } from '../employee/models/employee.dto';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { branchOfficeScheduleToEntity, branchOfficesToEntity, registerBranchOfficeScheduleToEntity } from './extensions/branch.office.extensions';
-import { BranchOfficeSchedulesDTO, DeleteBranchOfficeScheduleDTO, GetBranchOfficeScheduleDTO, RegisterBranchOfficeScheduleDTO, setFullDate } from './models/branch.office.dto';
+import { BranchOfficeSchedulesByIdDTO, BranchOfficeSchedulesDTO, DeleteBranchOfficeScheduleDTO, GetBranchOfficeScheduleDTO, RegisterBranchOfficeScheduleDTO, setFullDate } from './models/branch.office.dto';
 import { BranchOfficeEmployeeSchedule } from './models/branch.office.employee.entity';
 import { BranchOfficeEntity } from './models/branch.office.entity';
 import { BranchOfficeScheduleEntity } from './models/branch.office.schedule.entity';
@@ -140,6 +142,18 @@ export class BranchOfficeService {
       //1 for active, 2 for inactive, 3 unavailable 
       const branchOffice = await this.branchOfficeRepository.findOneBy({ name: branchOfficeName });
       const schedule = await this.branchOfficeScheduleRepository.find({ where: { branchId: branchOffice.id, status: 'activo' } });
+      return schedule;
+    } catch (exception) {
+      HandleException.exception(exception);
+    }
+  }
+
+  getBranchOfficeSchedulesById = async ({ id }: BranchOfficeSchedulesByIdDTO): Promise<any> => {
+    try {
+
+      //1 for active, 2 for inactive, 3 unavailable 
+      const branchOffice = await this.branchOfficeRepository.findOneBy({ id: Number(id) });
+      const schedule = await this.branchOfficeScheduleRepository.find({ where: { branchId: branchOffice.id, status: 'activo' } });
 
       return schedule;
     } catch (exception) {
@@ -150,10 +164,50 @@ export class BranchOfficeService {
 
   deleteBranchOfficeSchedule = async ({ scheduleId }: DeleteBranchOfficeScheduleDTO): Promise<any> => {
     try {
+      await this.branchOfficeEmployeeScheduleRepository.delete({branchScheduleId: Number(scheduleId)});
       const schedule = await this.branchOfficeScheduleRepository.delete({ id: Number(scheduleId) });
       return schedule;
     } catch (exception) {
       HandleException.exception(exception);
+    }
+  }
+
+
+
+
+  getBranchOfficeSchedulesEmployees = async ({ id }: BranchOfficeSchedulesByIdDTO): Promise<any> => {
+    try {
+
+      //1 for active, 2 for inactive, 3 unavailable 
+      const branchOffice = await this.branchOfficeRepository.findOneBy({ id: Number(id) });
+      const schedules = await this.branchOfficeScheduleRepository.find({ where: { branchId: branchOffice.id, status: 'activo' } });
+
+      let data: GetBranchOfficeSchedulesEmployees[] = [];
+      for await (const schedule of schedules) {
+        const employeeSchedules = await this.branchOfficeEmployeeScheduleRepository.createQueryBuilder('branch_schedule_dentist')
+          .innerJoin('branch_schedule', 'bs', 'branch_schedule_dentist.branch_schedule_id = bs.ID')
+          .innerJoinAndSelect('employee', 'e', 'branch_schedule_dentist.dentist_id = e.id')
+          .where('branch_schedule_dentist.branch_id = :branchId', { branchId: branchOffice.id })
+          .andWhere('bs.id = :scheduleId', { scheduleId: schedule.id })
+          .getRawMany();
+
+        data.push(new GetBranchOfficeSchedulesEmployees(schedule, employeeSchedules.map((value,_) => this.employeeToEmployeEntity(value))))
+      }
+      return data;
+    } catch (exception) {
+      HandleException.exception(exception);
+    }
+  }
+
+  employeeToEmployeEntity = (data: any) => {
+    if (data != null) {
+      const employee = new EmployeeEntity();
+      employee.name = data.e_name;
+      employee.lastname = data.e_last_name1;
+      employee.secondLastname = data.e_last_name2;
+      employee.id = data.e_id;
+      employee.branchOfficeId = data.e_branch_id;
+      return employee;
     }
   }
 
@@ -218,6 +272,18 @@ export class BranchOfficeService {
     //console.log(schedule);
   }
 }
+
+export class GetBranchOfficeSchedulesEmployees {
+  schedule: BranchOfficeScheduleEntity;
+  employees: EmployeeEntity[];
+
+  constructor(schedule: BranchOfficeScheduleEntity,
+    employees: EmployeeEntity[]){
+      this.schedule = schedule;
+      this.employees = employees;
+    }
+}
+
 
 
 

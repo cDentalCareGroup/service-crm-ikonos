@@ -3,7 +3,7 @@ import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { GetPatientsByFilter } from './models/get.patients.by.filter';
 import { GetPatientByIdDTO, GetPatientsByBranchOfficeDTO, GetPatientsByFilterDTO, RegisterPatientDTO, UpdatePatientDTO, UpdatePatientStatus } from './models/patient.dto';
 import { PatientEntity } from './models/patient.entity';
-import { PatientService } from './patient.service';
+import { GetColoniesDTO, PatientService } from './patient.service';
 
 @ApiTags('Patients')
 @Controller('patient')
@@ -55,6 +55,13 @@ export class PatientController {
     @ApiBody({ type: GetPatientByIdDTO })
     async getPatientById(@Body() body: GetPatientByIdDTO): Promise<PatientEntity> {
         return this.patientService.getPatientById(body);
+    }
+
+
+    @Post('colonies')
+    @ApiBody({ type: GetColoniesDTO })
+    async getColoniesFromPostalCode (@Body() body: GetColoniesDTO) {
+        return this.patientService.getColoniesFromPostalCode(body);
     }
 
 }

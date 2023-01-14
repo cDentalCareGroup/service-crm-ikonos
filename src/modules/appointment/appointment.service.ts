@@ -66,7 +66,7 @@ export class AppointmentService {
         const endDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), currentDay, endHour, endMinutes, endSeconds))
 
         const dif = getDiff(startDate, endDate) + 1;
-       
+
 
         for (let index = 0; index < Number(dif.toFixed()); index++) {
           let hourToAdd = (startHour + index);
@@ -197,7 +197,7 @@ export class AppointmentService {
 
   getAppointmentDetail = async (body: AppointmentDetailDTO): Promise<GetNextAppointmentDetailDTO> => {
     try {
-      const appointment = await this.appointmentRepository.findOneBy({ folio: body.folio});
+      const appointment = await this.appointmentRepository.findOneBy({ folio: body.folio });
       if (appointment == null) throw new NotFoundCustomException(NotFoundType.APPOINTMENT_NOT_FOUND);
       const updatedAppointment = await this.getAppointment(appointment);
       let nextAppointments = await this.getNextAppointments(appointment.patientId);
@@ -208,10 +208,10 @@ export class AppointmentService {
     }
   }
 
-  getNextAppointments = async(patientId: number): Promise<GetAppointmentDetailDTO[]>=> {
+  getNextAppointments = async (patientId: number): Promise<GetAppointmentDetailDTO[]> => {
     try {
-      const appointments = await this.appointmentRepository.findBy({status:'activa',patientId: patientId});
-      let nextAppointments:GetAppointmentDetailDTO[] = [];
+      const appointments = await this.appointmentRepository.findBy({ status: 'activa', patientId: patientId });
+      let nextAppointments: GetAppointmentDetailDTO[] = [];
 
       for await (const item of appointments) {
         const result = await this.getAppointment(item);
@@ -225,7 +225,7 @@ export class AppointmentService {
   }
   getAppointmentDetailPatient = async (body: AppointmentDetailDTO): Promise<GetAppointmentDetailDTO> => {
     try {
-      const appointment = await this.appointmentRepository.findOneBy({ folio: body.folio, status:'activa'});
+      const appointment = await this.appointmentRepository.findOneBy({ folio: body.folio, status: 'activa' });
       if (appointment == null) throw new NotFoundCustomException(NotFoundType.APPOINTMENT_NOT_FOUND);
       return this.getAppointment(appointment);
     } catch (exception) {
@@ -270,7 +270,7 @@ export class AppointmentService {
     }
   }
 
-  updateAppointmentStatus = async ({ id, status }: UpdateAppointmentStatusDTO) => {
+  updateAppointmentStatus = async ({ id, status, amount }: UpdateAppointmentStatusDTO) => {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ id: Number(id) });
 
@@ -282,7 +282,8 @@ export class AppointmentService {
       if (status == 'finalizada') {
         appointment.finishedAt = formatISO(new Date())
         appointment.status = 'finalizada';
-        appointment.comments = `${appointment.comments} \n Estatus: finalizada ${formatISO(new Date())}`
+        appointment.comments = `${appointment.comments} \n Estatus: finalizada ${formatISO(new Date())}`;
+        appointment.costAmount = Number(amount);
       }
       const updatedAppointment = await this.appointmentRepository.save(appointment);
       return this.getAppointment(updatedAppointment);
@@ -514,7 +515,7 @@ export class AppointmentService {
       }
       let updatedAppointment = await this.getAppointment(response);
       let nextAppointments = await this.getNextAppointments(response.patientId);
-      return new GetNextAppointmentDetailDTO(updatedAppointment,nextAppointments?.filter((value, _) => value.appointment.id != updatedAppointment.appointment.id));
+      return new GetNextAppointmentDetailDTO(updatedAppointment, nextAppointments?.filter((value, _) => value.appointment.id != updatedAppointment.appointment.id));
     } catch (exception) {
       HandleException.exception(exception);
     }
@@ -537,7 +538,7 @@ export class AppointmentService {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ folio: folio });
       //const employee = await this.employeeRepository.findOneBy({ branchOfficeId: appointment.branchId, typeId:10  });
-      const employee = await this.employeeRepository.findOneBy({ id:21  });
+      const employee = await this.employeeRepository.findOneBy({ id: 21 });
       const message = {
         notification: {
           title: `Cita Folio: ${appointment.folio}`,
@@ -572,7 +573,7 @@ export class AppointmentService {
     }
 
     if (appointment.dentistId != null && appointment.dentistId != undefined && appointment.dentistId != 0) {
-      
+
       const previewDentist = await this.employeeRepository.findOneBy({ id: appointment.dentistId });
       const type = await this.employeeTypeRepository.findOneBy({ id: previewDentist.typeId });
       previewDentist.typeName = type.name;
@@ -675,6 +676,33 @@ export class AppointmentService {
       return failureEmails;
     } catch (exception) {
       console.log(exception);
+    }
+  }
+
+
+  test = async () => {
+    try {
+      const response = await fetch('https://graph.facebook.com/v15.0/112314965085672/messages', {
+        headers: {
+          "Authorization": 'Bearer EAAvaI0aTk5wBAKV5VRfwTTBl3ChPjnXfWpuZBh4CYKqzHavkonKQPvmaskPZCCmtkIucgTXjcBx7VZBYcw4joOXeimMX33r7yD2YqMcQmOgpfeS1HqqsuszTALVI02WNJQmKZCRoZCnfm2FyXMyf9RbhZBaoARj7Eo6IAAL4HUXIKRMJyLev3K6MQNdBP38rQDy4pvAJsuFQZDZD',
+          "Content-Type": 'application/json',
+        },
+        method: "POST",
+        body: JSON.stringify(
+          {
+            "messaging_product": "whatsapp",
+            "to": "527773510031",
+            "type": "template",
+            "template": {
+              "name": "confirm_appointment",
+              "language": { "code": "es_MX" }
+            }
+          }
+        )
+      },)
+      return response;
+    } catch (error) {
+      console.log(error);
     }
   }
 }

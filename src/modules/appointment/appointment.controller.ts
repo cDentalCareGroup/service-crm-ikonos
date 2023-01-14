@@ -94,17 +94,22 @@ export class AppointmentController {
     return this.appointmentService.sendAppointmentNotification(body);
   }
 
-  @Get('webhooks')
-  async hook(@Query() query: any) {
-    return query['hub.challenge'];
-  }
+//   @Get('webhooks')
+//   async hook(@Query() query: any) {
+//     return query['hub.challenge'];
+//   }
 
-  @Post('webhooks')
-  async post(@Body() body: any) {
-    for  (const entry of body.entry) {
-        console.log(entry.changes[0].value.messages[0]);
-    }
-    return 200;
+//   @Post('webhooks')
+//   async post(@Body() body: any) {
+//     for  (const entry of body.entry) {
+//         console.log(entry.changes[0].value.messages[0]);
+//     }
+//     return 200;
+//   }
+
+@Get('test')
+  async hook() {
+    return this.appointmentService.test();
   }
 
 }

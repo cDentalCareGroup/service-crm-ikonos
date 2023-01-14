@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { format } from 'date-fns';
 import {
   HandleException,
   NotFoundCustomException,
@@ -11,7 +12,7 @@ import { Repository } from 'typeorm';
 import { DeleteBranchOfficeScheduleDTO } from '../branch_office/models/branch.office.dto';
 import { BranchOfficeEmployeeSchedule } from '../branch_office/models/branch.office.employee.entity';
 import { registerScheduleEmployeeToEntity } from './extensions/employee.extensions';
-import { GetEmployeesByScheduleDTO, GetEmployeesByTypeDTO, RegisterScheduleesEmployeesDTO } from './models/employee.dto';
+import { DeleteEmployeeScheduleDTO, GetEmployeesByScheduleDTO, GetEmployeesByTypeDTO, RegisterEmployeeDTO, RegisterScheduleesEmployeesDTO } from './models/employee.dto';
 import { EmployeeEntity } from './models/employee.entity';
 import { EmployeeTypeEntity } from './models/employee.type.entity';
 
@@ -72,6 +73,7 @@ export class EmployeeService {
       }
 
     } catch (exception) {
+      console.log(exception);
       HandleException.exception(exception);
     }
   };
@@ -103,9 +105,11 @@ export class EmployeeService {
   }
 
 
-  deleteEmployeeSchedule = async ({ scheduleId }: DeleteBranchOfficeScheduleDTO): Promise<any> => {
+  deleteEmployeeSchedule = async ({ scheduleId, dentistId }: DeleteEmployeeScheduleDTO): Promise<any> => {
     try {
-      const schedule = await this.branchOfficeEmployeeScheduleRepository.delete({ id: Number(scheduleId) });
+      const schedule = await this.branchOfficeEmployeeScheduleRepository.delete({
+        branchScheduleId: Number(scheduleId), employeeId: Number(dentistId)
+      });
       return schedule;
     } catch (exception) {
       HandleException.exception(exception);
@@ -113,7 +117,7 @@ export class EmployeeService {
   }
 
 
-  getEmployeesBySchedule = async ({id}: GetEmployeesByScheduleDTO) => {
+  getEmployeesBySchedule = async ({ id }: GetEmployeesByScheduleDTO) => {
     try {
       const schedules = await this.branchOfficeEmployeeScheduleRepository.findBy({ branchScheduleId: Number(id) });
       let employeesArray: string[] = [];
@@ -128,6 +132,48 @@ export class EmployeeService {
     } catch (exception) {
       console.log(exception);
       HandleException.exception(exception);
+    }
+  }
+
+
+  getEmployeesByBranchOffice = async ({ id }: GetEmployeesByScheduleDTO): Promise<EmployeeEntity[]> => {
+    try {
+      const employees = await this.employeeRepository.findBy({ branchOfficeId: Number(id) });
+      return employees;
+    } catch (error) {
+      HandleException.exception(error);
+    }
+  }
+
+
+  registerEmployee = async (body: RegisterEmployeeDTO) => {
+    try {
+      const employee = new EmployeeEntity();
+      employee.user = body.user;
+      employee.password = body.password;
+      employee.name = body.name;
+      employee.lastname = body.lastname;
+      employee.secondLastname = body.secondLastname;
+      employee.street = body.street;
+      employee.number = body.number;
+      employee.colony = body.colony;
+      employee.cp = body.cp;
+      employee.state = body.state;
+      employee.primaryContact = body.phone;
+      employee.birthDay = new Date(body.brithday);
+      employee.rfc = body.rfc;
+      employee.nss = body.nss;
+      employee.startDate = format(new Date(),'yyyy-MM-dd');
+      employee.branchOfficeId = body.branchOfficeId;
+      employee.status = body.status;
+      employee.jobScheme = body.jobSchemeId;
+      employee.typeId = body.typeId;
+      employee.email = body.email;
+      employee.gender = body.gender;
+      return await this.employeeRepository.save(employee);
+
+    } catch (error) {
+      HandleException.exception(error);
     }
   }
 }
