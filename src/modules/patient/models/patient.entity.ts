@@ -41,17 +41,17 @@ export class PatientEntity {
   })
   number: string;
 
-  @Column({
-    name: 'city_id',
-    type: 'int',
-  })
-  cityId: number;
+  // @Column({
+  //   name: 'city_id',
+  //   type: 'int',
+  // })
+  // cityId: number;
 
-  @Column({
-    name: 'county_id',
-    type: 'int',
-  })
-  countyId: number;
+  // @Column({
+  //   name: 'county_id',
+  //   type: 'int',
+  // })
+  // countyId: number;
 
 
   @Column({
@@ -60,6 +60,13 @@ export class PatientEntity {
     length: 255,
   })
   colony: string;
+
+  @Column({
+    name: 'city',
+    type: 'varchar',
+    length: 255,
+  })
+  city: string;
 
   @Column({
     name: 'zip_code',
@@ -126,15 +133,22 @@ export class PatientEntity {
     length:    4,
     comment:  'siglas del estado seleccionado, ej: mor, cdmx, bcs, etc',
   })
-  state: string;
+  country: string;
 
   @Column({
-    name:     'state_id',
-    type:     'int',
-   
+    name:     'state',
+    type:     'varchar',
     comment:  'siglas del estado seleccionado, ej: mor, cdmx, bcs, etc',
   })
-  stateId: number;
+  state: string;
+
+  // @Column({
+  //   name:     'state_id',
+  //   type:     'int',
+   
+  //   comment:  'siglas del estado seleccionado, ej: mor, cdmx, bcs, etc',
+  // })
+  // stateId: number;
 
   @Column({
     name:       'lat',

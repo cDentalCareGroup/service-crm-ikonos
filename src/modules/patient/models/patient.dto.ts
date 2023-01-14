@@ -158,3 +158,26 @@ export class GetPatientByIdDTO {
   })
   patientId: number;
 }
+
+export class UpdatePatientDTO {
+  name: string;
+  lastname: string;
+  secondLastname: string;
+  birthDate: string;
+  gender: string;
+  phone: string;
+  email: string;
+  street: string;
+  streetNumber: string;
+  colony: string;
+  zipCode: string;
+  city: string;
+  state: string;
+  civilStatus: string;
+  occupation: string;
+  lat: number;
+  lon: number;
+  branchOfficeId: number;
+  originId: number;
+  patientId: number;
+}

@@ -7,7 +7,7 @@ import {
   ValidationException,
   ValidationExceptionType,
 } from 'src/common/exceptions/general.exception';
-import { isNumber } from 'src/utils/general.functions.utils';
+import { capitalizeFirstLetter, isNumber } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
 import {
@@ -15,14 +15,12 @@ import {
   GetPatientsByBranchOfficeDTO,
   GetPatientsByFilterDTO,
   RegisterPatientDTO,
+  UpdatePatientDTO,
   UpdatePatientStatus,
 } from './models/patient.dto';
 import { PatientEntity } from './models/patient.entity';
 import { HttpService } from '@nestjs/axios';
 import { async, catchError, lastValueFrom, map } from 'rxjs';
-import { GetPatientsByFilter } from './models/get.patients.by.filter';
-import { StateEntity } from './models/state.entity';
-import { MunicipalitiesEntity } from './models/municipalities';
 import { PatientOriginEntity } from './models/patient.origin.entity';
 
 @Injectable()
@@ -32,11 +30,6 @@ export class PatientService {
     private patientRepository: Repository<PatientEntity>,
     @InjectRepository(BranchOfficeEntity)
     private branchOfficeRepository: Repository<BranchOfficeEntity>,
-    private http: HttpService,
-    @InjectRepository(StateEntity)
-    private stateRepository: Repository<StateEntity>,
-    @InjectRepository(MunicipalitiesEntity)
-    private municipalityRepository: Repository<MunicipalitiesEntity>,
     @InjectRepository(PatientOriginEntity)
     private patientOriginRepository: Repository<PatientOriginEntity>,
   ) { }
@@ -85,38 +78,38 @@ export class PatientService {
     }
   };
 
-  private getLatLngFromPostalCode = async (): Promise<any> => {
-    try {
-      const API_KEY = process.env.GOOGLE_API_KEY;
-      const CP = 62158;
-      const COUNTRY = 'MX';
+  // private getLatLngFromPostalCode = async (): Promise<any> => {
+  //   try {
+  //     const API_KEY = process.env.GOOGLE_API_KEY;
+  //     const CP = 62158;
+  //     const COUNTRY = 'MX';
 
-      const request = this.http
-        .get(
-          `https://maps.googleapis.com/maps/api/geocode/json?components=postal_code:${CP}|country:${COUNTRY}&key=${API_KEY}`,
-        )
-        .pipe(map((res) => res.data.results))
-        .pipe(catchError(() => null));
-      const response = await lastValueFrom(request);
-      if (
-        response != null &&
-        (response as Array<any>) != null &&
-        (response as Array<any>).length > 0
-      ) {
-        const address = (response as Array<any>)[0];
-        return {
-          lat: address.geometry.location.lat,
-          lng: address.geometry.location.lng,
-          address: address.formatted_address,
-        };
-      }
+  //     const request = this.http
+  //       .get(
+  //         `https://maps.googleapis.com/maps/api/geocode/json?components=postal_code:${CP}|country:${COUNTRY}&key=${API_KEY}`,
+  //       )
+  //       .pipe(map((res) => res.data.results))
+  //       .pipe(catchError(() => null));
+  //     const response = await lastValueFrom(request);
+  //     if (
+  //       response != null &&
+  //       (response as Array<any>) != null &&
+  //       (response as Array<any>).length > 0
+  //     ) {
+  //       const address = (response as Array<any>)[0];
+  //       return {
+  //         lat: address.geometry.location.lat,
+  //         lng: address.geometry.location.lng,
+  //         address: address.formatted_address,
+  //       };
+  //     }
 
-      return { lat: 0, lng: 0, address: 'EMPTY' };
-    } catch (exception) {
-      console.log(exception);
-      return { lat: 0, lng: 0, address: 'EMPTY' };
-    }
-  };
+  //     return { lat: 0, lng: 0, address: 'EMPTY' };
+  //   } catch (exception) {
+  //     console.log(exception);
+  //     return { lat: 0, lng: 0, address: 'EMPTY' };
+  //   }
+  // };
 
   getPatientsByFilter = async ({ queries }: GetPatientsByFilterDTO): Promise<PatientEntity[]> => {
     try {
@@ -164,8 +157,6 @@ export class PatientService {
 
   registerPatient = async (body: RegisterPatientDTO) => {
     try {
-      const state = await this.stateRepository.findOneBy({name: body.state });
-      const county = await this.municipalityRepository.findOneBy({name: body.city});
 
       const exists = await this.patientRepository.findOneBy({name: body.name, lastname: body.lastname, secondLastname: body.secondLastname});
       if (exists) {
@@ -180,20 +171,51 @@ export class PatientService {
       patient.gender = body.gender;
       patient.maritalStatus = body.civilStatus;
       patient.street = body.street;
-      patient.number =body.streetNumber;
+      patient.number = body.streetNumber;
       patient.colony = body.colony;
       patient.cp = body.zipCode;
       patient.primaryContact = body.phone;
       patient.email = body.email;
       patient.originBranchOfficeId = body.branchOfficeId;
-      patient.state = 'MX';
+      patient.country = 'MX';
+      patient.state = capitalizeFirstLetter(body.state);
       patient.lat = body.lat;
       patient.lng = body.lon;
-      patient.cityId = state.id;
-      patient.countyId = county.id;
       patient.sourceClient = body.originId;
-      patient.stateId = state.id
-     //console.log(body.originId)
+      patient.job = body.occupation;
+      patient.city = capitalizeFirstLetter(body.city);
+
+      return await this.patientRepository.save(patient);
+    } catch (error) {
+      console.log(error);
+      HandleException.exception(error);
+    }
+  }
+
+  updatePatient = async (body: UpdatePatientDTO) => {
+    try {
+
+      const patient = await this.patientRepository.findOneBy({id: body.patientId });
+      patient.name = body.name;
+      patient.lastname = body.lastname;
+      patient.secondLastname = body.secondLastname;
+      patient.birthDay = new Date(body.birthDate);
+      patient.gender = body.gender;
+      patient.maritalStatus = body.civilStatus;
+      patient.street = body.street;
+      patient.number = body.streetNumber;
+      patient.colony = body.colony;
+      patient.cp = body.zipCode;
+      patient.primaryContact = body.phone;
+      patient.email = body.email;
+      patient.originBranchOfficeId = body.branchOfficeId;
+      patient.country = 'MX';
+      patient.state = capitalizeFirstLetter(body.state);
+      patient.lat = body.lat;
+      patient.lng = body.lon;
+      patient.job = body.occupation;
+      patient.sourceClient = body.originId;
+      patient.city = capitalizeFirstLetter(body.city);
 
       return await this.patientRepository.save(patient);
     } catch (error) {

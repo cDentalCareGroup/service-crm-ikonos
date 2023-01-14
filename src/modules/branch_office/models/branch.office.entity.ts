@@ -65,7 +65,7 @@ export class BranchOfficeEntity {
   email: string;
 
   @Column({
-    name: 'idStatusBranch',
+    name: 'branch_status',
     type: 'int',
 
   })

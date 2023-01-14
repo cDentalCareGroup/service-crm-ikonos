@@ -27,7 +27,7 @@ export class EmployeeEntity {
   secondLastname: string;
 
   @Column({
-    name: 'idEstatus',
+    name: 'status_id',
     type: 'int',
   })
   status: number;

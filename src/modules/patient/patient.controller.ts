@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { GetPatientsByFilter } from './models/get.patients.by.filter';
-import { GetPatientByIdDTO, GetPatientsByBranchOfficeDTO, GetPatientsByFilterDTO, RegisterPatientDTO, UpdatePatientStatus } from './models/patient.dto';
+import { GetPatientByIdDTO, GetPatientsByBranchOfficeDTO, GetPatientsByFilterDTO, RegisterPatientDTO, UpdatePatientDTO, UpdatePatientStatus } from './models/patient.dto';
 import { PatientEntity } from './models/patient.entity';
 import { PatientService } from './patient.service';
 
@@ -32,6 +32,12 @@ export class PatientController {
     @ApiBody({ type: RegisterPatientDTO })
     async registerPatient(@Body() body: RegisterPatientDTO): Promise<any> {
         return this.patientService.registerPatient(body);
+    }
+
+    @Post('update')
+    @ApiBody({ type: UpdatePatientDTO })
+    async updatePatient(@Body() body: UpdatePatientDTO): Promise<any> {
+        return this.patientService.updatePatient(body);
     }
 
     @Get('origins')

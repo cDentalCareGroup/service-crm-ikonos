@@ -46,4 +46,11 @@ const getTodayDate = (): string => {
 
 }
 
-export { isNumber, addHours, getDiff, getRandomInt,getTodayDate };
+const capitalizeFirstLetter = (value: string | undefined): string => {
+        if (value != undefined) {
+                return value?.charAt(0).toUpperCase() + value?.slice(1).toLowerCase();
+        }
+        return '';
+}
+
+export { isNumber, addHours, getDiff, getRandomInt, getTodayDate, capitalizeFirstLetter };
