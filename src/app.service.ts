@@ -16,7 +16,7 @@ export class AppService {
     const date2 = new Date();
     date2.setDate(date2.getDate() - 1);
     const nextDate2 = date2.toISOString().split("T")[0];
-    const col = await this.getColoniesFromPostalCode();
+    //const col = await this.getColoniesFromPostalCode();
 
     return {
       'version': 'Version 1.0.15 - Firebase v.1',
@@ -25,7 +25,7 @@ export class AppService {
       'currentDate+1': date,
       'remindersAt': nextDate,
       'cancelledAt': nextDate2,
-      'col':col
+
     }
   }
 
