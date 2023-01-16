@@ -89,7 +89,7 @@ export class RegisterEmployeeDTO {
   lastname: string;
   secondLastname: string;
   street: string;
-  number: string;
+  streetNumber: string;
   colony: string;
   cp: string;
   state: string;
@@ -97,10 +97,13 @@ export class RegisterEmployeeDTO {
   brithday: string;
   rfc: string;
   nss: string;
-  status: number;
   branchOfficeId: number;
-  jobSchemeId: number;
-  typeId: number;
   email: string;
   gender: string;
+  city: string;
+  lat: number;
+  lon: number;
+  contractType: number;
+  employeeType: number;
+  role: number;
 }

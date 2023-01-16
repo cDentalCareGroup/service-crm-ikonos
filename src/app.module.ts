@@ -7,7 +7,6 @@ import { ConfigModule } from '@nestjs/config';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { mail } from './utils/mail.utils';
 import { EmailController } from './modules/email/email.controller';
-import { PatientModule } from './modules/patient/patient.module';
 import { BranchOfficeModule } from './modules/branch_office/branch.office.module';
 import { EmployeeModule } from './modules/employee/employee.module';
 import { StatisticModule } from './modules/statistic/statistic.module';
@@ -19,6 +18,8 @@ import { EmailModule } from './modules/email/email.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TaskServiceService } from './task-service/task-service.service';
 import { FirebaseModule } from 'nestjs-firebase';
+import { PatientModule } from './modules/patient/patient.module';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { FirebaseModule } from 'nestjs-firebase';
     StatisticModule,
     AppointmentModule,
     EmailModule,
+    HttpModule
   ],
   controllers: [AppController],
   providers: [AppService, TaskServiceService],

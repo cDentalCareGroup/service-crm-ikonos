@@ -5,12 +5,15 @@ import { BranchOfficeEmployeeSchedule } from '../branch_office/models/branch.off
 import { EmployeeController } from './employee.controller';
 import { EmployeeService } from './employee.service';
 import { EmployeeEntity } from './models/employee.entity';
+import { EmployeeRoleEntity } from './models/employee.rol.entity';
 import { EmployeeTypeEntity } from './models/employee.type.entity';
+import { RolEntity } from '../auth/models/entities/rol.entity';
+
 
 @Module({
     imports: [
         ConfigModule.forRoot(),
-        TypeOrmModule.forFeature([EmployeeEntity, EmployeeTypeEntity,BranchOfficeEmployeeSchedule]),
+        TypeOrmModule.forFeature([EmployeeEntity, EmployeeTypeEntity,BranchOfficeEmployeeSchedule, EmployeeRoleEntity, RolEntity]),
       ],
       controllers: [EmployeeController],
       providers: [EmployeeService],

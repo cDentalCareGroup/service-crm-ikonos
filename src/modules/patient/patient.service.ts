@@ -1,5 +1,8 @@
+import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { formatISO } from 'date-fns';
+import { catchError, lastValueFrom, map } from 'rxjs';
 import {
   HandleException,
   NotFoundCustomException,
@@ -19,8 +22,7 @@ import {
   UpdatePatientStatus,
 } from './models/patient.dto';
 import { PatientEntity } from './models/patient.entity';
-import { HttpService } from '@nestjs/axios';
-import { async, catchError, lastValueFrom, map } from 'rxjs';
+import { PatientOrganizationEntity } from './models/patient.organization.entity';
 import { PatientOriginEntity } from './models/patient.origin.entity';
 
 @Injectable()
@@ -32,6 +34,9 @@ export class PatientService {
     private branchOfficeRepository: Repository<BranchOfficeEntity>,
     @InjectRepository(PatientOriginEntity)
     private patientOriginRepository: Repository<PatientOriginEntity>,
+    @InjectRepository(PatientOrganizationEntity)
+    private patientOrganizationRepository: Repository<PatientOrganizationEntity>,
+    private readonly httpService: HttpService
   ) { }
 
   getAllPatients = async (): Promise<PatientEntity[]> => {
@@ -158,11 +163,11 @@ export class PatientService {
   registerPatient = async (body: RegisterPatientDTO) => {
     try {
 
-      const exists = await this.patientRepository.findOneBy({name: body.name, lastname: body.lastname, secondLastname: body.secondLastname});
+      const exists = await this.patientRepository.findOneBy({ name: body.name, lastname: body.lastname, secondLastname: body.secondLastname });
       if (exists) {
         throw new ValidationException(ValidationExceptionType.PATIENT_EXISTS);
       }
-      
+
       const patient = new PatientEntity();
       patient.name = body.name;
       patient.lastname = body.lastname;
@@ -185,6 +190,8 @@ export class PatientService {
       patient.sourceClient = body.originId;
       patient.job = body.occupation;
       patient.city = capitalizeFirstLetter(body.city);
+      patient.organizationClient = body.organization;
+      patient.startDate =  formatISO(new Date());
 
       return await this.patientRepository.save(patient);
     } catch (error) {
@@ -196,7 +203,10 @@ export class PatientService {
   updatePatient = async (body: UpdatePatientDTO) => {
     try {
 
-      const patient = await this.patientRepository.findOneBy({id: body.patientId });
+
+
+
+      const patient = await this.patientRepository.findOneBy({ id: body.patientId });
       patient.name = body.name;
       patient.lastname = body.lastname;
       patient.secondLastname = body.secondLastname;
@@ -217,6 +227,8 @@ export class PatientService {
       patient.job = body.occupation;
       patient.sourceClient = body.originId;
       patient.city = capitalizeFirstLetter(body.city);
+      patient.organizationClient = body.organization;
+      patient.startDate = body.startDate;
 
       return await this.patientRepository.save(patient);
     } catch (error) {
@@ -225,7 +237,7 @@ export class PatientService {
     }
   }
 
-  getPatientsOrigin = async(): Promise<PatientOriginEntity[]> => {
+  getPatientsOrigin = async (): Promise<PatientOriginEntity[]> => {
     try {
       const result = await this.patientOriginRepository.find();
       return result;
@@ -234,9 +246,9 @@ export class PatientService {
     }
   }
 
-  updatePatientStatus = async(body: UpdatePatientStatus): Promise<any> => {
+  updatePatientStatus = async (body: UpdatePatientStatus): Promise<any> => {
     try {
-      const result = await this.patientRepository.findOneBy({id: Number(body.patientId)});
+      const result = await this.patientRepository.findOneBy({ id: Number(body.patientId) });
       result.status = body.status;
       return await this.patientRepository.save(result);
     } catch (exception) {
@@ -244,9 +256,9 @@ export class PatientService {
     }
   }
 
-  getPatientById = async(body: GetPatientByIdDTO): Promise<PatientEntity> => {
+  getPatientById = async (body: GetPatientByIdDTO): Promise<PatientEntity> => {
     try {
-      const result = await this.patientRepository.findOneBy({id: Number(body.patientId)});
+      const result = await this.patientRepository.findOneBy({ id: Number(body.patientId) });
       return result;
     } catch (exception) {
       console.log(exception);
@@ -254,13 +266,26 @@ export class PatientService {
     }
   }
 
-  getColoniesFromPostalCode = async(body: GetColoniesDTO) => {
+  getColoniesFromPostalCode = async (body: GetColoniesDTO) => {
     try {
-      
-      const response = await fetch(`https://www.walmart.com.mx/api/wmx/service/v1/common/neighborhood/details?zipcode=${body.cp}&channel=4&shipping=1`,)
-      .then(response => response.json());
+      const request = this.httpService
+        .get(
+          `https://www.walmart.com.mx/api/wmx/service/v1/common/neighborhood/details?zipcode=${body.cp}&channel=4&shipping=1`,
+        )
+        .pipe(map((res) => res.data))
+      const response = await lastValueFrom(request);
       return response
     } catch (error) {
+      HandleException.exception(error);
+    }
+  }
+
+  getPatientOrganizations = async () => {
+    try {
+      const result = await this.patientOrganizationRepository.find();
+      return result;
+    } catch (error) {
+      console.log(`getPatientOrganizations ${error}`)
       HandleException.exception(error);
     }
   }

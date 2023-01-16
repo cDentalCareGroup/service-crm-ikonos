@@ -64,4 +64,9 @@ export class PatientController {
         return this.patientService.getColoniesFromPostalCode(body);
     }
 
+    @Get('organizations')
+    async getPatientOrganizations () {
+        return this.patientService.getPatientOrganizations();
+    }
+
 }

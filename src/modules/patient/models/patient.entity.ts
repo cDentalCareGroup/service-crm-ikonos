@@ -196,10 +196,10 @@ export class PatientEntity {
 
   @Column({
     name:     'start_date',
-    type:     'date',
+    type:     'char',
     comment:  'fecha en la que se atendio el paciente por primera vez en alguna sucursal, no el dia que se capturo',
   })
-  startDate: Date;
+  startDate: string;
 
   @Column({
     name:     'last_appointment_date',

@@ -26,6 +26,11 @@ export class EmployeeController {
         return this.employeeService.getEmployeeTypes();
     }
 
+    @Get('roles')
+    async getEmployeeRoles() {
+        return this.employeeService.getEmployeeRoles();
+    }
+
     @Post('schedules')
     @ApiBody({ type: RegisterScheduleesEmployeesDTO })
     async registerEmployeeSchedules(@Body() body: RegisterScheduleesEmployeesDTO) {

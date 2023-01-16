@@ -15,6 +15,9 @@ import { registerScheduleEmployeeToEntity } from './extensions/employee.extensio
 import { DeleteEmployeeScheduleDTO, GetEmployeesByScheduleDTO, GetEmployeesByTypeDTO, RegisterEmployeeDTO, RegisterScheduleesEmployeesDTO } from './models/employee.dto';
 import { EmployeeEntity } from './models/employee.entity';
 import { EmployeeTypeEntity } from './models/employee.type.entity';
+import { SecurityUtil, } from 'src/utils/security.util';
+import { EmployeeRoleEntity } from './models/employee.rol.entity';
+import { RolEntity } from '../auth/models/entities/rol.entity';
 
 @Injectable()
 export class EmployeeService {
@@ -23,7 +26,10 @@ export class EmployeeService {
     private employeeRepository: Repository<EmployeeEntity>,
     @InjectRepository(EmployeeTypeEntity)
     private employeeTypeRepository: Repository<EmployeeTypeEntity>,
+    @InjectRepository(EmployeeRoleEntity)
+    private employeeRoleRepository: Repository<EmployeeRoleEntity>,
     @InjectRepository(BranchOfficeEmployeeSchedule) private branchOfficeEmployeeScheduleRepository: Repository<BranchOfficeEmployeeSchedule>,
+    @InjectRepository(RolEntity) private roleRepository: Repository<RolEntity>,
   ) { }
 
   getAllEmployees = async (): Promise<EmployeeEntity[]> => {
@@ -81,6 +87,15 @@ export class EmployeeService {
   getEmployeeTypes = async (): Promise<EmployeeTypeEntity[]> => {
     try {
       const results = await this.employeeTypeRepository.find();
+      return results;
+    } catch (exception) {
+      HandleException.exception(exception);
+    }
+  };
+
+  getEmployeeRoles = async (): Promise<RolEntity[]> => {
+    try {
+      const results = await this.roleRepository.find();
       return results;
     } catch (exception) {
       HandleException.exception(exception);
@@ -148,14 +163,16 @@ export class EmployeeService {
 
   registerEmployee = async (body: RegisterEmployeeDTO) => {
     try {
+
+      const pass = await SecurityUtil.encryptText(body.password);
       const employee = new EmployeeEntity();
       employee.user = body.user;
-      employee.password = body.password;
+      employee.password = pass;
       employee.name = body.name;
       employee.lastname = body.lastname;
       employee.secondLastname = body.secondLastname;
       employee.street = body.street;
-      employee.number = body.number;
+      employee.number = body.streetNumber;
       employee.colony = body.colony;
       employee.cp = body.cp;
       employee.state = body.state;
@@ -163,16 +180,24 @@ export class EmployeeService {
       employee.birthDay = new Date(body.brithday);
       employee.rfc = body.rfc;
       employee.nss = body.nss;
-      employee.startDate = format(new Date(),'yyyy-MM-dd');
+      employee.startDate = format(new Date(), 'yyyy-MM-dd');
       employee.branchOfficeId = body.branchOfficeId;
-      employee.status = body.status;
-      employee.jobScheme = body.jobSchemeId;
-      employee.typeId = body.typeId;
+      employee.jobScheme = body.contractType;
+      employee.typeId = body.employeeType;
       employee.email = body.email;
       employee.gender = body.gender;
-      return await this.employeeRepository.save(employee);
+      employee.status = 1;
+
+      const result = await this.employeeRepository.save(employee);
+
+      const employeeRole = new EmployeeRoleEntity();
+      employeeRole.roleId = Number(body.role);
+      employeeRole.employeeId = Number(result.id);
+
+      return await this.employeeRoleRepository.save(employeeRole);
 
     } catch (error) {
+      console.log(error);
       HandleException.exception(error);
     }
   }

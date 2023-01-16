@@ -136,6 +136,12 @@ export class RegisterPatientDTO {
     example: '1 | Las palmas',
   })
   originId: number;
+
+  @ApiProperty({
+    description: 'branch office name or id',
+    example: '1 | Las palmas',
+  })
+  organization: number;
 }
 
 export class UpdatePatientStatus {
@@ -180,4 +186,6 @@ export class UpdatePatientDTO {
   branchOfficeId: number;
   originId: number;
   patientId: number;
+  organization: number;
+  startDate: string;
 }
