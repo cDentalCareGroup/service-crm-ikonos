@@ -177,6 +177,7 @@ export class PatientService {
       patient.primaryContact = body.phone;
       patient.email = body.email;
       patient.originBranchOfficeId = body.branchOfficeId;
+      patient.currentBranchOfficeId = body.branchOfficeId;
       patient.country = 'MX';
       patient.state = capitalizeFirstLetter(body.state);
       patient.lat = body.lat;

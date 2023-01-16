@@ -280,10 +280,13 @@ export class AppointmentService {
         appointment.comments = `${appointment.comments} \n Estatus: proceso ${formatISO(new Date())}`;
       }
       if (status == 'finalizada') {
-        appointment.finishedAt = formatISO(new Date())
+        const patient = await this.patientRepository.findOneBy({ id: appointment.patientId });
+        appointment.finishedAt = formatISO(new Date());
         appointment.status = 'finalizada';
         appointment.comments = `${appointment.comments} \n Estatus: finalizada ${formatISO(new Date())}`;
-        appointment.costAmount = Number(amount);
+        appointment.priceAmount = Number(amount);
+        patient.lastVisitDate = formatISO(new Date());
+        await this.patientRepository.save(patient);
       }
       const updatedAppointment = await this.appointmentRepository.save(appointment);
       return this.getAppointment(updatedAppointment);

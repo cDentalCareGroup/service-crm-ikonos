@@ -124,6 +124,12 @@ export class PatientEntity {
   })
   originBranchOfficeId: number;
 
+  @Column({
+    name: 'current_branch_id',
+    type: 'int',
+  })
+  currentBranchOfficeId: number;
+
   
   // FCV 22Nov22 se agregan campos para analisis de datos
 
@@ -201,7 +207,7 @@ export class PatientEntity {
     comment:  'fechaHora en la que se atendio el paciente por ultima vez vez en alguna sucursal',
     default : null
   })
-  lastVisitDate: Date;
+  lastVisitDate: string;
 
   @Column({
     name:     'patient_origin_id',
