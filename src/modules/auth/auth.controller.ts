@@ -2,30 +2,17 @@ import {
   Body,
   Controller,
   Get,
-  HttpStatus,
-  Injectable,
   Post,
-  Res,
-  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { SignInDTO } from './models/dto/create-user.dto';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
-import { LoginDTO } from './models/dto/login.dto';
-import { JwtAuthGuard } from './jwt-auth.guard';
+import { LoginDTO, SaveTokenDTO } from './models/dto/login.dto';
 import { UserResponse } from './models/entities/user.entity';
-
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
-
-  @Post('signin')
-  @ApiBody({ type: SignInDTO })
-  async signin(@Body() body: SignInDTO): Promise<UserResponse> {
-    return this.authService.signin(body);
-  }
+   constructor(private authService: AuthService) {}
 
   @Post('login')
   @ApiBody({ type: LoginDTO })
@@ -33,9 +20,12 @@ export class AuthController {
     return this.authService.login(body);
   }
 
-  @Get('testauth')
-  @UseGuards(JwtAuthGuard)
+  @Post('token')
+  async saveToken(@Body() body: SaveTokenDTO) {
+    return this.authService.saveToken(body);
+  }
+  @Get('test')
   async test() {
-    return "token works";
+    return this.authService.test();
   }
 }

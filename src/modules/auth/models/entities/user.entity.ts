@@ -5,46 +5,58 @@ import {
   OneToOne,
   JoinColumn,
 } from 'typeorm';
+import { Rol, RolEntity } from './rol.entity';
 
-@Entity('users')
-export class User {
+@Entity('employee')
+export class UserEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  name: string;
+  @Column({name:'user', type:'varchar', length: 45})
+  username: string;
 
-  @Column()
-  lastname: string;
-
-  @Column({ unique: true })
-  email: string;
-
-  @Column()
+  @Column({name:'password', type:'varchar', length: 45})
   password: string;
 
-  @Column({ nullable: true })
-  token: string;
+  @Column({name:'name', type:'varchar', length: 150})
+  name: string;
 
-  @Column({
-    name: 'created_at',
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    nullable: true,
-  })
-  createdAt: Date;
+  @Column({name:'last_name1', type:'varchar', length: 150})
+  lastname: string;
+
+  @Column({name:'last_name2', type:'varchar', length: 150})
+  secondLastname: string;
+
+  @Column({name:'token', type:'text'})
+  token?: string;
+
+  @Column({name:'branch_id', type:'int'})
+  branchId?: number;
 }
 
 export class UserResponse {
   name: string;
   lastname: string;
-  email: string;
+  username: string;
   token: string;
-  constructor(user: User, token: string) {
+  roles?: string;
+  branchId?: number;
+  constructor(user: UserEntity, token: string, roles?: Rol[]) {
     this.name = user.name;
-    this.lastname = user.lastname;
-    this.email = user.email;
+    this.lastname = user.lastname + ' ' + user.secondLastname;
+    this.username = user.username;
     this.token = token;
+    let rolesStr = '';
+    for (let index = 0; index < roles.length; index++) {
+      const element = roles[index];
+      if(index != roles.length) {
+        rolesStr+=`${element.name},`;
+      } else {
+        rolesStr+=`${element.name}`;
+      }
+    }
+    this.roles = rolesStr;
+    this.branchId = user.branchId;
   }
 }
 

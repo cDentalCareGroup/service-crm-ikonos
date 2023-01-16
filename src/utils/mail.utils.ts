@@ -1,10 +1,10 @@
 export const mail = {
-    host: "smtp.sendgrid.net",
+    host: "mail.cdentalcaregroup.com",
     port: 465,
       secure: true,
       auth: {
           // should be replaced with real sender's account
-          user: "apikey",
-          pass: "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"
+          user: process.env.MAIL_USER,
+          pass: process.env.MAIL_PASSWORD
       }, 
 }

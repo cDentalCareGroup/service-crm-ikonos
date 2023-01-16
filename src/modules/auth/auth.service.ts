@@ -1,10 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User, UserResponse } from './models/entities/user.entity';
 import { Repository } from 'typeorm';
-import { SignInDTO } from './models/dto/create-user.dto';
 import { SecurityUtil, TokenPayload } from 'src/utils/security.util';
-import { LoginDTO } from './models/dto/login.dto';
+import { LoginDTO, SaveTokenDTO } from './models/dto/login.dto';
 import {
   HandleException,
   NotFoundCustomException,
@@ -13,55 +11,69 @@ import {
   ValidationExceptionType,
 } from 'src/common/exceptions/general.exception';
 import { JwtService } from '@nestjs/jwt';
+import { UserEntity, UserResponse } from './models/entities/user.entity';
+import { Rol, RolEntity, UserRolEntity } from './models/entities/rol.entity';
+import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User) private userRepository: Repository<User>,
+    @InjectRepository(UserEntity) private userRepository: Repository<UserEntity>,
+    @InjectRepository(RolEntity) private rolRepository: Repository<RolEntity>,
+    @InjectRepository(UserRolEntity) private userRolRepository: Repository<UserRolEntity>,
+    @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin,
     private jtwService: JwtService,
   ) {}
 
-  signin = async (data: SignInDTO): Promise<UserResponse> => {
-    try {
-      const plainToHash = await SecurityUtil.encryptText(data.password);
-      const newUSer = this.userRepository.create({
-        ...data,
-        password: plainToHash,
-      });
-      const queryResult =  await this.userRepository.save(newUSer);
-
-      const token = this.jtwService.sign(
-        new TokenPayload(queryResult.id, queryResult.name, queryResult.email).toPlainObject(),
-      );
-
-      return new UserResponse(queryResult, token);
-    } catch (exception) {
-      HandleException.exception(exception);
-    }
-  };
-
   login = async (data: LoginDTO): Promise<UserResponse> => {
     try {
-      if (data.email == "" || data.password == "") throw new ValidationException(ValidationExceptionType.MISSING_VALUES);
+      if (data.username == "" || data.password == "") throw new ValidationException(ValidationExceptionType.MISSING_VALUES);
       
-      const user = await this.userRepository.findOneBy({ email: data.email });
+      const user = await this.userRepository.findOneBy({ username: data.username});
       
       if (user == null) throw new NotFoundCustomException(NotFoundType.USER);
 
-      const checkPassword = await SecurityUtil.compareText(
-        user.password,
+      const checkPassword = await SecurityUtil.validatePassword(
         data.password,
+        user.password
       );
       if (!checkPassword)
         throw new ValidationException(ValidationExceptionType.WRONG_PASSWORD);
 
+
+      const userRoles = await this.userRolRepository.find({ where: {userId: user.id}});
+      const roles: Rol[] = [];
+      for (const userRol of userRoles) {
+        const role = await this.rolRepository.findOne({where: { id: userRol.rolId }});
+        roles.push(new Rol(role.id, role.name));
+      }
+
       const token = this.jtwService.sign(
-        new TokenPayload(user.id, user.name, user.email).toPlainObject(),
+        new TokenPayload(user.id, user.name, user.username).toPlainObject(),
       );
 
-      return new UserResponse(user, token);
+      return new UserResponse(user, token, roles);
     } catch (exception) {
+      console.log(exception);
       HandleException.exception(exception);
     }
   };
+
+
+  saveToken = async(data: SaveTokenDTO) => {
+    try {
+        const user = await this.userRepository.findOneBy({username: data.username});
+        if (user != null ){
+          user.token = data.token;
+          return await this.userRepository.save(user);
+        }
+    } catch (exception) {
+      HandleException.exception(exception);
+    }
+  }
+
+
+  test = async () => {
+  return 200;
+  }
 }

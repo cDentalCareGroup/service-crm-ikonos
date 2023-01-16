@@ -16,6 +16,9 @@ export class SqlException {
             case '23000': {
                 return "INSERT_DATA_ERROR"
             }
+            case '42S02': {
+                return "TABLE_NOT_FOUND"
+            }
        
         }
     }

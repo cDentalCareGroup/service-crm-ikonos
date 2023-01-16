@@ -22,6 +22,18 @@ export class TransformInterceptor<T>
   ): Observable<Response<T>> {
     const status = 200;
     const message = 'success';
+    // let isWebHook = false;
+    // for (const args of context.getArgs()) {
+    //   if (args.originalUrl != null && args.originalUrl != "" && args.originalUrl.includes('/webhooks')) {
+    //     isWebHook = true;
+    //   }
+    // }
+    // console.log(isWebHook);
+    // if (isWebHook) {
+    //   return next.handle()
+    // } else {
+    //   return next.handle().pipe(map((data) => ({ data, status, message })));
+    // }
     return next.handle().pipe(map((data) => ({ data, status, message })));
   }
 }

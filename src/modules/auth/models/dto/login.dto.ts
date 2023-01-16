@@ -2,10 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDTO {
   @ApiProperty({
-    description: 'User email',
-    example: 'test@test.com',
+    description: 'Username',
+    example: 'username',
   })
-  email: string;
+  username: string;
 
   @ApiProperty({
     description: 'User password',
@@ -13,4 +13,19 @@ export class LoginDTO {
     minimum: 8,
   })
   password: string;
+}
+
+
+export class SaveTokenDTO {
+  @ApiProperty({
+    description: 'Username',
+    example: 'username',
+  })
+  username: string;
+
+  @ApiProperty({
+    description: 'token',
+    example: 'ASDASDAS',
+  })
+  token: string;
 }
