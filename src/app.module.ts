@@ -20,6 +20,7 @@ import { TaskServiceService } from './task-service/task-service.service';
 import { FirebaseModule } from 'nestjs-firebase';
 import { PatientModule } from './modules/patient/patient.module';
 import { HttpModule } from '@nestjs/axios';
+import { CallsModule } from './modules/calls/calls.module';
 
 @Module({
   imports: [
@@ -47,7 +48,8 @@ import { HttpModule } from '@nestjs/axios';
     StatisticModule,
     AppointmentModule,
     EmailModule,
-    HttpModule
+    HttpModule,
+    CallsModule,
   ],
   controllers: [AppController],
   providers: [AppService, TaskServiceService],
