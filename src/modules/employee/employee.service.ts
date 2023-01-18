@@ -12,12 +12,14 @@ import { Repository } from 'typeorm';
 import { DeleteBranchOfficeScheduleDTO } from '../branch_office/models/branch.office.dto';
 import { BranchOfficeEmployeeSchedule } from '../branch_office/models/branch.office.employee.entity';
 import { registerScheduleEmployeeToEntity } from './extensions/employee.extensions';
-import { DeleteEmployeeScheduleDTO, GetEmployeesByScheduleDTO, GetEmployeesByTypeDTO, RegisterEmployeeDTO, RegisterScheduleesEmployeesDTO } from './models/employee.dto';
+import { DeleteEmployeeScheduleDTO, GetEmployeeById, GetEmployeesByScheduleDTO, GetEmployeesByTypeDTO, RegisterEmployeeDTO, RegisterScheduleesEmployeesDTO, UpdateEmployeeDTO } from './models/employee.dto';
 import { EmployeeEntity } from './models/employee.entity';
 import { EmployeeTypeEntity } from './models/employee.type.entity';
 import { SecurityUtil, } from 'src/utils/security.util';
 import { EmployeeRoleEntity } from './models/employee.rol.entity';
 import { RolEntity } from '../auth/models/entities/rol.entity';
+import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
+import { capitalizeFirstLetter } from 'src/utils/general.functions.utils';
 
 @Injectable()
 export class EmployeeService {
@@ -30,6 +32,8 @@ export class EmployeeService {
     private employeeRoleRepository: Repository<EmployeeRoleEntity>,
     @InjectRepository(BranchOfficeEmployeeSchedule) private branchOfficeEmployeeScheduleRepository: Repository<BranchOfficeEmployeeSchedule>,
     @InjectRepository(RolEntity) private roleRepository: Repository<RolEntity>,
+    @InjectRepository(BranchOfficeEntity) private branchOfficeRepository: Repository<BranchOfficeEntity>,
+
   ) { }
 
   getAllEmployees = async (): Promise<EmployeeEntity[]> => {
@@ -37,6 +41,38 @@ export class EmployeeService {
       const results = await this.employeeRepository.find();
       return results;
     } catch (exception) {
+      HandleException.exception(exception);
+    }
+  };
+
+  getAllEmployeesInfo = async (): Promise<EmployeeEntity[]> => {
+    try {
+      const results = await this.employeeRepository.find({order:{id:'DESC'}});
+      const data = [];
+      for await (const employee of results) {
+        const branchOffice = await this.branchOfficeRepository.findOneBy({ id: employee.branchOfficeId });
+        data.push({
+          'employee': employee,
+          'branchOffice': branchOffice,
+        })
+      }
+      return data;
+    } catch (exception) {
+      console.log(exception);
+      HandleException.exception(exception);
+    }
+  };
+
+  getEmployeeInfoById = async ({ id }: GetEmployeeById): Promise<any> => {
+    try {
+      const employee = await this.employeeRepository.findOneBy({ id: Number(id) });
+      const branchOffice = await this.branchOfficeRepository.findOneBy({ id: employee.branchOfficeId });
+      return {
+        'employee': employee,
+        'branchOffice': branchOffice,
+      };
+    } catch (exception) {
+      console.log(exception);
       HandleException.exception(exception);
     }
   };
@@ -164,18 +200,20 @@ export class EmployeeService {
   registerEmployee = async (body: RegisterEmployeeDTO) => {
     try {
 
-      const pass = await SecurityUtil.encryptText(body.password);
+
+      const pass = await SecurityUtil.encryptPassword(body.password);
       const employee = new EmployeeEntity();
       employee.user = body.user;
       employee.password = pass;
-      employee.name = body.name;
-      employee.lastname = body.lastname;
-      employee.secondLastname = body.secondLastname;
+      employee.name = capitalizeFirstLetter(body.name);
+      employee.lastname = capitalizeFirstLetter(body.lastname);
+      employee.secondLastname = capitalizeFirstLetter(body.secondLastname);
       employee.street = body.street;
       employee.number = body.streetNumber;
       employee.colony = body.colony;
       employee.cp = body.cp;
       employee.state = body.state;
+      employee.city = body.city;
       employee.primaryContact = body.phone;
       employee.birthDay = new Date(body.brithday);
       employee.rfc = body.rfc;
@@ -188,6 +226,7 @@ export class EmployeeService {
       employee.gender = body.gender;
       employee.status = 1;
 
+
       const result = await this.employeeRepository.save(employee);
 
       const employeeRole = new EmployeeRoleEntity();
@@ -195,6 +234,46 @@ export class EmployeeService {
       employeeRole.employeeId = Number(result.id);
 
       return await this.employeeRoleRepository.save(employeeRole);
+
+    } catch (error) {
+      console.log(error);
+      HandleException.exception(error);
+    }
+  }
+
+  updateEmployee = async (body: UpdateEmployeeDTO) => {
+    try {
+
+      let pass: string = '';
+      const employee = await this.employeeRepository.findOneBy({ id: body.id });
+
+      if (body.password != null && body.password != "") {
+        pass = await SecurityUtil.encryptPassword(body.password);
+      } else {
+        pass = employee.password;
+      }
+
+      employee.user = body.user;
+      employee.password = pass;
+      employee.name = body.name;
+      employee.lastname = body.lastname;
+      employee.secondLastname = body.secondLastname;
+      employee.street = body.street;
+      employee.number = body.streetNumber;
+      employee.colony = body.colony;
+      employee.cp = body.cp;
+      employee.state = body.state;
+      employee.city = body.city;
+      employee.primaryContact = body.phone;
+      employee.birthDay = new Date(body.brithday);
+      employee.rfc = body.rfc;
+      employee.nss = body.nss;
+      employee.branchOfficeId = body.branchOfficeId;
+      employee.jobScheme = body.contractType;
+      employee.typeId = body.employeeType;
+      employee.email = body.email;
+      employee.gender = body.gender;
+      return await this.employeeRepository.save(employee);
 
     } catch (error) {
       console.log(error);

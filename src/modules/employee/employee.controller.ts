@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { EmployeeService } from './employee.service';
-import { DeleteEmployeeScheduleDTO, GetEmployeesByScheduleDTO, GetEmployeesByTypeDTO, RegisterEmployeeDTO, RegisterScheduleesEmployeesDTO } from './models/employee.dto';
+import { DeleteEmployeeScheduleDTO, GetEmployeeById, GetEmployeesByScheduleDTO, GetEmployeesByTypeDTO, RegisterEmployeeDTO, RegisterScheduleesEmployeesDTO, UpdateEmployeeDTO } from './models/employee.dto';
 
 @ApiTags('Employees')
 @Controller('employee')
@@ -15,10 +15,21 @@ export class EmployeeController {
         return this.employeeService.getAllEmployees();
     }
 
+    @Get('all/info')
+    async getAllEmployeesInfo() {
+        return this.employeeService.getAllEmployeesInfo();
+    }
+
     @Post('byType')
     @ApiBody({ type: GetEmployeesByTypeDTO })
     async getEmployeesByType(@Body() body: GetEmployeesByTypeDTO) {
         return this.employeeService.getEmployeesByType(body);
+    }
+
+    @Post('id')
+    @ApiBody({ type: GetEmployeeById })
+    async getEmployeeById(@Body() body: GetEmployeeById) {
+        return this.employeeService.getEmployeeInfoById(body);
     }
 
     @Get('getTypes')
@@ -59,5 +70,11 @@ export class EmployeeController {
     @ApiBody({ type: RegisterEmployeeDTO })
     async registerEmployee(@Body() body: RegisterEmployeeDTO) {
         return this.employeeService.registerEmployee(body);
+    }
+
+    @Post('update')
+    @ApiBody({ type: UpdateEmployeeDTO })
+    async updateEmployee(@Body() body: UpdateEmployeeDTO) {
+        return this.employeeService.updateEmployee(body);
     }
 }

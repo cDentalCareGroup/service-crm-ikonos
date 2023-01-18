@@ -11,6 +11,14 @@ export class GetEmployeesByTypeDTO {
   })
   type: string;
 }
+
+export class GetEmployeeById {
+  @ApiProperty({
+    description: 'type name',
+    example: 'Socio | Director general | Gerente administrativo | Gerente de comercialización | Jefe de recursos humanos | Jefe de finanzas | Contabilidad | Compras | Director de clínica | Recepcionista | Médico | Asistente médico | Mantenimiento | Coordinadora de recepciones | Especialista',
+  })
+  id: string;
+}
 export class RegisterScheduleesEmployeesDTO {
   @ApiProperty({
     description: 'data',
@@ -106,4 +114,28 @@ export class RegisterEmployeeDTO {
   contractType: number;
   employeeType: number;
   role: number;
+}
+
+export class UpdateEmployeeDTO {
+  id: number;
+  user: string;
+  password: string;
+  name: string;
+  lastname: string;
+  secondLastname: string;
+  street: string;
+  streetNumber: string;
+  colony: string;
+  cp: string;
+  state: string;
+  phone: string;
+  brithday: string;
+  rfc: string;
+  nss: string;
+  branchOfficeId: number;
+  email: string;
+  gender: string;
+  city: string;
+  contractType: number;
+  employeeType: number;
 }
