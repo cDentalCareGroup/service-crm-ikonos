@@ -53,4 +53,11 @@ const capitalizeFirstLetter = (value: string | undefined): string => {
         return '';
 }
 
-export { isNumber, addHours, getDiff, getRandomInt, getTodayDate, capitalizeFirstLetter };
+const capitalizeAllCharacters = (value: string | undefined): string => {
+        if (value != undefined) {
+                return value.replace(/\b\w/g, l => l.toUpperCase());
+        }
+        return ''
+}
+
+export { isNumber, addHours, getDiff, getRandomInt, getTodayDate, capitalizeFirstLetter,capitalizeAllCharacters };

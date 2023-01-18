@@ -17,6 +17,9 @@ export class SecurityUtil {
   static validatePassword = async (hash: string, text: string): Promise<boolean> => {
     return md5(hash) === text;
   };
+  static encryptPassword = async (pass: string) => {
+    return await md5(pass);
+  }
 }
 
 export class TokenPayload {

@@ -38,11 +38,11 @@ export class EmployeeEntity {
   })
   state: string;
 
-  // @Column({
-  //   name: 'city_id',
-  //   type: 'int',
-  // })
-  // municipalityId: number;
+  @Column({
+    name: 'city',
+    type: 'varchar',
+  })
+  city: string;
 
   @Column({
     name: 'contract_type_id',

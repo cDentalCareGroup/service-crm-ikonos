@@ -10,7 +10,7 @@ import {
   ValidationException,
   ValidationExceptionType,
 } from 'src/common/exceptions/general.exception';
-import { capitalizeFirstLetter, isNumber } from 'src/utils/general.functions.utils';
+import { capitalizeAllCharacters, capitalizeFirstLetter, isNumber } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
 import {
@@ -169,27 +169,27 @@ export class PatientService {
       }
 
       const patient = new PatientEntity();
-      patient.name = body.name;
-      patient.lastname = body.lastname;
-      patient.secondLastname = body.secondLastname;
+      patient.name = capitalizeAllCharacters(body.name);
+      patient.lastname = capitalizeAllCharacters(body.lastname);
+      patient.secondLastname =capitalizeAllCharacters(body.secondLastname);
       patient.birthDay = new Date(body.birthDate);
       patient.gender = body.gender;
       patient.maritalStatus = body.civilStatus;
-      patient.street = body.street;
+      patient.street = capitalizeAllCharacters(body.street);
       patient.number = body.streetNumber;
-      patient.colony = body.colony;
+      patient.colony = capitalizeAllCharacters(body.colony);
       patient.cp = body.zipCode;
       patient.primaryContact = body.phone;
       patient.email = body.email;
       patient.originBranchOfficeId = body.branchOfficeId;
       patient.currentBranchOfficeId = body.branchOfficeId;
       patient.country = 'MX';
-      patient.state = capitalizeFirstLetter(body.state);
+      patient.state = capitalizeAllCharacters(body.state);
       patient.lat = body.lat;
       patient.lng = body.lon;
       patient.sourceClient = body.originId;
       patient.job = body.occupation;
-      patient.city = capitalizeFirstLetter(body.city);
+      patient.city = capitalizeAllCharacters(body.city);
       patient.organizationClient = body.organization;
       patient.startDate =  formatISO(new Date());
 
@@ -207,26 +207,26 @@ export class PatientService {
 
 
       const patient = await this.patientRepository.findOneBy({ id: body.patientId });
-      patient.name = body.name;
-      patient.lastname = body.lastname;
-      patient.secondLastname = body.secondLastname;
+      patient.name = capitalizeAllCharacters(body.name);
+      patient.lastname =capitalizeAllCharacters(body.lastname);
+      patient.secondLastname =capitalizeAllCharacters(body.secondLastname);
       patient.birthDay = new Date(body.birthDate);
       patient.gender = body.gender;
       patient.maritalStatus = body.civilStatus;
-      patient.street = body.street;
+      patient.street = capitalizeAllCharacters(body.street);
       patient.number = body.streetNumber;
-      patient.colony = body.colony;
+      patient.colony = capitalizeAllCharacters(body.colony);
       patient.cp = body.zipCode;
       patient.primaryContact = body.phone;
       patient.email = body.email;
       patient.originBranchOfficeId = body.branchOfficeId;
       patient.country = 'MX';
-      patient.state = capitalizeFirstLetter(body.state);
+      patient.state = capitalizeAllCharacters(body.state);
       patient.lat = body.lat;
       patient.lng = body.lon;
       patient.job = body.occupation;
       patient.sourceClient = body.originId;
-      patient.city = capitalizeFirstLetter(body.city);
+      patient.city = capitalizeAllCharacters(body.city);
       patient.organizationClient = body.organization;
       patient.startDate = body.startDate;
 

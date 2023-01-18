@@ -29,7 +29,7 @@ export class AppService {
     const col = await this.getColoniesFromPostalCode();
 
     return {
-      'version': 'Version 1.0.16 - Firebase v.1.0.0',
+      'version': 'Version 1.0.19 - Firebase v.1.0.0',
       'col':col
 
     }
