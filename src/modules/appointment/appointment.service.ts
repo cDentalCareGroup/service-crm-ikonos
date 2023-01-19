@@ -17,7 +17,7 @@ import { AppointmentTemplateMail, EmailService } from '../email/email.service';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
-import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, UpdateAppointmentStatusDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
+import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 import { AppointmentEntity } from './models/appointment.entity';
 import { ProspectEntity } from './models/prospect.entity';
 
@@ -470,7 +470,7 @@ export class AppointmentService {
 
 
 
-  registerNextAppointment = async ({ branchOfficeId, date, time, patientId, dentistId, hasLabs }: RegisterNextAppointmentDTO) => {
+  registerNextAppointment = async ({ branchOfficeId, date, time, patientId, dentistId, hasLabs, hasCabinet }: RegisterNextAppointmentDTO) => {
     try {
 
       const branchOffice = await this.branchOfficeRepository.findOneBy({ id: Number(branchOfficeId) });
@@ -499,6 +499,7 @@ export class AppointmentService {
       entity.dentistId = Number(dentistId)
       entity.comments = `Cita Agendada por Recepcionista ${date.toString().split("T")[0]} ${time.simpleTime}`
       entity.hasLabs = hasLabs ? 1 : 0;
+      entity.hasCabinet = hasCabinet ? 1 : 0;
 
       const response = await this.appointmentRepository.save(entity);
 
@@ -529,8 +530,19 @@ export class AppointmentService {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ id: Number(id) });
       appointment.hasLabs = hasLabs ? 1 : 0;
-      await this.appointmentRepository.save(appointment);
-      return 200;
+      const newAppointment = await this.appointmentRepository.save(appointment);
+      return await this.getAppointment(newAppointment);
+    } catch (exception) {
+      HandleException.exception(exception);
+    }
+  }
+
+  updateHasCabinet = async ({ id, hasCabinet }: UpdateHasCabinetAppointmentDTO) => {
+    try {
+      const appointment = await this.appointmentRepository.findOneBy({ id: Number(id) });
+      appointment.hasCabinet = hasCabinet ? 1 : 0;
+      const newAppointment = await this.appointmentRepository.save(appointment);
+      return await this.getAppointment(newAppointment);
     } catch (exception) {
       HandleException.exception(exception);
     }

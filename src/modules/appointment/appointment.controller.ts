@@ -2,7 +2,7 @@ import { Body, Controller, Get, Post, Query, Res } from '@nestjs/common';
 import { ApiBody } from '@nestjs/swagger';
 import { randomUUID } from 'crypto';
 import { AppointmentService } from './appointment.service';
-import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, UpdateAppointmentStatusDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
+import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 
 @Controller('appointment')
 export class AppointmentController {
@@ -66,7 +66,7 @@ export class AppointmentController {
     @Post('cancel')
     @ApiBody({ type: CancelAppointmentDTO })
     async cancelAppointment(@Body() body: CancelAppointmentDTO): Promise<any> {
-       return this.appointmentService.cancelAppointment(body);
+        return this.appointmentService.cancelAppointment(body);
     }
 
     @Post('day/availability/dentist')
@@ -76,40 +76,45 @@ export class AppointmentController {
     }
 
     @Post('resgiter/nextappointment')
-    @ApiBody({type: RegisterNextAppointmentDTO})
+    @ApiBody({ type: RegisterNextAppointmentDTO })
     async registerNextAppointment(@Body() body: RegisterNextAppointmentDTO) {
         return this.appointmentService.registerNextAppointment(body);
     }
 
     @Post('update/haslabs')
-    @ApiBody({type: UpdateHasLabsAppointmentDTO})
+    @ApiBody({ type: UpdateHasLabsAppointmentDTO })
     async updateHasLabs(@Body() body: UpdateHasLabsAppointmentDTO) {
         return this.appointmentService.updateHasLabs(body);
     }
 
+    @Post('update/hasCabinet')
+    @ApiBody({type: UpdateHasCabinetAppointmentDTO})
+    async updateHasCabinet(@Body() body: UpdateHasCabinetAppointmentDTO) {
+        return this.appointmentService.updateHasCabinet(body);
+    }
 
-  @Post('notification')
-  @ApiBody({type: SendNotificationDTO})
-  async sendAppointmentNotification(@Body() body: SendNotificationDTO) {
-    return this.appointmentService.sendAppointmentNotification(body);
-  }
+    @Post('notification')
+    @ApiBody({ type: SendNotificationDTO })
+    async sendAppointmentNotification(@Body() body: SendNotificationDTO) {
+        return this.appointmentService.sendAppointmentNotification(body);
+    }
 
-//   @Get('webhooks')
-//   async hook(@Query() query: any) {
-//     return query['hub.challenge'];
-//   }
+    //   @Get('webhooks')
+    //   async hook(@Query() query: any) {
+    //     return query['hub.challenge'];
+    //   }
 
-//   @Post('webhooks')
-//   async post(@Body() body: any) {
-//     for  (const entry of body.entry) {
-//         console.log(entry.changes[0].value.messages[0]);
-//     }
-//     return 200;
-//   }
+    //   @Post('webhooks')
+    //   async post(@Body() body: any) {
+    //     for  (const entry of body.entry) {
+    //         console.log(entry.changes[0].value.messages[0]);
+    //     }
+    //     return 200;
+    //   }
 
-@Get('test')
-  async hook() {
-    return this.appointmentService.test();
-  }
+    @Get('test')
+    async hook() {
+        return this.appointmentService.test();
+    }
 
 }
