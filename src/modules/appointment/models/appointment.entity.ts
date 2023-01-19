@@ -147,6 +147,13 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
   })
   hasLabs: number;
 
+  @Column({
+    name: 'has_cabinet',
+    type: 'int',
+    nullable: true,
+  })
+  hasCabinet: number;
+
 //   @Column({
 //     name: 'dentist_id',
 //     type: 'int',

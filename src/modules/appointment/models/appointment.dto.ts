@@ -140,11 +140,17 @@ export class RegisterNextAppointmentDTO {
   branchOfficeId: string;
   dentistId: string;
   hasLabs: boolean;
+  hasCabinet: boolean;
 }
 
 export class UpdateHasLabsAppointmentDTO {
   id: number;
   hasLabs: boolean;
+}
+
+export class UpdateHasCabinetAppointmentDTO {
+  id: number;
+  hasCabinet: boolean;
 }
 
 export class SendNotificationDTO {
