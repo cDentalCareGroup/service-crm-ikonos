@@ -6,7 +6,7 @@ import { id } from 'date-fns/locale';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { async } from 'rxjs';
 import { HandleException, NotFoundCustomException, NotFoundType, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
-import { getDiff, getRandomInt, getTodayDate } from 'src/utils/general.functions.utils';
+import { capitalizeAllCharacters, getDiff, getRandomInt, getTodayDate } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { UserEntity } from '../auth/models/entities/user.entity';
 import { branchOfficeScheduleToEntity } from '../branch_office/extensions/branch.office.extensions';
@@ -142,7 +142,7 @@ export class AppointmentService {
       prospect = await this.prospectRepository.findOneBy({ name: name });
       if (prospect == null || prospect == undefined) {
         const newProspect = new ProspectEntity();
-        newProspect.name = name;
+        newProspect.name = capitalizeAllCharacters(name);
         newProspect.email = email;
         newProspect.primaryContact = phone;
         newProspect.createdAt = new Date();
@@ -177,7 +177,7 @@ export class AppointmentService {
       if (email != null && email != undefined) {
         await this.emailService.sendAppointmentEmail(
           new AppointmentTemplateMail(
-            name,
+            capitalizeAllCharacters(name),
             `${date.toString().split("T")[0]} ${time.simpleTime}`,
             `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
             `${branchOffice.name}`,
@@ -317,7 +317,7 @@ export class AppointmentService {
         const email = response.prospect?.email ?? response.patient?.email;
         await this.emailService.sendAppointmentRescheduleEmail(
           new AppointmentTemplateMail(
-            name,
+            capitalizeAllCharacters(name),
             `${appointment.appointment} ${appointment.time}`,
             `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
             `${branchOffice.name}`,
