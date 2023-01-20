@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
-import { formatISO } from 'date-fns';
+import { format, formatISO } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { async } from 'rxjs';
@@ -19,7 +19,9 @@ import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 import { AppointmentEntity } from './models/appointment.entity';
+import { PaymentMethodEntity } from './models/payment.method.entity';
 import { ProspectEntity } from './models/prospect.entity';
+import { ServiceEntity } from './models/service.entity';
 
 @Injectable()
 export class AppointmentService {
@@ -35,6 +37,8 @@ export class AppointmentService {
     @InjectRepository(BranchOfficeEmployeeSchedule) private branchOfficeEmployeeScheduleRepository: Repository<BranchOfficeEmployeeSchedule>,
     @InjectRepository(EmployeeTypeEntity) private employeeTypeRepository: Repository<EmployeeTypeEntity>,
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin,
+    @InjectRepository(ServiceEntity) private serviceRepository: Repository<ServiceEntity>,
+    @InjectRepository(PaymentMethodEntity) private paymentRepository: Repository<PaymentMethodEntity>,
     private emailService: EmailService
   ) { }
 
@@ -111,6 +115,7 @@ export class AppointmentService {
           appointment: dateSended,
           time: hour.simpleTime
         });
+        console.log(appointments.length)
         if (appointments.length < hour.seat) {
           data.push(hour);
         }
@@ -129,7 +134,6 @@ export class AppointmentService {
 
       const branchOffice = await this.branchOfficeRepository.findOneBy({ name: branchName });
       // let patient: PatientEntity;
-      let prospect: ProspectEntity;
 
       // if (phone != null && phone != '') {
       //   patient = await this.patientRepository.findOneBy({ primaryContact: phone });
@@ -139,15 +143,13 @@ export class AppointmentService {
       // }
 
       // if (patient == null || patient == undefined) {
-      prospect = await this.prospectRepository.findOneBy({ name: name });
-      if (prospect == null || prospect == undefined) {
-        const newProspect = new ProspectEntity();
-        newProspect.name = capitalizeAllCharacters(name);
-        newProspect.email = email;
-        newProspect.primaryContact = phone;
-        newProspect.createdAt = new Date();
-        prospect = await this.prospectRepository.save(newProspect);
-      }
+      const newProspect = new ProspectEntity();
+      newProspect.name = capitalizeAllCharacters(name);
+      newProspect.email = email;
+      newProspect.primaryContact = phone;
+      newProspect.createdAt = new Date();
+      const prospect = await this.prospectRepository.save(newProspect);
+
       //}
 
       // const exists = await this.appointmentRepository.findOneBy({
@@ -261,7 +263,6 @@ export class AppointmentService {
       appointment.receptionistId = receptionist.id;
       appointment.comments = `${appointment.comments} \n Dentista asignado ${id} \n Recepcionista ${receptionist.name}`;
       appointment.patientId = Number(patientId);
-      appointment.prospectId = null;
       const updatedAppointment = await this.appointmentRepository.save(appointment);
       return this.getAppointment(updatedAppointment);
     } catch (exception) {
@@ -270,7 +271,7 @@ export class AppointmentService {
     }
   }
 
-  updateAppointmentStatus = async ({ id, status, amount }: UpdateAppointmentStatusDTO) => {
+  updateAppointmentStatus = async ({ id, status, amount, paymentMethod }: UpdateAppointmentStatusDTO) => {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ id: Number(id) });
 
@@ -286,6 +287,8 @@ export class AppointmentService {
         appointment.comments = `${appointment.comments} \n Estatus: finalizada ${formatISO(new Date())}`;
         appointment.priceAmount = Number(amount);
         patient.lastVisitDate = formatISO(new Date());
+        appointment.paymentMethodId = paymentMethod;
+        patient.nextDateAppointment = null;
         await this.patientRepository.save(patient);
       }
       const updatedAppointment = await this.appointmentRepository.save(appointment);
@@ -308,7 +311,7 @@ export class AppointmentService {
       appointment.status = 'activa';
       appointment.dentistId = null;
       appointment.receptionistId = null;
-      appointment.comments = `${appointment.comments} \n Cita reagendada de ${appointment.appointment} ${appointment.time} para ${date.toString().split("T")[0]} ${time}`
+      appointment.comments = `${appointment.comments} \n Cita reagendada a las ${getTodayDate()} - De ${appointment.appointment} ${appointment.time} para ${date.toString().split("T")[0]} ${time.time}`
       const updatedAppointment = await this.appointmentRepository.save(appointment);
 
       const response = await this.getAppointment(updatedAppointment);
@@ -445,13 +448,11 @@ export class AppointmentService {
 
 
       const filteredHours: AvailableHoursDTO[] = [];
-
       for await (const hour of availableHours) {
         const appointments = await this.appointmentRepository.findBy({
           branchId: Number(branchOfficeId),
           time: hour.simpleTime,
-          dentistId: Number(dentistId),
-          appointment: date
+          appointment: format(new Date(date), 'yyyy-MM-dd')
         });
         if (appointments.length == 0) {
           filteredHours.push(hour);
@@ -470,7 +471,7 @@ export class AppointmentService {
 
 
 
-  registerNextAppointment = async ({ branchOfficeId, date, time, patientId, dentistId, hasLabs, hasCabinet }: RegisterNextAppointmentDTO) => {
+  registerNextAppointment = async ({ branchOfficeId, date, time, patientId, dentistId, hasLabs, hasCabinet, service }: RegisterNextAppointmentDTO) => {
     try {
 
       const branchOffice = await this.branchOfficeRepository.findOneBy({ id: Number(branchOfficeId) });
@@ -498,10 +499,14 @@ export class AppointmentService {
       entity.patientId = patientId;
       entity.dentistId = Number(dentistId)
       entity.comments = `Cita Agendada por Recepcionista ${date.toString().split("T")[0]} ${time.simpleTime}`
-      entity.hasLabs = hasLabs ? 1 : 0;
-      entity.hasCabinet = hasCabinet ? 1 : 0;
+      entity.hasLabs = hasLabs;
+      entity.hasCabinet = hasCabinet;
+      entity.reason = service;
 
       const response = await this.appointmentRepository.save(entity);
+
+      patient.nextDateAppointment = `${date.toString().split("T")[0]} ${time.simpleTime}`;
+      await this.patientRepository.save(patient);
 
 
       if (patient.email != null && patient.email != undefined) {
@@ -518,8 +523,8 @@ export class AppointmentService {
           patient.email);
       }
       let updatedAppointment = await this.getAppointment(response);
-      let nextAppointments = await this.getNextAppointments(response.patientId);
-      return new GetNextAppointmentDetailDTO(updatedAppointment, nextAppointments?.filter((value, _) => value.appointment.id != updatedAppointment.appointment.id));
+     // let nextAppointments = await this.getNextAppointments(response.patientId);
+      return updatedAppointment;
     } catch (exception) {
       HandleException.exception(exception);
     }
@@ -529,7 +534,7 @@ export class AppointmentService {
   updateHasLabs = async ({ id, hasLabs }: UpdateHasLabsAppointmentDTO) => {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ id: Number(id) });
-      appointment.hasLabs = hasLabs ? 1 : 0;
+      appointment.hasLabs = hasLabs;
       const newAppointment = await this.appointmentRepository.save(appointment);
       return await this.getAppointment(newAppointment);
     } catch (exception) {
@@ -540,7 +545,7 @@ export class AppointmentService {
   updateHasCabinet = async ({ id, hasCabinet }: UpdateHasCabinetAppointmentDTO) => {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ id: Number(id) });
-      appointment.hasCabinet = hasCabinet ? 1 : 0;
+      appointment.hasCabinet = hasCabinet;
       const newAppointment = await this.appointmentRepository.save(appointment);
       return await this.getAppointment(newAppointment);
     } catch (exception) {
@@ -552,8 +557,8 @@ export class AppointmentService {
   sendAppointmentNotification = async ({ folio }: SendNotificationDTO) => {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ folio: folio });
-      //const employee = await this.employeeRepository.findOneBy({ branchOfficeId: appointment.branchId, typeId:10  });
-      const employee = await this.employeeRepository.findOneBy({ id: 21 });
+      const employee = await this.employeeRepository.findOneBy({ branchOfficeId: appointment.branchId, typeId: 10  });
+   //   const employee = await this.employeeRepository.findOneBy({ id: 21 });
       const message = {
         notification: {
           title: `Cita Folio: ${appointment.folio}`,
@@ -718,6 +723,26 @@ export class AppointmentService {
       return response;
     } catch (error) {
       console.log(error);
+    }
+  }
+
+
+
+  getServices = async () => {
+    try {
+      const result = await this.serviceRepository.find();
+      return result;
+    } catch (error) {
+      HandleException.exception(error);
+    }
+  }
+
+  getPaymentMethods = async () => {
+    try {
+      const result = await this.paymentRepository.find();
+      return result;
+    } catch (error) {
+      HandleException.exception(error);
     }
   }
 }

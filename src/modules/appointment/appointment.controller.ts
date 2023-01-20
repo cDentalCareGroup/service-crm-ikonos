@@ -117,4 +117,12 @@ export class AppointmentController {
         return this.appointmentService.test();
     }
 
+    @Get('services')
+    async getServices() {
+        return this.appointmentService.getServices();
+    }
+    @Get('paymentmethods')
+    async getPaymentMethods() {
+        return this.appointmentService.getPaymentMethods();
+    }
 }

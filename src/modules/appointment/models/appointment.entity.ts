@@ -154,6 +154,19 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
   })
   hasCabinet: number;
 
+
+  @Column({
+    name: 'payment_method_id',
+    type: 'int'
+  })
+  paymentMethodId: number;
+
+  @Column({
+    name: 'reason',
+    type: 'varchar'
+  })
+  reason: string;
+
 //   @Column({
 //     name: 'dentist_id',
 //     type: 'int',
