@@ -13,7 +13,9 @@ import { PatientEntity } from '../patient/models/patient.entity';
 import { AppointmentController } from './appointment.controller';
 import { AppointmentService } from './appointment.service';
 import { AppointmentEntity } from './models/appointment.entity';
+import { PaymentMethodEntity } from './models/payment.method.entity';
 import { ProspectEntity } from './models/prospect.entity';
+import { ServiceEntity } from './models/service.entity';
 
 @Module({
     imports: [
@@ -27,7 +29,9 @@ import { ProspectEntity } from './models/prospect.entity';
       EmployeeEntity,
       UserEntity,
       BranchOfficeEmployeeSchedule,
-      EmployeeTypeEntity
+      EmployeeTypeEntity,
+      ServiceEntity,
+      PaymentMethodEntity
     ]),
     EmailModule
   ],

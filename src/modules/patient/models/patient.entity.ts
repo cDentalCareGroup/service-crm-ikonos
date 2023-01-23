@@ -174,9 +174,9 @@ export class PatientEntity {
 
   @Column({
     name: 'next_appointment_date',
-    type: 'datetime',
+    type: 'char',
   })
-  nextDateAppointment: Date; 
+  nextDateAppointment: string; 
 
   @Column({
     name:     'status',

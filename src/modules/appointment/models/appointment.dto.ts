@@ -67,15 +67,15 @@ export class GetAppointmentDetailDTO {
   prospect?: ProspectEntity;
   dentist?: EmployeeEntity
 
-  constructor( appointment: AppointmentEntity,
+  constructor(appointment: AppointmentEntity,
     branchOffice: BranchOfficeEntity,
     patient?: PatientEntity,
-    prospect?: ProspectEntity,dentist?: EmployeeEntity) {
-      this.appointment = appointment;
-      this.branchOffice = branchOffice;
-      this.patient = patient;
-      this.prospect = prospect;
-      this.dentist = dentist;
+    prospect?: ProspectEntity, dentist?: EmployeeEntity) {
+    this.appointment = appointment;
+    this.branchOffice = branchOffice;
+    this.patient = patient;
+    this.prospect = prospect;
+    this.dentist = dentist;
   }
 }
 
@@ -84,8 +84,8 @@ export class GetNextAppointmentDetailDTO {
   nextAppointments?: GetAppointmentDetailDTO[];
 
   constructor(appointment: GetAppointmentDetailDTO, nextAppointments?: GetAppointmentDetailDTO[]) {
-      this.appointment = appointment;
-      this.nextAppointments = nextAppointments;
+    this.appointment = appointment;
+    this.nextAppointments = nextAppointments;
   }
 }
 
@@ -109,6 +109,7 @@ export class UpdateAppointmentStatusDTO {
   status: string;
   date: string;
   amount: string;
+  paymentMethod: number;
 }
 
 
@@ -139,18 +140,19 @@ export class RegisterNextAppointmentDTO {
   patientId: number;
   branchOfficeId: string;
   dentistId: string;
-  hasLabs: boolean;
-  hasCabinet: boolean;
+  hasLabs: number;
+  hasCabinet: number;
+  service: string;
 }
 
 export class UpdateHasLabsAppointmentDTO {
   id: number;
-  hasLabs: boolean;
+  hasLabs: number;
 }
 
 export class UpdateHasCabinetAppointmentDTO {
   id: number;
-  hasCabinet: boolean;
+  hasCabinet: number;
 }
 
 export class SendNotificationDTO {

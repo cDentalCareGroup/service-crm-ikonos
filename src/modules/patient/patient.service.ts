@@ -289,8 +289,23 @@ export class PatientService {
       HandleException.exception(error);
     }
   }
+
+  updateLatLng = async (body: UpdateLatLngDTO) => {
+    try {
+      //const patient = await 
+    } catch (error) {
+      console.log(`updateLatLng ${error}`)
+      HandleException.exception(error);
+    }
+  }
 }
 
 export class GetColoniesDTO {
   cp: string;
+}
+
+
+export class UpdateLatLngDTO {
+  lat: number;
+  lng: number;
 }
