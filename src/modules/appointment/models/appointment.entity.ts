@@ -162,10 +162,10 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
   paymentMethodId: number;
 
   @Column({
-    name: 'reason',
-    type: 'varchar'
+    name: 'service_id',
+    type: 'int'
   })
-  reason: string;
+  serviceId: number;
 
 //   @Column({
 //     name: 'dentist_id',

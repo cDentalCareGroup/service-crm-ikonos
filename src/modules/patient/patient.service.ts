@@ -171,7 +171,7 @@ export class PatientService {
       const patient = new PatientEntity();
       patient.name = capitalizeAllCharacters(body.name);
       patient.lastname = capitalizeAllCharacters(body.lastname);
-      patient.secondLastname =capitalizeAllCharacters(body.secondLastname);
+      patient.secondLastname = capitalizeAllCharacters(body.secondLastname);
       patient.birthDay = new Date(body.birthDate);
       patient.gender = body.gender;
       patient.maritalStatus = body.civilStatus;
@@ -191,7 +191,7 @@ export class PatientService {
       patient.job = body.occupation;
       patient.city = capitalizeAllCharacters(body.city);
       patient.organizationClient = body.organization;
-      patient.startDate =  formatISO(new Date());
+      patient.startDate = formatISO(new Date());
 
       return await this.patientRepository.save(patient);
     } catch (error) {
@@ -208,8 +208,8 @@ export class PatientService {
 
       const patient = await this.patientRepository.findOneBy({ id: body.patientId });
       patient.name = capitalizeAllCharacters(body.name);
-      patient.lastname =capitalizeAllCharacters(body.lastname);
-      patient.secondLastname =capitalizeAllCharacters(body.secondLastname);
+      patient.lastname = capitalizeAllCharacters(body.lastname);
+      patient.secondLastname = capitalizeAllCharacters(body.secondLastname);
       patient.birthDay = new Date(body.birthDate);
       patient.gender = body.gender;
       patient.maritalStatus = body.civilStatus;
@@ -292,7 +292,13 @@ export class PatientService {
 
   updateLatLng = async (body: UpdateLatLngDTO) => {
     try {
-      //const patient = await 
+      const patient = await this.patientRepository.findOneBy({ id: body.patientId });
+      if (patient != null) {
+        patient.lat = body.lat;
+        patient.lng = body.lng;
+        await this.patientRepository.save(patient);
+      }
+      return 200;
     } catch (error) {
       console.log(`updateLatLng ${error}`)
       HandleException.exception(error);
@@ -308,4 +314,5 @@ export class GetColoniesDTO {
 export class UpdateLatLngDTO {
   lat: number;
   lng: number;
+  patientId: number;
 }

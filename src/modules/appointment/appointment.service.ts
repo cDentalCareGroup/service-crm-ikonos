@@ -17,7 +17,7 @@ import { AppointmentTemplateMail, EmailService } from '../email/email.service';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
-import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
+import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 import { AppointmentEntity } from './models/appointment.entity';
 import { PaymentMethodEntity } from './models/payment.method.entity';
 import { ProspectEntity } from './models/prospect.entity';
@@ -240,7 +240,38 @@ export class AppointmentService {
   getAllAppointmentByBranchOffice = async (body: GetAppointmentsByBranchOfficeDTO): Promise<GetAppointmentDetailDTO[]> => {
     try {
       const data: GetAppointmentDetailDTO[] = [];
-      const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id) });
+      if (body.status != null && body.status != '') {
+        if (body.status == 'finalizada-cita' || body.status == 'finalizada') {
+          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: 'finalizada' });
+          for await (const appointment of appointments) {
+            const result = await this.getAppointment(appointment);
+            data.push(result);
+          }
+        } else {
+          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: body.status });
+          for await (const appointment of appointments) {
+            const result = await this.getAppointment(appointment);
+            data.push(result);
+          }
+        }
+      } else {
+        const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id) });
+        for await (const appointment of appointments) {
+          const result = await this.getAppointment(appointment);
+          data.push(result);
+        }
+      }
+      return data;
+    } catch (exception) {
+      console.log(exception);
+      HandleException.exception(exception);
+    }
+  }
+
+  getAllAppointmentByBranchOfficeStatus = async (body: GetAppointmentsByBranchOfficeStatusDTO): Promise<GetAppointmentDetailDTO[]> => {
+    try {
+      const data: GetAppointmentDetailDTO[] = [];
+      const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), });
       for await (const appointment of appointments) {
         const result = await this.getAppointment(appointment);
         data.push(result);
@@ -271,7 +302,7 @@ export class AppointmentService {
     }
   }
 
-  updateAppointmentStatus = async ({ id, status, amount, paymentMethod }: UpdateAppointmentStatusDTO) => {
+  updateAppointmentStatus = async ({ id, status, amount, paymentMethod, serviceId }: UpdateAppointmentStatusDTO) => {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ id: Number(id) });
 
@@ -289,6 +320,7 @@ export class AppointmentService {
         patient.lastVisitDate = formatISO(new Date());
         appointment.paymentMethodId = paymentMethod;
         patient.nextDateAppointment = null;
+        appointment.serviceId = serviceId;
         await this.patientRepository.save(patient);
       }
       const updatedAppointment = await this.appointmentRepository.save(appointment);
@@ -501,7 +533,7 @@ export class AppointmentService {
       entity.comments = `Cita Agendada por Recepcionista ${date.toString().split("T")[0]} ${time.simpleTime}`
       entity.hasLabs = hasLabs;
       entity.hasCabinet = hasCabinet;
-      entity.reason = service;
+      entity.serviceId = Number(service);
 
       const response = await this.appointmentRepository.save(entity);
 
@@ -523,7 +555,7 @@ export class AppointmentService {
           patient.email);
       }
       let updatedAppointment = await this.getAppointment(response);
-     // let nextAppointments = await this.getNextAppointments(response.patientId);
+      // let nextAppointments = await this.getNextAppointments(response.patientId);
       return updatedAppointment;
     } catch (exception) {
       HandleException.exception(exception);
@@ -557,8 +589,8 @@ export class AppointmentService {
   sendAppointmentNotification = async ({ folio }: SendNotificationDTO) => {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ folio: folio });
-      const employee = await this.employeeRepository.findOneBy({ branchOfficeId: appointment.branchId, typeId: 10  });
-   //   const employee = await this.employeeRepository.findOneBy({ id: 21 });
+      const employee = await this.employeeRepository.findOneBy({ branchOfficeId: appointment.branchId, typeId: 10 });
+      //   const employee = await this.employeeRepository.findOneBy({ id: 21 });
       const message = {
         notification: {
           title: `Cita Folio: ${appointment.folio}`,
@@ -585,6 +617,7 @@ export class AppointmentService {
     let prospect: ProspectEntity;
     let patient: PatientEntity;
     let dentist: EmployeeEntity;
+    let service: ServiceEntity;
 
     if (appointment.patientId == null || appointment.patientId == undefined) {
       prospect = await this.prospectRepository.findOneBy({ id: appointment.prospectId });
@@ -593,13 +626,15 @@ export class AppointmentService {
     }
 
     if (appointment.dentistId != null && appointment.dentistId != undefined && appointment.dentistId != 0) {
-
       const previewDentist = await this.employeeRepository.findOneBy({ id: appointment.dentistId });
       const type = await this.employeeTypeRepository.findOneBy({ id: previewDentist.typeId });
       previewDentist.typeName = type.name;
       dentist = previewDentist;
     }
-    return new GetAppointmentDetailDTO(appointment, branchOffice, patient, prospect, dentist,);
+    if (appointment.serviceId != null && appointment.serviceId != undefined && appointment.serviceId != 0) {
+      service = await this.serviceRepository.findOneBy({ id: appointment.serviceId });
+    }
+    return new GetAppointmentDetailDTO(appointment, branchOffice, patient, prospect, dentist, service);
   }
 
 

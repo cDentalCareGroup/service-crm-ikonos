@@ -6,8 +6,8 @@ import { Repository } from 'typeorm';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { CallCatalogEntity } from './models/call.catalog.entity';
-import { GetCallsDTO, RegisterCatalogDTO, UpdateCallDTO, UpdateCatalogDTO } from './models/call.dto';
-import { CallEntity } from './models/call.entity';
+import { GetCallsDTO, RegisterCallDTO, RegisterCatalogDTO, UpdateCallDTO, UpdateCatalogDTO } from './models/call.dto';
+import { CallEntity, CallResult } from './models/call.entity';
 
 @Injectable()
 export class CallsService {
@@ -50,7 +50,7 @@ export class CallsService {
         try {
             const result = await this.callRepository.findOneBy({ id: id });
             result.status = 'resuelta';
-            result.description = description;
+            result.description = `${result.description ?? ''} \n${description}`;
             result.effectiveDate = new Date();
             result.comments = `LLamada resuelta por call center - ${new Date()}`;
             return await this.callRepository.save(result);
@@ -80,6 +80,24 @@ export class CallsService {
             catalog.goal = goal;
             catalog.script = script;
             return await this.catalogRepository.save(catalog);
+        } catch (error) {
+            HandleException.exception(error);
+        }
+    }
+
+    registerCall = async ({ patientId, appointmentId, description, date, type }: RegisterCallDTO) => {
+        try {
+            const call = new CallEntity();
+            call.patientId = patientId;
+            if (appointmentId != null && appointmentId != 0) {
+                call.appointmentId = appointmentId;
+            }
+            call.description = description;
+            call.dueDate = new Date(date);
+            call.caltalogId = Number(type);
+            call.status = 'activa';
+            call.result = CallResult.CALL;
+            return await this.callRepository.save(call);
         } catch (error) {
             HandleException.exception(error);
         }

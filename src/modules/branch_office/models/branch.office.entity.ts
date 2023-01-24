@@ -80,5 +80,23 @@ export class BranchOfficeEntity {
   })
   lng: number;
 
-  appointmens?: number;
+  appointment?: AppointmentStatistic;
+}
+
+
+export class AppointmentStatistic {
+  active: number;
+  proccess: number;
+  finshed: number;
+  noAttended: number;
+
+  constructor(active: number,
+    proccess: number,
+    finished: number,
+    noAttended: number) {
+      this.active = active;
+      this.proccess = proccess;
+      this.finshed = finished;
+      this.noAttended = noAttended;
+  }
 }

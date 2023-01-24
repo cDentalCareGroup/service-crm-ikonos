@@ -5,6 +5,7 @@ import { EmployeeEntity } from "src/modules/employee/models/employee.entity";
 import { PatientEntity } from "src/modules/patient/models/patient.entity";
 import { AppointmentEntity } from "./appointment.entity";
 import { ProspectEntity } from "./prospect.entity";
+import { ServiceEntity } from "./service.entity";
 
 export class AvailableHoursDTO {
   id: number;
@@ -65,17 +66,19 @@ export class GetAppointmentDetailDTO {
   branchOffice: BranchOfficeEntity;
   patient?: PatientEntity;
   prospect?: ProspectEntity;
-  dentist?: EmployeeEntity
+  dentist?: EmployeeEntity;
+  service?: ServiceEntity;
 
   constructor(appointment: AppointmentEntity,
     branchOffice: BranchOfficeEntity,
     patient?: PatientEntity,
-    prospect?: ProspectEntity, dentist?: EmployeeEntity) {
+    prospect?: ProspectEntity, dentist?: EmployeeEntity, service?: ServiceEntity) {
     this.appointment = appointment;
     this.branchOffice = branchOffice;
     this.patient = patient;
     this.prospect = prospect;
     this.dentist = dentist;
+    this.service = service;
   }
 }
 
@@ -95,6 +98,13 @@ export class AppointmentDetailDTO {
 
 export class GetAppointmentsByBranchOfficeDTO {
   id: string | number;
+  status?: string;
+}
+
+
+export class GetAppointmentsByBranchOfficeStatusDTO {
+  id: string | number;
+  status: string;
 }
 
 export class RegisterAppointmentDentistDTO {
@@ -110,6 +120,7 @@ export class UpdateAppointmentStatusDTO {
   date: string;
   amount: string;
   paymentMethod: number;
+  serviceId: number;
 }
 
 

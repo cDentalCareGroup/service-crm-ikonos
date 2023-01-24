@@ -37,3 +37,11 @@ export class RegisterCatalogDTO {
     script: string;
     name:string;
 }
+
+export class RegisterCallDTO {
+    patientId: number;
+    description: string;
+    appointmentId: number;
+    date: string;
+    type: string;
+}
