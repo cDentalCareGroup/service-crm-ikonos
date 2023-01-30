@@ -3,6 +3,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 export enum CallResult {
     CALL = 'llamada',
     ACTIVE = 'activa',
+    APPOINTMENT = 'cita'
 }
 
 @Entity('call')

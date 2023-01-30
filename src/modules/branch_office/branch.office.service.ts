@@ -13,7 +13,7 @@ import { EmployeeEntity } from '../employee/models/employee.entity';
 import { branchOfficeScheduleToEntity, branchOfficesToEntity, registerBranchOfficeScheduleToEntity } from './extensions/branch.office.extensions';
 import { BranchOfficeSchedulesByIdDTO, BranchOfficeSchedulesDTO, DeleteBranchOfficeScheduleDTO, GetBranchOfficeScheduleDTO, RegisterBranchOfficeScheduleDTO, setFullDate } from './models/branch.office.dto';
 import { BranchOfficeEmployeeSchedule } from './models/branch.office.employee.entity';
-import { BranchOfficeEntity } from './models/branch.office.entity';
+import { AppointmentStatistic, BranchOfficeEntity } from './models/branch.office.entity';
 import { BranchOfficeScheduleEntity } from './models/branch.office.schedule.entity';
 
 @Injectable()
@@ -34,13 +34,15 @@ export class BranchOfficeService {
 
       let branchOffices: BranchOfficeEntity[] = [];
       for await (const branchOffice of data) {
-        const numOfAppointments = await this.appointmentRepository.findBy({ branchId: branchOffice.id, status: 'activa' });
+        const appointments = await this.appointmentRepository.findBy({ branchId: branchOffice.id });
+        const active = appointments.filter((value,_) => value.status == 'activa');
+        const proccess = appointments.filter((value,_) => value.status == 'proceso');
+        const finished = appointments.filter((value,_) => value.status == 'finalizada');
+        const noAttended = appointments.filter((value,_) => value.status == 'no-atendida');
         const item = branchOffice;
-        item.appointmens = numOfAppointments.length;
+        item.appointment = new AppointmentStatistic(active.length, proccess.length, finished.length, noAttended.length);
         branchOffices.push(item);
       }
-
-
       return branchOffices.reverse();
     } catch (exception) {
       HandleException.exception(exception);
