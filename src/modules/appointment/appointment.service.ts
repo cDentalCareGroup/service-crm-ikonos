@@ -115,7 +115,7 @@ export class AppointmentService {
           appointment: dateSended,
           time: hour.simpleTime
         });
-        console.log(appointments.length)
+        //console.log(appointments.length)
         if (appointments.length < hour.seat) {
           data.push(hour);
         }
