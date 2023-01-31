@@ -15,8 +15,12 @@ export class AppService {
 
   }
   async getHello() {
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
+    const nextDate = date.toISOString().split("T")[0];
     return {
-      'version': 'Version 1.0.28 - Firebase v.1.0.0',
+      'version': 'Version 1.0.29 - Firebase v.1.0.0',
+      'date': new Date().toISOString().split("T")[0]
     }
   }
 
