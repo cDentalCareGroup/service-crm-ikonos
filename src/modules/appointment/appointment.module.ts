@@ -5,6 +5,8 @@ import { UserEntity } from '../auth/models/entities/user.entity';
 import { BranchOfficeEmployeeSchedule } from '../branch_office/models/branch.office.employee.entity';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
 import { BranchOfficeScheduleEntity } from '../branch_office/models/branch.office.schedule.entity';
+import { CallCatalogEntity } from '../calls/models/call.catalog.entity';
+import { CallEntity } from '../calls/models/call.entity';
 import { EmailModule } from '../email/email.module';
 import { EmailService } from '../email/email.service';
 import { EmployeeEntity } from '../employee/models/employee.entity';
@@ -31,7 +33,9 @@ import { ServiceEntity } from './models/service.entity';
       BranchOfficeEmployeeSchedule,
       EmployeeTypeEntity,
       ServiceEntity,
-      PaymentMethodEntity
+      PaymentMethodEntity,
+      CallCatalogEntity,
+      CallEntity
     ]),
     EmailModule
   ],
