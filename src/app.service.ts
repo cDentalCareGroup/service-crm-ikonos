@@ -16,7 +16,7 @@ export class AppService {
   }
   async getHello() {
     return {
-      'version': 'Version 1.0.27 - Firebase v.1.0.0',
+      'version': 'Version 1.0.28 - Firebase v.1.0.0',
     }
   }
 

@@ -13,6 +13,8 @@ import { branchOfficeScheduleToEntity } from '../branch_office/extensions/branch
 import { BranchOfficeEmployeeSchedule } from '../branch_office/models/branch.office.employee.entity';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
 import { BranchOfficeScheduleEntity } from '../branch_office/models/branch.office.schedule.entity';
+import { CallCatalogEntity } from '../calls/models/call.catalog.entity';
+import { CallEntity, CallResult } from '../calls/models/call.entity';
 import { AppointmentTemplateMail, EmailService } from '../email/email.service';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
@@ -39,6 +41,8 @@ export class AppointmentService {
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin,
     @InjectRepository(ServiceEntity) private serviceRepository: Repository<ServiceEntity>,
     @InjectRepository(PaymentMethodEntity) private paymentRepository: Repository<PaymentMethodEntity>,
+    @InjectRepository(CallEntity) private callRepository: Repository<CallEntity>,
+    @InjectRepository(CallCatalogEntity) private callCatalogRepository: Repository<CallCatalogEntity>,
     private emailService: EmailService
   ) { }
 
@@ -708,25 +712,31 @@ export class AppointmentService {
         }
         const branchOffice = await this.branchOfficeRepository.findOneBy({ id: appointment.branchId });
 
-        if (prospect?.email || patient?.email) {
-          const name = prospect?.name ?? `${patient?.name} ${patient?.lastname} ${patient?.secondLastname}`;
-          const email = prospect?.email ?? patient?.email;
-          const isSuccess = await this.emailService.sendAppointmentCancelEmail(
-            new AppointmentTemplateMail(
-              name,
-              `${appointment.appointment} ${appointment.time}`,
-              `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
-              `${branchOffice.name}`,
-              `${branchOffice.primaryContact}`,
-              `${appointment.folio}`,
-              `${prospect?.primaryContact ?? patient?.primaryContact}`,
-            ),
-            email
-          );
-          if (isSuccess != 1) {
-            failureEmails.push(appointment);
+        if ((prospect?.email != null && prospect.email != '') || (patient?.email != null && patient.email != '')) {
+          try {
+            const name = prospect?.name ?? `${patient?.name} ${patient?.lastname} ${patient?.secondLastname}`;
+            const email = prospect?.email ?? patient?.email;
+            const isSuccess = await this.emailService.sendAppointmentCancelEmail(
+              new AppointmentTemplateMail(
+                name,
+                `${appointment.appointment} ${appointment.time}`,
+                `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
+                `${branchOffice.name}`,
+                `${branchOffice.primaryContact}`,
+                `${appointment.folio}`,
+                `${prospect?.primaryContact ?? patient?.primaryContact}`,
+              ),
+              email
+            );
+
+            if (isSuccess != 1) {
+              failureEmails.push(appointment);
+            }
+          } catch (error) {
+            console.log(`Error sending email to ${patient} ${prospect}`);
           }
         }
+        await this.callFromAppointmentNotAttended(appointment);
       }
       return failureEmails;
     } catch (exception) {
@@ -761,6 +771,59 @@ export class AppointmentService {
     }
   }
 
+
+  callFromAppointmentNotAttended = async (appointment: AppointmentEntity) => {
+    try {
+      const catalog = await this.callCatalogRepository.findOneBy({ name: 'no-show' });
+      const call = new CallEntity();
+      call.appointmentId = appointment.id;
+      if (appointment.patientId != null && appointment.patientId != undefined && appointment.patientId != 0) {
+        call.patientId = appointment.patientId;
+      } else {
+        call.prospectId = appointment.prospectId;
+      }
+      call.status = 'activa';
+      call.result = CallResult.APPOINTMENT;
+      call.caltalogId = catalog.id;
+      call.comments = `${call.comments} \n Registro de llamada automatico ${new Date()}`;
+
+      const today = new Date();
+      today.setDate(today.getDate() + 1);
+      call.dueDate = today;
+      return await this.callRepository.save(call);
+    } catch (exception) {
+      console.log(exception);
+      return;
+    }
+  }
+
+
+
+  reminderPad = async () => {
+    try {
+      const date = new Date();
+      const nextDate = date.toISOString().split("T")[0];
+      const patients = await this.patientRepository.findBy({ padExpirationDate: nextDate });
+      const callPad = await this.callCatalogRepository.findOneBy({ name: 'pad vencido' });
+      for await (const patient of patients) {
+        const exits = await this.callRepository.findOneBy({ patientId: patient.id, caltalogId: callPad.id });
+        if (!exits) {
+          const today = new Date();
+          today.setDate(today.getDate() + 1);
+          const call = new CallEntity();
+          call.patientId = patient.id;
+          call.comments = `Registro de llamada automatico pad vencido ${new Date()}`;
+          call.caltalogId = callPad.id;
+          call.dueDate = today;
+          call.result = CallResult.CALL;
+          await this.callRepository.save(call);
+          console.log(`Llamada registrada`);
+        }
+      }
+    } catch (error) {
+      console.log(`Error remindier pad ${error}`);
+    }
+  }
 
 
   getServices = async () => {

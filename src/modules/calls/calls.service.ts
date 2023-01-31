@@ -4,6 +4,7 @@ import { async } from 'rxjs';
 import { HandleException } from 'src/common/exceptions/general.exception';
 import { Repository } from 'typeorm';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';
+import { ProspectEntity } from '../appointment/models/prospect.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { CallCatalogEntity } from './models/call.catalog.entity';
 import { GetCallsDTO, RegisterCallDTO, RegisterCatalogDTO, UpdateCallDTO, UpdateCatalogDTO } from './models/call.dto';
@@ -18,6 +19,7 @@ export class CallsService {
         @InjectRepository(PatientEntity) private patientRepository: Repository<PatientEntity>,
         @InjectRepository(AppointmentEntity) private appointmentRepository: Repository<AppointmentEntity>,
         @InjectRepository(CallCatalogEntity) private catalogRepository: Repository<CallCatalogEntity>,
+        @InjectRepository(ProspectEntity) private prospectRepository: Repository<ProspectEntity>,
 
     ) { }
 
@@ -26,10 +28,16 @@ export class CallsService {
             const result = await this.callRepository.findBy({ status: 'activa' });
             let data: GetCallsDTO[] = [];
             for await (const call of result) {
-                const patient = await this.patientRepository.findOneBy({ id: call.patientId });
+                let patient: PatientEntity;
+                let prospect: ProspectEntity;
+                if (call.patientId != null && call.patientId != undefined && call.patientId != 0) {
+                    patient = await this.patientRepository.findOneBy({ id: call.patientId });
+                } else {
+                    prospect = await this.prospectRepository.findOneBy({ id: call.prospectId });
+                }
                 const appintment = await this.appointmentRepository.findOneBy({ id: call.appointmentId });
                 const catalog = await this.catalogRepository.findOneBy({ id: call.caltalogId });
-                data.push(new GetCallsDTO(call, patient, catalog, appintment));
+                data.push(new GetCallsDTO(call, catalog, appintment, patient, prospect));
             }
             return data;
         } catch (error) {

@@ -18,6 +18,12 @@ export class CallEntity {
     patientId: number;
 
     @Column({
+        name: 'prospect_id',
+        type: 'int',
+    })
+    prospectId: number;
+
+    @Column({
         name: 'appointment_id',
         type: 'int',
     })
