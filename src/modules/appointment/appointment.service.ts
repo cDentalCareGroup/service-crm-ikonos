@@ -691,7 +691,6 @@ export class AppointmentService {
   appointmentNotAttended = async () => {
     try {
       const date = new Date();
-      date.setDate(date.getDate() - 1);
       const nextDate = date.toISOString().split("T")[0];
       const result = await this.appointmentRepository.find({ where: { appointment: nextDate, status: 'activa' } });
       let failureEmails = [];
