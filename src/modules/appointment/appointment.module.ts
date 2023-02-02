@@ -15,6 +15,7 @@ import { PatientEntity } from '../patient/models/patient.entity';
 import { AppointmentController } from './appointment.controller';
 import { AppointmentService } from './appointment.service';
 import { AppointmentEntity } from './models/appointment.entity';
+import { AppointmentServiceEntity } from './models/appointment.service.entity';
 import { PaymentMethodEntity } from './models/payment.method.entity';
 import { ProspectEntity } from './models/prospect.entity';
 import { ServiceEntity } from './models/service.entity';
@@ -35,7 +36,8 @@ import { ServiceEntity } from './models/service.entity';
       ServiceEntity,
       PaymentMethodEntity,
       CallCatalogEntity,
-      CallEntity
+      CallEntity,
+      AppointmentServiceEntity
     ]),
     EmailModule
   ],

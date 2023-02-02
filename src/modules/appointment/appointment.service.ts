@@ -21,6 +21,7 @@ import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 import { AppointmentEntity } from './models/appointment.entity';
+import { AppointmentServiceEntity } from './models/appointment.service.entity';
 import { PaymentMethodEntity } from './models/payment.method.entity';
 import { ProspectEntity } from './models/prospect.entity';
 import { ServiceEntity } from './models/service.entity';
@@ -43,6 +44,7 @@ export class AppointmentService {
     @InjectRepository(PaymentMethodEntity) private paymentRepository: Repository<PaymentMethodEntity>,
     @InjectRepository(CallEntity) private callRepository: Repository<CallEntity>,
     @InjectRepository(CallCatalogEntity) private callCatalogRepository: Repository<CallCatalogEntity>,
+    @InjectRepository(AppointmentServiceEntity) private appointmentServiceRepository: Repository<AppointmentServiceEntity>,
     private emailService: EmailService
   ) { }
 
@@ -137,33 +139,12 @@ export class AppointmentService {
         phone == null || phone == undefined || phone == '') throw new ValidationException(ValidationExceptionType.MISSING_VALUES);
 
       const branchOffice = await this.branchOfficeRepository.findOneBy({ name: branchName });
-      // let patient: PatientEntity;
-
-      // if (phone != null && phone != '') {
-      //   patient = await this.patientRepository.findOneBy({ primaryContact: phone });
-      // }
-      // if (email != null && email != '' && patient == null) {
-      //   patient = await this.patientRepository.findOneBy({ email: email });
-      // }
-
-      // if (patient == null || patient == undefined) {
       const newProspect = new ProspectEntity();
       newProspect.name = capitalizeAllCharacters(name);
       newProspect.email = email;
       newProspect.primaryContact = phone;
       newProspect.createdAt = new Date();
       const prospect = await this.prospectRepository.save(newProspect);
-
-      //}
-
-      // const exists = await this.appointmentRepository.findOneBy({
-      //   branchId: branchOffice.id,
-      //   branchName: branchOffice.name,
-      //   appointment: date.toString().split("T")[0],
-      //   time: time.simpleTime,
-      // });
-
-      // if (exists != null) throw new ValidationException(ValidationExceptionType.APPOINTMENT_EXISTS);
 
       const entity = new AppointmentEntity();
       entity.appointment = date.toString().split("T")[0]
@@ -175,8 +156,9 @@ export class AppointmentService {
       const folio = randomUUID().replace(/-/g, getRandomInt()).substring(0, 20).toUpperCase()
       entity.folio = folio;
       entity.prospectId = prospect.id;
-      // entity.patientId = patient?.id ?? null;
-      entity.comments = `Cita registrada ${date.toString().split("T")[0]} ${time.simpleTime}`
+      entity.comments = `Cita registrada ${date.toString().split("T")[0]} ${time.simpleTime}`;
+      entity.hasCabinet = 0;
+      entity.hasLabs = 0;
 
       const response = await this.appointmentRepository.save(entity);
 
@@ -306,7 +288,7 @@ export class AppointmentService {
     }
   }
 
-  updateAppointmentStatus = async ({ id, status, amount, paymentMethod, serviceId }: UpdateAppointmentStatusDTO) => {
+  updateAppointmentStatus = async ({ id, status, amount, paymentMethod, servicesId }: UpdateAppointmentStatusDTO) => {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ id: Number(id) });
 
@@ -324,8 +306,14 @@ export class AppointmentService {
         patient.lastVisitDate = formatISO(new Date());
         appointment.paymentMethodId = paymentMethod;
         patient.nextDateAppointment = null;
-        appointment.serviceId = serviceId;
         await this.patientRepository.save(patient);
+
+        for await (const serviceId of servicesId) {
+          const service = new AppointmentServiceEntity();
+          service.appointmentId = appointment.id;
+          service.serviceId = serviceId;
+          await this.appointmentServiceRepository.save(service);
+        }
       }
       const updatedAppointment = await this.appointmentRepository.save(appointment);
       return this.getAppointment(updatedAppointment);
@@ -507,7 +495,7 @@ export class AppointmentService {
 
 
 
-  registerNextAppointment = async ({ branchOfficeId, date, time, patientId, dentistId, hasLabs, hasCabinet, service }: RegisterNextAppointmentDTO) => {
+  registerNextAppointment = async ({ branchOfficeId, date, time, patientId, dentistId, hasLabs, hasCabinet, services }: RegisterNextAppointmentDTO) => {
     try {
 
       const branchOffice = await this.branchOfficeRepository.findOneBy({ id: Number(branchOfficeId) });
@@ -537,13 +525,18 @@ export class AppointmentService {
       entity.comments = `Cita Agendada por Recepcionista ${date.toString().split("T")[0]} ${time.simpleTime}`
       entity.hasLabs = hasLabs;
       entity.hasCabinet = hasCabinet;
-      entity.serviceId = Number(service);
 
       const response = await this.appointmentRepository.save(entity);
 
       patient.nextDateAppointment = `${date.toString().split("T")[0]} ${time.simpleTime}`;
       await this.patientRepository.save(patient);
 
+      for await (const serviceId of services) {
+        const service = new AppointmentServiceEntity();
+        service.appointmentId = response.id;
+        service.serviceId = serviceId;
+        await this.appointmentServiceRepository.save(service);
+      }
 
       if (patient.email != null && patient.email != undefined) {
         await this.emailService.sendAppointmentEmail(
@@ -621,7 +614,7 @@ export class AppointmentService {
     let prospect: ProspectEntity;
     let patient: PatientEntity;
     let dentist: EmployeeEntity;
-    let service: ServiceEntity;
+    let services: ServiceEntity[] = [];
 
     if (appointment.patientId == null || appointment.patientId == undefined) {
       prospect = await this.prospectRepository.findOneBy({ id: appointment.prospectId });
@@ -635,10 +628,13 @@ export class AppointmentService {
       previewDentist.typeName = type.name;
       dentist = previewDentist;
     }
-    if (appointment.serviceId != null && appointment.serviceId != undefined && appointment.serviceId != 0) {
-      service = await this.serviceRepository.findOneBy({ id: appointment.serviceId });
+
+    const appointmentServices = await this.appointmentServiceRepository.findBy({ appointmentId: appointment.id });
+    for await (const serviceId of appointmentServices) {
+      const res = await this.serviceRepository.findOneBy({ id: serviceId.serviceId });
+      if (res) services.push(res);
     }
-    return new GetAppointmentDetailDTO(appointment, branchOffice, patient, prospect, dentist, service);
+    return new GetAppointmentDetailDTO(appointment, branchOffice, patient, prospect, dentist, services);
   }
 
 
@@ -740,7 +736,7 @@ export class AppointmentService {
       }
       return failureEmails;
     } catch (exception) {
-      console.log(exception);
+      console.log(`Exception main method cancel appoitnments ${exception}`);
     }
   }
 

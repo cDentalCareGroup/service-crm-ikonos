@@ -47,3 +47,11 @@ export class RegisterCallDTO {
     date: string;
     type: string;
 }
+
+
+
+export class GetCallDetailDTO {
+    patientId: number;
+    prospectId: number;
+
+}

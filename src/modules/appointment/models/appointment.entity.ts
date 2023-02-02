@@ -161,11 +161,7 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
   })
   paymentMethodId: number;
 
-  @Column({
-    name: 'service_id',
-    type: 'int'
-  })
-  serviceId: number;
+
 
 //   @Column({
 //     name: 'dentist_id',

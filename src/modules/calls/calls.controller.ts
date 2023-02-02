@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiBody } from '@nestjs/swagger';
 import { CallsService } from './calls.service';
-import { RegisterCallDTO, RegisterCatalogDTO, UpdateCallDTO, UpdateCatalogDTO } from './models/call.dto';
+import { GetCallDetailDTO, RegisterCallDTO, RegisterCatalogDTO, UpdateCallDTO, UpdateCatalogDTO } from './models/call.dto';
 
 @Controller('calls')
 export class CallsController {
@@ -43,5 +43,11 @@ export class CallsController {
     @ApiBody({type: RegisterCallDTO})
     async registerCall(@Body() body: RegisterCallDTO) {
         return this.callsService.registerCall(body);
+    }
+
+    @Post('/detail')
+    @ApiBody({type: GetCallDetailDTO})
+    async getCallDetail(@Body() body: GetCallDetailDTO) {
+        return this.callsService.getCallDetail(body);
     }
 }

@@ -7,7 +7,7 @@ import { AppointmentEntity } from '../appointment/models/appointment.entity';
 import { ProspectEntity } from '../appointment/models/prospect.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { CallCatalogEntity } from './models/call.catalog.entity';
-import { GetCallsDTO, RegisterCallDTO, RegisterCatalogDTO, UpdateCallDTO, UpdateCatalogDTO } from './models/call.dto';
+import { GetCallDetailDTO, GetCallsDTO, RegisterCallDTO, RegisterCatalogDTO, UpdateCallDTO, UpdateCatalogDTO } from './models/call.dto';
 import { CallEntity, CallResult } from './models/call.entity';
 
 @Injectable()
@@ -25,7 +25,7 @@ export class CallsService {
 
     getCalls = async () => {
         try {
-            const result = await this.callRepository.findBy({ status: 'activa' });
+            const result = await this.callRepository.find({ order: { dueDate: { direction: 'ASC' } }, where: { status: 'activa' } });
             let data: GetCallsDTO[] = [];
             for await (const call of result) {
                 let patient: PatientEntity;
@@ -39,8 +39,9 @@ export class CallsService {
                 const catalog = await this.catalogRepository.findOneBy({ id: call.caltalogId });
                 data.push(new GetCallsDTO(call, catalog, appintment, patient, prospect));
             }
-            return data;
+            return data
         } catch (error) {
+            console.log(error);
             HandleException.exception(error);
         }
     }
@@ -106,6 +107,33 @@ export class CallsService {
             call.status = 'activa';
             call.result = CallResult.CALL;
             return await this.callRepository.save(call);
+        } catch (error) {
+            HandleException.exception(error);
+        }
+    }
+
+    getCallDetail = async ({ patientId, prospectId }: GetCallDetailDTO) => {
+        try {
+            console.log(patientId);
+            console.log(prospectId);
+
+            if (patientId != null && patientId != 0) {
+                const patient = await this.patientRepository.findOneBy({ id: patientId });
+                const calls = await this.callRepository.findBy({ patientId: patient.id });
+                let data: any[] = [];
+                for await (const item of calls) {
+                    const catalog = await this.catalogRepository.findOneBy({ id: item.caltalogId });
+                    data.push({
+                        'catalogName':catalog.name,
+                        'catalogId':catalog.id,
+                        'callId': item.id,
+                        'callDueDate': item.dueDate,
+                        'appointment':item.appointmentId,
+                        'callStatus':item.status,
+                    })
+                }
+                return data;
+            }
         } catch (error) {
             HandleException.exception(error);
         }

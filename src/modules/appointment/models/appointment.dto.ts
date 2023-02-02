@@ -67,18 +67,18 @@ export class GetAppointmentDetailDTO {
   patient?: PatientEntity;
   prospect?: ProspectEntity;
   dentist?: EmployeeEntity;
-  service?: ServiceEntity;
+  services?: ServiceEntity[];
 
   constructor(appointment: AppointmentEntity,
     branchOffice: BranchOfficeEntity,
     patient?: PatientEntity,
-    prospect?: ProspectEntity, dentist?: EmployeeEntity, service?: ServiceEntity) {
+    prospect?: ProspectEntity, dentist?: EmployeeEntity, services?: ServiceEntity[]) {
     this.appointment = appointment;
     this.branchOffice = branchOffice;
     this.patient = patient;
     this.prospect = prospect;
     this.dentist = dentist;
-    this.service = service;
+    this.services = services;
   }
 }
 
@@ -120,7 +120,7 @@ export class UpdateAppointmentStatusDTO {
   date: string;
   amount: string;
   paymentMethod: number;
-  serviceId: number;
+  servicesId: number[];
 }
 
 
@@ -153,7 +153,7 @@ export class RegisterNextAppointmentDTO {
   dentistId: string;
   hasLabs: number;
   hasCabinet: number;
-  service: string;
+  services: number[];
 }
 
 export class UpdateHasLabsAppointmentDTO {
