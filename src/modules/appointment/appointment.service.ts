@@ -691,6 +691,7 @@ export class AppointmentService {
   appointmentNotAttended = async () => {
     try {
       const date = new Date();
+      date.setDate(date.getDate() - 1);
       const nextDate = date.toISOString().split("T")[0];
       const result = await this.appointmentRepository.find({ where: { appointment: nextDate, status: 'activa' } });
       let failureEmails = [];
@@ -801,6 +802,7 @@ export class AppointmentService {
   reminderPad = async () => {
     try {
       const date = new Date();
+      date.setDate(date.getDate() - 1);
       const nextDate = date.toISOString().split("T")[0];
       const patients = await this.patientRepository.findBy({ padExpirationDate: nextDate });
       const callPad = await this.callCatalogRepository.findOneBy({ name: 'pad vencido' });

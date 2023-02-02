@@ -19,6 +19,7 @@ export class TaskServiceService {
   @Cron('0 10 21 * * 0-6')
   async handleRemiderNotAttendedAppointment() {
     const date = new Date();
+    date.setDate(date.getDate() - 1);
     const nextDate = date.toISOString().split("T")[0];
     console.log(`Executing job handleRemiderNotAttendedAppointment at ${nextDate}`);
     const data = await this.appointmentService.appointmentNotAttended();
@@ -26,7 +27,7 @@ export class TaskServiceService {
   }
 
 
-  @Cron('0 30 5 * * 0-6')
+  @Cron('0 30 9 * * 0-6')
   async handleReminderPad() {
     console.log(`Executing job handleReminderPad at ${new Date()}`);
     await this.appointmentService.reminderPad();
