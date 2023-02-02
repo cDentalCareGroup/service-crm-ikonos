@@ -18,7 +18,9 @@ export class TaskServiceService {
 
   @Cron('0 10 21 * * 0-6')
   async handleRemiderNotAttendedAppointment() {
-    console.log(`Executing job handleRemiderNotAttendedAppointment at ${new Date()}`);
+    const date = new Date();
+    const nextDate = date.toISOString().split("T")[0];
+    console.log(`Executing job handleRemiderNotAttendedAppointment at ${nextDate}`);
     const data = await this.appointmentService.appointmentNotAttended();
     console.log(`Failure emails ${data}`);
   }
