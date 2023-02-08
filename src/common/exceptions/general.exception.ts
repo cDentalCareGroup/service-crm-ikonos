@@ -43,12 +43,15 @@ export class ValidationException extends HttpException {
     if (type == ValidationExceptionType.PATIENT_EXISTS) {
       message = 'PATIENT_EXISTS'
     }
+    if (type == ValidationExceptionType.REGISTER_EXISTS) {
+      message = 'REGISTER_EXISTS'
+    }
     super(message, HttpStatus.BAD_REQUEST);
   }
 }
 
 export enum ValidationExceptionType {
-  WRONG_PASSWORD, MISSING_VALUES, APPOINTMENT_EXISTS, PATIENT_EXISTS
+  WRONG_PASSWORD, MISSING_VALUES, APPOINTMENT_EXISTS, PATIENT_EXISTS, REGISTER_EXISTS
 }
 
 export class HandleException {
