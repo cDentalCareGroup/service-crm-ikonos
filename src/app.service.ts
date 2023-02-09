@@ -4,7 +4,7 @@ import { addMinutes, subMinutes } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { lastValueFrom, map } from 'rxjs';
 import { HandleException } from './common/exceptions/general.exception';
-import { getTodayDate } from './utils/general.functions.utils';
+import { capitalizeAllCharacters, getTodayDate } from './utils/general.functions.utils';
 
 
 @Injectable()
@@ -18,8 +18,9 @@ export class AppService {
     const date = new Date();
     date.setDate(date.getDate() - 1);
     const nextDate = date.toISOString().split("T")[0];
+
     return {
-      'version': 'Version 1.0.30 - Firebase v.1.0.0',
+      'version': 'Version 1.0.33.1 - Firebase v.1.0.0',
       'date': new Date().toISOString().split("T")[0]
     }
   }

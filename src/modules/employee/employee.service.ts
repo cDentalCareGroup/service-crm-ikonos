@@ -19,7 +19,7 @@ import { SecurityUtil, } from 'src/utils/security.util';
 import { EmployeeRoleEntity } from './models/employee.rol.entity';
 import { RolEntity } from '../auth/models/entities/rol.entity';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
-import { capitalizeFirstLetter } from 'src/utils/general.functions.utils';
+import { capitalizeAllCharacters, capitalizeFirstLetter } from 'src/utils/general.functions.utils';
 
 @Injectable()
 export class EmployeeService {
@@ -200,19 +200,18 @@ export class EmployeeService {
   registerEmployee = async (body: RegisterEmployeeDTO) => {
     try {
 
-
       const pass = await SecurityUtil.encryptPassword(body.password);
       const employee = new EmployeeEntity();
       employee.user = body.user;
       employee.password = pass;
-      employee.name = capitalizeFirstLetter(body.name);
-      employee.lastname = capitalizeFirstLetter(body.lastname);
-      employee.secondLastname = capitalizeFirstLetter(body.secondLastname);
-      employee.street = body.street;
+      employee.name = capitalizeAllCharacters(body.name);
+      employee.lastname = capitalizeAllCharacters(body.lastname);
+      employee.secondLastname = capitalizeAllCharacters(body.secondLastname);
+      employee.street = capitalizeAllCharacters(body.street);
       employee.number = body.streetNumber;
-      employee.colony = body.colony;
+      employee.colony = capitalizeAllCharacters(body.colony);
       employee.cp = body.cp;
-      employee.state = body.state;
+      employee.state =capitalizeAllCharacters(body.state);
       employee.city = body.city;
       employee.primaryContact = body.phone;
       employee.birthDay = new Date(body.brithday);
@@ -255,14 +254,14 @@ export class EmployeeService {
 
       employee.user = body.user;
       employee.password = pass;
-      employee.name = body.name;
-      employee.lastname = body.lastname;
-      employee.secondLastname = body.secondLastname;
-      employee.street = body.street;
+      employee.name = capitalizeAllCharacters(body.name);
+      employee.lastname = capitalizeAllCharacters(body.lastname);
+      employee.secondLastname = capitalizeAllCharacters(body.secondLastname);
+      employee.street = capitalizeAllCharacters(body.street);
       employee.number = body.streetNumber;
-      employee.colony = body.colony;
+      employee.colony =capitalizeAllCharacters(body.colony);
       employee.cp = body.cp;
-      employee.state = body.state;
+      employee.state = capitalizeAllCharacters(body.state);
       employee.city = body.city;
       employee.primaryContact = body.phone;
       employee.birthDay = new Date(body.brithday);

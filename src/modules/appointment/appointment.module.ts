@@ -16,6 +16,7 @@ import { AppointmentController } from './appointment.controller';
 import { AppointmentService } from './appointment.service';
 import { AppointmentEntity } from './models/appointment.entity';
 import { AppointmentServiceEntity } from './models/appointment.service.entity';
+import { AppointmentTimesEntity } from './models/appointment.times.entity';
 import { PaymentMethodEntity } from './models/payment.method.entity';
 import { ProspectEntity } from './models/prospect.entity';
 import { ServiceEntity } from './models/service.entity';
@@ -37,7 +38,8 @@ import { ServiceEntity } from './models/service.entity';
       PaymentMethodEntity,
       CallCatalogEntity,
       CallEntity,
-      AppointmentServiceEntity
+      AppointmentServiceEntity,
+      AppointmentTimesEntity
     ]),
     EmailModule
   ],

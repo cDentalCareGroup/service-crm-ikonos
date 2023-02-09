@@ -4,6 +4,7 @@ import { BranchOfficeScheduleEntity } from "src/modules/branch_office/models/bra
 import { EmployeeEntity } from "src/modules/employee/models/employee.entity";
 import { PatientEntity } from "src/modules/patient/models/patient.entity";
 import { AppointmentEntity } from "./appointment.entity";
+import { AppointmentTimesEntity } from "./appointment.times.entity";
 import { ProspectEntity } from "./prospect.entity";
 import { ServiceEntity } from "./service.entity";
 
@@ -39,6 +40,8 @@ export class AppointmentAvailabilityDTO {
     example: 'Lunes, martes',
   })
   date: string;
+
+  filterHours?: boolean;
 }
 
 export class RegisterAppointmentDTO {
@@ -68,17 +71,19 @@ export class GetAppointmentDetailDTO {
   prospect?: ProspectEntity;
   dentist?: EmployeeEntity;
   services?: ServiceEntity[];
+  extendedTimes?: AppointmentTimesEntity[];
 
   constructor(appointment: AppointmentEntity,
     branchOffice: BranchOfficeEntity,
     patient?: PatientEntity,
-    prospect?: ProspectEntity, dentist?: EmployeeEntity, services?: ServiceEntity[]) {
+    prospect?: ProspectEntity, dentist?: EmployeeEntity, services?: ServiceEntity[], extendedTimes?: AppointmentTimesEntity[]) {
     this.appointment = appointment;
     this.branchOffice = branchOffice;
     this.patient = patient;
     this.prospect = prospect;
     this.dentist = dentist;
     this.services = services;
+    this.extendedTimes = extendedTimes;
   }
 }
 
@@ -168,4 +173,11 @@ export class UpdateHasCabinetAppointmentDTO {
 
 export class SendNotificationDTO {
   folio: string;
+}
+
+
+export class RegisterExtendAppointmentDTO {
+  id: number;
+  times: string[];
+  appointment: string;
 }

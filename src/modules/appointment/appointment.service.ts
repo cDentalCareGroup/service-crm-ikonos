@@ -19,9 +19,10 @@ import { AppointmentTemplateMail, EmailService } from '../email/email.service';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
-import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
+import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 import { AppointmentEntity } from './models/appointment.entity';
 import { AppointmentServiceEntity } from './models/appointment.service.entity';
+import { AppointmentTimesEntity } from './models/appointment.times.entity';
 import { PaymentMethodEntity } from './models/payment.method.entity';
 import { ProspectEntity } from './models/prospect.entity';
 import { ServiceEntity } from './models/service.entity';
@@ -45,17 +46,17 @@ export class AppointmentService {
     @InjectRepository(CallEntity) private callRepository: Repository<CallEntity>,
     @InjectRepository(CallCatalogEntity) private callCatalogRepository: Repository<CallCatalogEntity>,
     @InjectRepository(AppointmentServiceEntity) private appointmentServiceRepository: Repository<AppointmentServiceEntity>,
+    @InjectRepository(AppointmentTimesEntity) private appointmentTimesRepository: Repository<AppointmentTimesEntity>,
     private emailService: EmailService
   ) { }
 
-  getAppointmentsAvailability = async ({ branchOfficeName, dayName, date }: AppointmentAvailabilityDTO): Promise<AvailableHoursDTO[]> => {
+  getAppointmentsAvailability = async ({ branchOfficeName, dayName, date, filterHours }: AppointmentAvailabilityDTO): Promise<AvailableHoursDTO[]> => {
     try {
-
       const branchOffice = await this.branchOfficeRepository.findOneBy({ name: branchOfficeName });
       const schedule = await this.branchOfficeScheduleRepository.find({ where: { branchId: branchOffice.id, status: 'activo', dayName: dayName } });
 
       let availableHours: AvailableHoursDTO[] = [];
-      const data: AvailableHoursDTO[] = [];
+      let data: AvailableHoursDTO[] = [];
       const today = new Date();
       let currentDay = today.getDate();
 
@@ -114,17 +115,26 @@ export class AppointmentService {
         }
 
       }
+      console.log(`Filtering ${filterHours}`)
       const dateSended = date.split("T")[0];
-      for await (const hour of availableHours) {
-        const appointments = await this.appointmentRepository.findBy({
-          branchId: branchOffice.id,
-          appointment: dateSended,
-          time: hour.simpleTime
-        });
-        //console.log(appointments.length)
-        if (appointments.length < hour.seat) {
-          data.push(hour);
+      if (filterHours == true) {
+        for await (const hour of availableHours) {
+          const appointments = await this.appointmentRepository.findBy({
+            branchId: branchOffice.id,
+            appointment: dateSended,
+            time: hour.simpleTime
+          });
+          const extendedAppointments = await this.appointmentTimesRepository.findBy({
+            appointment: dateSended,
+            time: hour.simpleTime,
+            status: 'activa'
+          });
+          if (appointments.length < hour.seat && extendedAppointments.length == 0) {
+            data.push(hour);
+          }
         }
+      } else {
+        data = availableHours;
       }
       return data;
     } catch (exception) {
@@ -471,29 +481,25 @@ export class AppointmentService {
       }
 
 
-      const filteredHours: AvailableHoursDTO[] = [];
-      for await (const hour of availableHours) {
-        const appointments = await this.appointmentRepository.findBy({
-          branchId: Number(branchOfficeId),
-          time: hour.simpleTime,
-          appointment: format(new Date(date), 'yyyy-MM-dd')
-        });
-        if (appointments.length == 0) {
-          filteredHours.push(hour);
-        }
-      }
+      // const filteredHours: AvailableHoursDTO[] = [];
+      // for await (const hour of availableHours) {
+      //   const appointments = await this.appointmentRepository.findBy({
+      //     branchId: Number(branchOfficeId),
+      //     time: hour.simpleTime,
+      //     appointment: format(new Date(date), 'yyyy-MM-dd')
+      //   });
+      //   if (appointments.length == 0) {
+      //     filteredHours.push(hour);
+      //   }
+      // }
 
-      return filteredHours;
+      return availableHours;
     } catch (exception) {
       console.log(exception);
       HandleException.exception(exception);
     }
 
   }
-
-
-
-
 
   registerNextAppointment = async ({ branchOfficeId, date, time, patientId, dentistId, hasLabs, hasCabinet, services }: RegisterNextAppointmentDTO) => {
     try {
@@ -634,7 +640,9 @@ export class AppointmentService {
       const res = await this.serviceRepository.findOneBy({ id: serviceId.serviceId });
       if (res) services.push(res);
     }
-    return new GetAppointmentDetailDTO(appointment, branchOffice, patient, prospect, dentist, services);
+    const extendedTimes = await this.appointmentTimesRepository.findBy({ appointmentId: appointment.id });
+
+    return new GetAppointmentDetailDTO(appointment, branchOffice, patient, prospect, dentist, services, extendedTimes);
   }
 
 
@@ -836,6 +844,32 @@ export class AppointmentService {
     try {
       const result = await this.paymentRepository.find();
       return result;
+    } catch (error) {
+      HandleException.exception(error);
+    }
+  }
+
+
+  extendAppointment = async (body: RegisterExtendAppointmentDTO) => {
+    try {
+
+      for await (const time of body.times) {
+        const exist = await this.appointmentTimesRepository.findBy({
+          appointmentId: body.id,
+          time: time,
+          appointment: body.appointment
+        });
+        if (exist == null || exist.length == 0) {
+          const appointmentTime = new AppointmentTimesEntity();
+          appointmentTime.appointmentId = body.id;
+          appointmentTime.appointment = body.appointment;
+          appointmentTime.status = 'activa';
+          appointmentTime.time = time;
+          await this.appointmentTimesRepository.save(appointmentTime);
+        }
+      }
+      const appointment = await this.appointmentRepository.findOneBy({ id: body.id });
+      return this.getAppointment(appointment);
     } catch (error) {
       HandleException.exception(error);
     }

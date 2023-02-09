@@ -202,10 +202,6 @@ export class PatientService {
 
   updatePatient = async (body: UpdatePatientDTO) => {
     try {
-
-
-
-
       const patient = await this.patientRepository.findOneBy({ id: body.patientId });
       patient.name = capitalizeAllCharacters(body.name);
       patient.lastname = capitalizeAllCharacters(body.lastname);
