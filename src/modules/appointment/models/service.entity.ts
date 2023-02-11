@@ -17,15 +17,16 @@ export class ServiceEntity {
     })
     name: string;
 
-    @Column({
-        name: 'type',
-        type: 'int',
-    })
-    type: number;
 
     @Column({
         name: 'price',
         type: 'decimal',
     })
     price: number;
+
+    @Column({
+        name: 'status',
+        type: 'varchar',
+    })
+    status: string;
 }

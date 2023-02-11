@@ -163,6 +163,23 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
 
 
 
+  @Column({
+    name: 'next_appointment_id',
+    type: 'int',
+    nullable: true,
+  })
+  nextAppointmentId: number;
+
+  @Column({
+    name: 'next_appointment_date',
+    type: 'varchar',
+    nullable: true,
+  })
+  nextAppointmentDate: string;
+
+  
+
+
 //   @Column({
 //     name: 'dentist_id',
 //     type: 'int',

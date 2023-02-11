@@ -18,6 +18,8 @@ import { PatientModule } from './modules/patient/patient.module';
 import { HttpModule } from '@nestjs/axios';
 import { CallsModule } from './modules/calls/calls.module';
 import { PadModule } from './modules/pad/pad.module';
+import { ServicesModule } from './modules/services/services.module';
+
 
 @Module({
   imports: [
@@ -48,6 +50,7 @@ import { PadModule } from './modules/pad/pad.module';
     HttpModule,
     CallsModule,
     PadModule,
+    ServicesModule,
   ],
   controllers: [AppController],
   providers: [AppService, TaskServiceService],

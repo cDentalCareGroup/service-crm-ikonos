@@ -4,12 +4,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ServiceEntity } from '../appointment/models/service.entity';
 import { PadCatalogueEntity } from './models/pad.catalogue.entity';
 import { PadComponenEntity } from './models/pad.component.entity';
+import { PadEntity } from './models/pad.entity';
 import { PadController } from './pad.controller';
 import { PadService } from './pad.service';
 
 @Module({
     imports: [ConfigModule.forRoot(),
-    TypeOrmModule.forFeature([PadCatalogueEntity, PadComponenEntity,ServiceEntity]),],
+    TypeOrmModule.forFeature([PadCatalogueEntity, PadComponenEntity,ServiceEntity, PadEntity]),],
     providers: [PadService],
     controllers: [PadController]
 })

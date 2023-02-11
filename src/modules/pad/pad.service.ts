@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { addDays } from 'date-fns';
 import { async } from 'rxjs';
 import { HandleException, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
 import { Repository } from 'typeorm';
@@ -7,6 +8,8 @@ import { ServiceEntity } from '../appointment/models/service.entity';
 import { getPadType, PadCatalogueEntity } from './models/pad.catalogue.entity';
 import { PadComponenEntity } from './models/pad.component.entity';
 import { RegisterPadComponentDTO, RegisterPadDTO, UpdatePadDTO } from './models/pad.dto';
+import { PadEntity } from './models/pad.entity';
+import { PadMemberEntity } from './models/pad.member.entity';
 
 @Injectable()
 export class PadService {
@@ -15,8 +18,45 @@ export class PadService {
         @InjectRepository(PadCatalogueEntity) private padCatalogueRepository: Repository<PadCatalogueEntity>,
         @InjectRepository(PadComponenEntity) private padComponentRepository: Repository<PadComponenEntity>,
         @InjectRepository(ServiceEntity) private serviceRepository: Repository<ServiceEntity>,
+        @InjectRepository(PadEntity) private padRepository: Repository<PadEntity>,
     ) { }
 
+
+
+    registerPad = async (body: any) => {
+        try {
+          // console.log(body);
+
+            const padCatalogue = await this.padCatalogueRepository.findOneBy({ id: body.padCatalogueId });
+           // console.log(padCatalogue);
+
+            const pad = new PadEntity();
+            pad.padAdquisitionDate = body.adquisitionDate;
+            pad.padCatalogueId = body.padCatalogueId;
+            pad.padPrice = padCatalogue.price;
+            pad.padType = padCatalogue.type;
+            pad.padDueDate = addDays(new Date(body.adquisitionDate), padCatalogue.day)
+
+
+            let index = 0;
+            for await (const item of body.members) {
+                const padMember = new PadMemberEntity();
+                padMember.padCatalogueId = body.padCatalogueId;
+                padMember.padId = pad.id;
+                padMember.patientId = item;
+                if (index == 0) {
+                    padMember.isPrincipal = 1;
+                    index++;
+                } else {
+                    padMember.isPrincipal = 0;
+                }
+                console.log(padMember);
+            }
+            return 200;
+        } catch (error) {
+            HandleException.exception(error);
+        }
+    }
 
 
     registerPadCatalog = async (body: RegisterPadDTO) => {
@@ -31,6 +71,8 @@ export class PadService {
             padCatalogue.price = Number(body.price);
             padCatalogue.type = getPadType(body.type);
             padCatalogue.day = Number(body.day);
+            padCatalogue.maxMember = body.maxMembers;
+            padCatalogue.maxAdditional = body.maxAdditionals;
             const result = await this.padCatalogueRepository.save(padCatalogue);
             console.log(result);
             return await this.getPadCatalogueDetail(result.id);
@@ -50,7 +92,7 @@ export class PadService {
             padCatalogue.day = Number(body.day);
             console.log(padCatalogue);
             const result = await this.padCatalogueRepository.save(padCatalogue);
-           return await this.getPadCatalogueDetail(result.id);
+            return await this.getPadCatalogueDetail(result.id);
         } catch (error) {
             console.log(`PadService - Register ${error}`);
             HandleException.exception(error);
@@ -136,6 +178,8 @@ export class PadService {
                 'type': padCatalogue.type,
                 'status': padCatalogue.status,
                 'day': padCatalogue.day,
+                'maxMemebers': padCatalogue.maxMember,
+                'maxAdditional': padCatalogue.maxAdditional,
                 'components': services
             }
         } catch (error) {

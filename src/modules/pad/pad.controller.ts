@@ -6,13 +6,19 @@ import { PadService } from './pad.service';
 @Controller('pad')
 export class PadController {
 
-
     constructor(private padService: PadService) { }
 
 
+
+
+    @Post('register')
+    async registerPad(@Body() body: any) {
+        return this.padService.registerPad(body);
+    }
+
     @Post('register/catalogue')
     @ApiBody({ type: RegisterPadDTO })
-    async registerPad(@Body() body: RegisterPadDTO) {
+    async registerPadCatalogue(@Body() body: RegisterPadDTO) {
         return this.padService.registerPadCatalog(body);
     }
 
@@ -42,4 +48,8 @@ export class PadController {
     async deleteCatalogueComponent(@Body() body: any) {
         return this.padService.deletePadCatalogComponent(body);
     }
+
+
+
+    
 }

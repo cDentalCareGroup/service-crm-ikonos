@@ -172,11 +172,6 @@ export class PatientEntity {
   })
   lng: number;
 
-  @Column({
-    name: 'next_appointment_date',
-    type: 'char',
-  })
-  nextDateAppointment: string; 
 
   @Column({
     name:     'status',
@@ -201,13 +196,6 @@ export class PatientEntity {
   })
   startDate: string;
 
-  @Column({
-    name:     'last_appointment_date',
-    type:     'datetime',
-    comment:  'fechaHora en la que se atendio el paciente por ultima vez vez en alguna sucursal',
-    default : null
-  })
-  lastVisitDate: string;
 
   @Column({
     name:     'patient_origin_id',

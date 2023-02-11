@@ -7,7 +7,7 @@ import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { async } from 'rxjs';
 import { HandleException, NotFoundCustomException, NotFoundType, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
 import { capitalizeAllCharacters, getDiff, getRandomInt, getTodayDate } from 'src/utils/general.functions.utils';
-import { Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import { UserEntity } from '../auth/models/entities/user.entity';
 import { branchOfficeScheduleToEntity } from '../branch_office/extensions/branch.office.extensions';
 import { BranchOfficeEmployeeSchedule } from '../branch_office/models/branch.office.employee.entity';
@@ -129,7 +129,7 @@ export class AppointmentService {
             time: hour.simpleTime,
             status: 'activa'
           });
-          if (appointments.length < hour.seat && extendedAppointments.length == 0) {
+          if (appointments.length < hour.seat && extendedAppointments.length < hour.seat) {
             data.push(hour);
           }
         }
@@ -237,8 +237,18 @@ export class AppointmentService {
     try {
       const data: GetAppointmentDetailDTO[] = [];
       if (body.status != null && body.status != '') {
-        if (body.status == 'finalizada-cita' || body.status == 'finalizada') {
-          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: 'finalizada' });
+        if (body.status == 'finalizada-cita') {
+          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: 'finalizada', nextAppointmentId: Not(IsNull()) });
+          for await (const appointment of appointments) {
+            const existsNext = appointments.find((value, _) => value.id == appointment.nextAppointmentId);
+            if (existsNext == null || existsNext == undefined) {
+              const result = await this.getAppointment(appointment);
+              data.push(result);
+            }
+          }
+        } else if (body.status == 'finalizada') {
+          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: 'finalizada', nextAppointmentId: IsNull() });
+
           for await (const appointment of appointments) {
             const result = await this.getAppointment(appointment);
             data.push(result);
@@ -313,10 +323,20 @@ export class AppointmentService {
         appointment.status = 'finalizada';
         appointment.comments = `${appointment.comments} \n Estatus: finalizada ${formatISO(new Date())}`;
         appointment.priceAmount = Number(amount);
-        patient.lastVisitDate = formatISO(new Date());
         appointment.paymentMethodId = paymentMethod;
-        patient.nextDateAppointment = null;
         await this.patientRepository.save(patient);
+
+        const extendedTimes = await this.appointmentTimesRepository.findBy({
+          appointmentId: appointment.id,
+          appointment: appointment.appointment,
+          status: 'activa'
+        });
+
+        for await (const time of extendedTimes) {
+          const item = time;
+          item.status = 'finalizada';
+          await this.appointmentTimesRepository.save(item);
+        }
 
         for await (const serviceId of servicesId) {
           const service = new AppointmentServiceEntity();
@@ -501,7 +521,7 @@ export class AppointmentService {
 
   }
 
-  registerNextAppointment = async ({ branchOfficeId, date, time, patientId, dentistId, hasLabs, hasCabinet, services }: RegisterNextAppointmentDTO) => {
+  registerNextAppointment = async ({ branchOfficeId, date, time, patientId, dentistId, hasLabs, hasCabinet, services, nextAppointmentId }: RegisterNextAppointmentDTO) => {
     try {
 
       const branchOffice = await this.branchOfficeRepository.findOneBy({ id: Number(branchOfficeId) });
@@ -534,8 +554,10 @@ export class AppointmentService {
 
       const response = await this.appointmentRepository.save(entity);
 
-      patient.nextDateAppointment = `${date.toString().split("T")[0]} ${time.simpleTime}`;
-      await this.patientRepository.save(patient);
+      const previousAppointment = await this.appointmentRepository.findOneBy({ id: nextAppointmentId });
+      previousAppointment.nextAppointmentId = response.id;
+      previousAppointment.nextAppointmentDate = date.toString().split("T")[0];
+      await this.appointmentRepository.save(previousAppointment);
 
       for await (const serviceId of services) {
         const service = new AppointmentServiceEntity();
@@ -544,7 +566,7 @@ export class AppointmentService {
         await this.appointmentServiceRepository.save(service);
       }
 
-      if (patient.email != null && patient.email != undefined) {
+      if (patient.email != null && patient.email != undefined && patient.email != '') {
         await this.emailService.sendAppointmentEmail(
           new AppointmentTemplateMail(
             `${patient.name} ${patient.lastname} ${patient.secondLastname}`,
@@ -558,7 +580,6 @@ export class AppointmentService {
           patient.email);
       }
       let updatedAppointment = await this.getAppointment(response);
-      // let nextAppointments = await this.getNextAppointments(response.patientId);
       return updatedAppointment;
     } catch (exception) {
       HandleException.exception(exception);

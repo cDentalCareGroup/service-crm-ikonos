@@ -7,6 +7,8 @@ export class RegisterPadDTO {
     type: string;
     day: number;
     status: boolean;
+    maxMembers: number;
+    maxAdditionals: number;
 }
 
 export class UpdatePadDTO {

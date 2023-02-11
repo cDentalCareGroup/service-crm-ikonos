@@ -52,4 +52,10 @@ export class PadCatalogueEntity {
 
     @Column({ name: 'day', type: 'int' })
     day: number;
+
+    @Column({ name: 'max_member', type: 'int' })
+    maxMember: number;
+
+    @Column({ name: 'max_addtional', type: 'int' })
+    maxAdditional: number;
 }

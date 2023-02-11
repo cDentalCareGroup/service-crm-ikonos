@@ -159,6 +159,7 @@ export class RegisterNextAppointmentDTO {
   hasLabs: number;
   hasCabinet: number;
   services: number[];
+  nextAppointmentId: number;
 }
 
 export class UpdateHasLabsAppointmentDTO {
