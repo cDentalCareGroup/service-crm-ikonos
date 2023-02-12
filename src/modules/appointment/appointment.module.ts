@@ -17,6 +17,7 @@ import { AppointmentController } from './appointment.controller';
 import { AppointmentService } from './appointment.service';
 import { AppointmentDetailEntity } from './models/appointment.detail.entity';
 import { AppointmentEntity } from './models/appointment.entity';
+import { AppointmentReferralEntity } from './models/appointment.referral.entity';
 import { AppointmentServiceEntity } from './models/appointment.service.entity';
 import { AppointmentTimesEntity } from './models/appointment.times.entity';
 import { PaymentMethodEntity } from './models/payment.method.entity';
@@ -43,7 +44,8 @@ import { ServiceEntity } from './models/service.entity';
       AppointmentServiceEntity,
       AppointmentTimesEntity,
       AppointmentDetailEntity,
-      PadComponentUsedEntity
+      PadComponentUsedEntity,
+      AppointmentReferralEntity
     ]),
     EmailModule
   ],

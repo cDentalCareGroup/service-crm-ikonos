@@ -51,16 +51,18 @@ export class RegisterAppointmentDTO {
   time?: AvailableHoursDTO;
   email?: string;
   branchName?: string;
+  referal?: string;
   constructor(
     name?: string,
     phone?: string,
-    date?: Date, time?: AvailableHoursDTO, email?: string, branchName?: string,) {
+    date?: Date, time?: AvailableHoursDTO, email?: string, branchName?: string,referal?: string) {
     this.time = time;
     this.name = name;
     this.phone = phone;
     this.date = date;
     this.email = email;
     this.branchName = branchName;
+    this.referal = referal;
   }
 }
 

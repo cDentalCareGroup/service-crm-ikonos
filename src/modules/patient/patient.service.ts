@@ -12,7 +12,12 @@ import {
 } from 'src/common/exceptions/general.exception';
 import { capitalizeAllCharacters, capitalizeFirstLetter, isNumber } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
+import { ServiceEntity } from '../appointment/models/service.entity';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
+import { PadCatalogueEntity } from '../pad/models/pad.catalogue.entity';
+import { PadComponenEntity } from '../pad/models/pad.component.entity';
+import { PadEntity } from '../pad/models/pad.entity';
+import { PadMemberEntity } from '../pad/models/pad.member.entity';
 import {
   GetPatientByIdDTO,
   GetPatientsByBranchOfficeDTO,
@@ -28,14 +33,15 @@ import { PatientOriginEntity } from './models/patient.origin.entity';
 @Injectable()
 export class PatientService {
   constructor(
-    @InjectRepository(PatientEntity)
-    private patientRepository: Repository<PatientEntity>,
-    @InjectRepository(BranchOfficeEntity)
-    private branchOfficeRepository: Repository<BranchOfficeEntity>,
-    @InjectRepository(PatientOriginEntity)
-    private patientOriginRepository: Repository<PatientOriginEntity>,
-    @InjectRepository(PatientOrganizationEntity)
-    private patientOrganizationRepository: Repository<PatientOrganizationEntity>,
+    @InjectRepository(PatientEntity) private patientRepository: Repository<PatientEntity>,
+    @InjectRepository(BranchOfficeEntity) private branchOfficeRepository: Repository<BranchOfficeEntity>,
+    @InjectRepository(PatientOriginEntity) private patientOriginRepository: Repository<PatientOriginEntity>,
+    @InjectRepository(PatientOrganizationEntity) private patientOrganizationRepository: Repository<PatientOrganizationEntity>,
+    @InjectRepository(PadEntity) private padRepository: Repository<PadEntity>,
+    @InjectRepository(PadMemberEntity) private padMemberRepository: Repository<PadMemberEntity>,
+    @InjectRepository(PadCatalogueEntity) private padCatalogRepository: Repository<PadCatalogueEntity>,
+    @InjectRepository(ServiceEntity) private serviceRepository: Repository<ServiceEntity>,
+    @InjectRepository(PadComponenEntity) private padComponentRepository: Repository<PadComponenEntity>,
     private readonly httpService: HttpService
   ) { }
 
@@ -255,10 +261,42 @@ export class PatientService {
     }
   }
 
-  getPatientById = async (body: GetPatientByIdDTO): Promise<PatientEntity> => {
+  getPatientById = async (body: GetPatientByIdDTO): Promise<any> => {
     try {
+      console.log('acaa')
       const result = await this.patientRepository.findOneBy({ id: Number(body.patientId) });
-      return result;
+
+
+      if (result.pad != null && result.pad == 1) {
+        const padMember = await this.padMemberRepository.findOneBy({ patientId: result.id });
+        const pad = await this.padRepository.findOneBy({ id: padMember.padId });
+        const padCatalogue = await this.padCatalogRepository.findOneBy({ id: pad.padCatalogueId });
+
+        const padComponents = await this.padComponentRepository.findBy({ padCatalogueId: padCatalogue.id });
+        const services = [];
+        for await (const component of padComponents) {
+          const service = await this.serviceRepository.findOneBy({ id: component.serviceId });
+          services.push({
+            'service': service,
+            'component': component
+          })
+        }
+
+        const padData = {
+          'pad': pad,
+          'padCatalog': padCatalogue,
+          'component': services
+        }
+        return {
+          'patient': result,
+          'pad': padData
+        }
+      }
+
+      return {
+        'patient': result,
+        'pad': null
+      }
     } catch (exception) {
       console.log(exception);
       HandleException.exception(exception);

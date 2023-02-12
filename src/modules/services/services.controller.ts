@@ -10,7 +10,7 @@ export class ServicesController {
     constructor(private service: ServicesService) { }
 
 
-    @Get('/')
+    @Get('/all')
     async getAll() {
         return this.service.getAll();
     }

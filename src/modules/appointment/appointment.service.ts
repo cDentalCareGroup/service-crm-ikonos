@@ -23,6 +23,7 @@ import { PatientEntity } from '../patient/models/patient.entity';
 import { AppointmentDetailEntity } from './models/appointment.detail.entity';
 import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 import { AppointmentEntity } from './models/appointment.entity';
+import { AppointmentReferralEntity } from './models/appointment.referral.entity';
 import { AppointmentServiceEntity } from './models/appointment.service.entity';
 import { AppointmentTimesEntity } from './models/appointment.times.entity';
 import { PaymentMethodEntity } from './models/payment.method.entity';
@@ -51,6 +52,7 @@ export class AppointmentService {
     @InjectRepository(AppointmentTimesEntity) private appointmentTimesRepository: Repository<AppointmentTimesEntity>,
     @InjectRepository(AppointmentDetailEntity) private appointmentDetailRepository: Repository<AppointmentDetailEntity>,
     @InjectRepository(PadComponentUsedEntity) private padComponentUsedRepository: Repository<PadComponentUsedEntity>,
+    @InjectRepository(AppointmentReferralEntity) private appointmentReferralEntityRepository: Repository<AppointmentReferralEntity>,
     private emailService: EmailService
   ) { }
 
@@ -126,14 +128,17 @@ export class AppointmentService {
           const appointments = await this.appointmentRepository.findBy({
             branchId: branchOffice.id,
             appointment: dateSended,
-            time: hour.simpleTime
+            time: hour.simpleTime,
+            status: 'activa'
           });
           const extendedAppointments = await this.appointmentTimesRepository.findBy({
             appointment: dateSended,
             time: hour.simpleTime,
             status: 'activa'
           });
-          if (appointments.length < hour.seat && extendedAppointments.length < hour.seat) {
+          
+          const allAppointments = appointments.length + extendedAppointments.length
+          if (allAppointments < hour.seat) {
             data.push(hour);
           }
         }
@@ -147,7 +152,7 @@ export class AppointmentService {
     }
   }
 
-  registerAppointment = async ({ date, branchName, time, phone, email, name }: RegisterAppointmentDTO): Promise<string> => {
+  registerAppointment = async ({ date, branchName, time, phone, email, name, referal }: RegisterAppointmentDTO): Promise<string> => {
     try {
       if (name == null || name == undefined || name == '' ||
         phone == null || phone == undefined || phone == '') throw new ValidationException(ValidationExceptionType.MISSING_VALUES);
@@ -189,6 +194,16 @@ export class AppointmentService {
           ),
           email);
       }
+
+      if (referal != null && referal != undefined && referal != '') {
+        const appointmentReferral = new AppointmentReferralEntity();
+        appointmentReferral.appointmentId = response.id;
+        appointmentReferral.folio = response.folio;
+        appointmentReferral.employeeId = Number(referal);
+        await this.appointmentReferralEntityRepository.save(appointmentReferral);
+      }
+
+
       return response.folio;
     } catch (exception) {
       console.log(exception);
@@ -877,7 +892,6 @@ export class AppointmentService {
   getServices = async () => {
     try {
       const result = await this.serviceRepository.findBy({ status: 'activo' });
-      // const result = await this.serviceRepository.find();
       return result;
     } catch (error) {
       HandleException.exception(error);

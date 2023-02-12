@@ -20,7 +20,7 @@ export class AppService {
     const nextDate = date.toISOString().split("T")[0];
 
     return {
-      'version': 'Version 1.0.33.2',
+      'version': 'Version 1.0.34.2',
       'date': new Date().toISOString().split("T")[0]
     }
   }
