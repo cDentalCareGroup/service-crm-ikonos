@@ -125,7 +125,8 @@ export class UpdateAppointmentStatusDTO {
   date: string;
   amount: string;
   paymentMethod: number;
-  servicesId: number[];
+  services: any[];
+  padId: number;
 }
 
 

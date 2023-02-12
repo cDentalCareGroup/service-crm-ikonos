@@ -18,7 +18,9 @@ import { CallEntity, CallResult } from '../calls/models/call.entity';
 import { AppointmentTemplateMail, EmailService } from '../email/email.service';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
+import { PadComponentUsedEntity } from '../pad/models/pad.component.used.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
+import { AppointmentDetailEntity } from './models/appointment.detail.entity';
 import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 import { AppointmentEntity } from './models/appointment.entity';
 import { AppointmentServiceEntity } from './models/appointment.service.entity';
@@ -47,6 +49,8 @@ export class AppointmentService {
     @InjectRepository(CallCatalogEntity) private callCatalogRepository: Repository<CallCatalogEntity>,
     @InjectRepository(AppointmentServiceEntity) private appointmentServiceRepository: Repository<AppointmentServiceEntity>,
     @InjectRepository(AppointmentTimesEntity) private appointmentTimesRepository: Repository<AppointmentTimesEntity>,
+    @InjectRepository(AppointmentDetailEntity) private appointmentDetailRepository: Repository<AppointmentDetailEntity>,
+    @InjectRepository(PadComponentUsedEntity) private padComponentUsedRepository: Repository<PadComponentUsedEntity>,
     private emailService: EmailService
   ) { }
 
@@ -308,7 +312,7 @@ export class AppointmentService {
     }
   }
 
-  updateAppointmentStatus = async ({ id, status, amount, paymentMethod, servicesId }: UpdateAppointmentStatusDTO) => {
+  updateAppointmentStatus = async ({ id, status, amount, paymentMethod, services, padId }: UpdateAppointmentStatusDTO) => {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ id: Number(id) });
 
@@ -338,11 +342,29 @@ export class AppointmentService {
           await this.appointmentTimesRepository.save(item);
         }
 
-        for await (const serviceId of servicesId) {
-          const service = new AppointmentServiceEntity();
-          service.appointmentId = appointment.id;
-          service.serviceId = serviceId;
-          await this.appointmentServiceRepository.save(service);
+        for await (const service of services) {
+          const appointmentDetail = new AppointmentDetailEntity();
+          appointmentDetail.appointmentId = appointment.id;
+          appointmentDetail.patientId = appointment.patientId;
+          appointmentDetail.dentistId = appointment.dentistId;
+          appointmentDetail.serviceId = Number(service.key);
+          appointmentDetail.quantity = Number(service.quantity);
+          appointmentDetail.unitPrice = Number(service.unitPrice);
+          appointmentDetail.discount = Number(service.disscount);
+          appointmentDetail.price = Number(service.price);
+          appointmentDetail.subTotal = Number(service.subtotal);
+          appointmentDetail.comments = `Servicio registrado ${format(new Date(), 'yyyy-MM-dd')}`;
+          appointmentDetail.paid = Number(service.paid);
+          appointmentDetail.balance = Number(service.subtotal) - Number(service.paid);
+          await this.appointmentDetailRepository.save(appointmentDetail);
+
+          if (padId != null && padId != 0 && Number(service.disscount) > 0) {
+            const padComponent = new PadComponentUsedEntity();
+            padComponent.patientId = appointment.patientId;
+            padComponent.serviceId = Number(service.key);
+            padComponent.padId = padId;
+            await this.padComponentUsedRepository.save(padComponent);
+          }
         }
       }
       const updatedAppointment = await this.appointmentRepository.save(appointment);
@@ -854,7 +876,8 @@ export class AppointmentService {
 
   getServices = async () => {
     try {
-      const result = await this.serviceRepository.find();
+      const result = await this.serviceRepository.findBy({ status: 'activo' });
+      // const result = await this.serviceRepository.find();
       return result;
     } catch (error) {
       HandleException.exception(error);

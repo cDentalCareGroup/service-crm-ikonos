@@ -9,7 +9,10 @@ export class PadController {
     constructor(private padService: PadService) { }
 
 
-
+    @Get('')
+    async getPads() {
+        return this.padService.getPads();
+    }
 
     @Post('register')
     async registerPad(@Body() body: any) {
@@ -49,7 +52,9 @@ export class PadController {
         return this.padService.deletePadCatalogComponent(body);
     }
 
+    @Post('patient')
+    async getPadServicesByPatient(@Body() body: any) {
+        return this.padService.getPadServicesByPatient(body);
+    }
 
-
-    
 }

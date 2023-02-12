@@ -192,6 +192,7 @@ export class PatientService {
       patient.city = capitalizeAllCharacters(body.city);
       patient.organizationClient = body.organization;
       patient.startDate = formatISO(new Date());
+      patient.comments = `Paciente Registrado ${formatISO(new Date())}`
 
       return await this.patientRepository.save(patient);
     } catch (error) {
@@ -225,7 +226,8 @@ export class PatientService {
       patient.city = capitalizeAllCharacters(body.city);
       patient.organizationClient = body.organization;
       patient.startDate = body.startDate;
-
+      patient.updatedAt = new Date();
+      patient.comments = `${patient.comments} \n Paciente Actualizado ${formatISO(new Date())}`
       return await this.patientRepository.save(patient);
     } catch (error) {
       console.log(error);
@@ -246,6 +248,7 @@ export class PatientService {
     try {
       const result = await this.patientRepository.findOneBy({ id: Number(body.patientId) });
       result.status = body.status;
+      result.comments = `${result.comments} \n Cambio de Estatus de  ${result.status} a ${body.status}`;
       return await this.patientRepository.save(result);
     } catch (exception) {
       HandleException.exception(exception);
@@ -292,6 +295,7 @@ export class PatientService {
       if (patient != null) {
         patient.lat = body.lat;
         patient.lng = body.lng;
+        patient.comments = `${patient.comments} \n Actualización de coordenadas del paciente`;
         await this.patientRepository.save(patient);
       }
       return 200;

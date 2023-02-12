@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
+import { PadMemberEntity } from '../pad/models/pad.member.entity';
 import { PatientEntity } from './models/patient.entity';
 import { PatientOrganizationEntity } from './models/patient.organization.entity';
 import { PatientOriginEntity } from './models/patient.origin.entity';

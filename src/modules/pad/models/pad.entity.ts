@@ -23,4 +23,7 @@ export class PadEntity {
     @Column({ name: 'pad_due_date', type: 'date' })
     padDueDate: Date;
 
+    @Column({ name: 'status', type: 'varchar' })
+    status: string;
+
 }

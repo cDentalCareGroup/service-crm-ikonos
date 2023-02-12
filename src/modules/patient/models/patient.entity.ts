@@ -254,14 +254,6 @@ export class PatientEntity {
   })
   padAcquisitionBranch: number;
 
-  @Column({
-    name:       'pad_price',
-    type:       'decimal',
-    precision:   10, 
-    scale:       2, 
-    comment:    'precio al que se aquirio el pad',
-  })
-  padPrice: number;
 
   @Column({
     name: 'created_at',
@@ -274,5 +266,11 @@ export class PatientEntity {
     type: 'datetime'
   })
   updatedAt: Date;
+
+  @Column({
+    name: 'comments',
+    type: 'varchar'
+  })
+  comments: string;
 
 }

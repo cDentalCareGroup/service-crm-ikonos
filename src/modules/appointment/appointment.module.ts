@@ -11,9 +11,11 @@ import { EmailModule } from '../email/email.module';
 import { EmailService } from '../email/email.service';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
+import { PadComponentUsedEntity } from '../pad/models/pad.component.used.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { AppointmentController } from './appointment.controller';
 import { AppointmentService } from './appointment.service';
+import { AppointmentDetailEntity } from './models/appointment.detail.entity';
 import { AppointmentEntity } from './models/appointment.entity';
 import { AppointmentServiceEntity } from './models/appointment.service.entity';
 import { AppointmentTimesEntity } from './models/appointment.times.entity';
@@ -39,7 +41,9 @@ import { ServiceEntity } from './models/service.entity';
       CallCatalogEntity,
       CallEntity,
       AppointmentServiceEntity,
-      AppointmentTimesEntity
+      AppointmentTimesEntity,
+      AppointmentDetailEntity,
+      PadComponentUsedEntity
     ]),
     EmailModule
   ],

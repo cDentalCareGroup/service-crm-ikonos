@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { addDays } from 'date-fns';
+import { addDays, format } from 'date-fns';
 import { async } from 'rxjs';
 import { HandleException, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
 import { Repository } from 'typeorm';
 import { ServiceEntity } from '../appointment/models/service.entity';
+import { PatientEntity } from '../patient/models/patient.entity';
 import { getPadType, PadCatalogueEntity } from './models/pad.catalogue.entity';
 import { PadComponenEntity } from './models/pad.component.entity';
+import { PadComponentUsedEntity } from './models/pad.component.used.entity';
 import { RegisterPadComponentDTO, RegisterPadDTO, UpdatePadDTO } from './models/pad.dto';
 import { PadEntity } from './models/pad.entity';
 import { PadMemberEntity } from './models/pad.member.entity';
@@ -19,30 +21,62 @@ export class PadService {
         @InjectRepository(PadComponenEntity) private padComponentRepository: Repository<PadComponenEntity>,
         @InjectRepository(ServiceEntity) private serviceRepository: Repository<ServiceEntity>,
         @InjectRepository(PadEntity) private padRepository: Repository<PadEntity>,
+        @InjectRepository(PatientEntity) private patientRepository: Repository<PatientEntity>,
+        @InjectRepository(PadMemberEntity) private padMemeberRepository: Repository<PadMemberEntity>,
+        @InjectRepository(PadComponentUsedEntity) private padComponentUsedRepository: Repository<PadComponentUsedEntity>,
+
     ) { }
 
 
 
+    getPads = async () => {
+        try {
+            const pads = await this.padRepository.find();
+            let data = [];
+            for await (const pad of pads) {
+                const padMembers = await this.padMemeberRepository.findBy({ padId: pad.id });
+                let dataMembers = [];
+                let principalId: number;
+                for await (const padMember of padMembers) {
+                    const patient = await this.patientRepository.findOneBy({ id: padMember.patientId });
+                    dataMembers.push(patient);
+                    if (padMember.isPrincipal == 1) {
+                        principalId = patient.id
+                    }
+                }
+                const catalog = await this.padCatalogueRepository.findOneBy({ id: pad.padCatalogueId });
+                data.push({
+                    'members': dataMembers,
+                    'pad': pad,
+                    'catalogue': catalog,
+                    'principalId': principalId
+                });
+            }
+            return data;
+        } catch (error) {
+            HandleException.exception(error);
+        }
+    }
+
     registerPad = async (body: any) => {
         try {
-          // console.log(body);
 
             const padCatalogue = await this.padCatalogueRepository.findOneBy({ id: body.padCatalogueId });
-           // console.log(padCatalogue);
+            const padDueDate = addDays(new Date(body.adquisitionDate), padCatalogue.day);
 
             const pad = new PadEntity();
             pad.padAdquisitionDate = body.adquisitionDate;
             pad.padCatalogueId = body.padCatalogueId;
             pad.padPrice = padCatalogue.price;
             pad.padType = padCatalogue.type;
-            pad.padDueDate = addDays(new Date(body.adquisitionDate), padCatalogue.day)
-
-
+            pad.padDueDate = padDueDate;
+            pad.status = 'activo';
+            const newPad = await this.padRepository.save(pad);
             let index = 0;
             for await (const item of body.members) {
                 const padMember = new PadMemberEntity();
                 padMember.padCatalogueId = body.padCatalogueId;
-                padMember.padId = pad.id;
+                padMember.padId = newPad.id;
                 padMember.patientId = item;
                 if (index == 0) {
                     padMember.isPrincipal = 1;
@@ -50,14 +84,22 @@ export class PadService {
                 } else {
                     padMember.isPrincipal = 0;
                 }
-                console.log(padMember);
+                await this.padMemeberRepository.save(padMember);
+                const patient = await this.patientRepository.findOneBy({ id: item });
+                patient.pad = 1;
+                patient.padAcquisitionDate = body.adquisitionDate;
+                patient.padAcquisitionBranch = body.branchId;
+                patient.padExpirationDate = format(padDueDate, 'yyyy-MM-dd')
+                patient.padType = padCatalogue.type;
+                patient.currentPadId = newPad.id;
+                patient.comments = `${patient.comments} \n Pad Registrado ${body.adquisitionDate}`;
+                await this.patientRepository.save(patient);
             }
             return 200;
         } catch (error) {
             HandleException.exception(error);
         }
     }
-
 
     registerPadCatalog = async (body: RegisterPadDTO) => {
         try {
@@ -185,6 +227,41 @@ export class PadService {
         } catch (error) {
             console.log(`getPadCatalogueDetail - ${error}`);
             return {};
+        }
+    }
+
+
+
+    getPadServicesByPatient = async (body: any) => {
+        try {
+            const padMember = await this.padMemeberRepository.findOneBy({ patientId: body.patientId });
+            const pad = await this.padRepository.findOneBy({ id: padMember.padId });
+            if (pad.status == 'activo') {
+                let services = [];
+                const padComponents = await this.padComponentRepository.findBy({ padCatalogueId: pad.padCatalogueId });
+                for await (const component of padComponents) {
+                    const service = await this.serviceRepository.findOneBy({ id: component.serviceId });
+                    const serviceUsed = await this.padComponentUsedRepository.findBy({ serviceId: service.id, padId: pad.id, patientId: body.patientId });
+                    if (serviceUsed.length < component.maxPatientQuantity) {
+                        services.push({
+                            'service': service,
+                            'component': component,
+                        });
+                    }
+                }
+                return {
+                    'pad': pad,
+                    'padMember': padMember,
+                    'components': services,
+                }
+            } else {
+                console.log('inactivo');
+                return {}
+            }
+            return 200;
+        } catch (error) {
+            console.log(error);
+            HandleException.exception(error);
         }
     }
 
