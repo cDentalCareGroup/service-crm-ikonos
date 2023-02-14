@@ -1,3 +1,4 @@
+import { HttpModule, HttpService } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -11,6 +12,7 @@ import { EmailModule } from '../email/email.module';
 import { EmailService } from '../email/email.service';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
+import { MessageService } from '../messages/message.service';
 import { PadComponentUsedEntity } from '../pad/models/pad.component.used.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { AppointmentController } from './appointment.controller';
@@ -47,10 +49,11 @@ import { ServiceEntity } from './models/service.entity';
       PadComponentUsedEntity,
       AppointmentReferralEntity
     ]),
-    EmailModule
+    EmailModule,
+    HttpModule
   ],
   controllers: [AppointmentController],
-  providers: [AppointmentService,],
+  providers: [AppointmentService,MessageService],
   exports: [AppointmentService]
 })
 export class AppointmentModule {}

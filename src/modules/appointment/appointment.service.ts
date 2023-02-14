@@ -1,12 +1,13 @@
+import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { format, formatISO } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
-import { async } from 'rxjs';
+import { async, lastValueFrom, map } from 'rxjs';
 import { HandleException, NotFoundCustomException, NotFoundType, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
-import { capitalizeAllCharacters, getDiff, getRandomInt, getTodayDate } from 'src/utils/general.functions.utils';
+import { capitalizeAllCharacters, formatDateToWhatsapp, getDayName, getDiff, getRandomInt, getTodayDate } from 'src/utils/general.functions.utils';
 import { IsNull, Not, Repository } from 'typeorm';
 import { UserEntity } from '../auth/models/entities/user.entity';
 import { branchOfficeScheduleToEntity } from '../branch_office/extensions/branch.office.extensions';
@@ -18,10 +19,11 @@ import { CallEntity, CallResult } from '../calls/models/call.entity';
 import { AppointmentTemplateMail, EmailService } from '../email/email.service';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
+import { MessageService } from '../messages/message.service';
 import { PadComponentUsedEntity } from '../pad/models/pad.component.used.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { AppointmentDetailEntity } from './models/appointment.detail.entity';
-import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
+import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 import { AppointmentEntity } from './models/appointment.entity';
 import { AppointmentReferralEntity } from './models/appointment.referral.entity';
 import { AppointmentServiceEntity } from './models/appointment.service.entity';
@@ -53,7 +55,8 @@ export class AppointmentService {
     @InjectRepository(AppointmentDetailEntity) private appointmentDetailRepository: Repository<AppointmentDetailEntity>,
     @InjectRepository(PadComponentUsedEntity) private padComponentUsedRepository: Repository<PadComponentUsedEntity>,
     @InjectRepository(AppointmentReferralEntity) private appointmentReferralEntityRepository: Repository<AppointmentReferralEntity>,
-    private emailService: EmailService
+    private emailService: EmailService,
+    private readonly messageService: MessageService
   ) { }
 
   getAppointmentsAvailability = async ({ branchOfficeName, dayName, date, filterHours }: AppointmentAvailabilityDTO): Promise<AvailableHoursDTO[]> => {
@@ -136,7 +139,7 @@ export class AppointmentService {
             time: hour.simpleTime,
             status: 'activa'
           });
-          
+
           const allAppointments = appointments.length + extendedAppointments.length
           if (allAppointments < hour.seat) {
             data.push(hour);
@@ -202,6 +205,13 @@ export class AppointmentService {
         appointmentReferral.employeeId = Number(referal);
         await this.appointmentReferralEntityRepository.save(appointmentReferral);
       }
+
+      const whatsapp = await this.messageService.sendWhatsAppConfirmation(
+        new SendWhatsappConfirmationDTO(
+          phone, branchName, `${formatDateToWhatsapp(response.appointment)} - ${time.time}`
+        )
+      );
+      console.log(`Whatsapp sender ${whatsapp}`);
 
 
       return response.folio;
@@ -434,7 +444,7 @@ export class AppointmentService {
   cancelAppointment = async ({ reason, folio }: CancelAppointmentDTO) => {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ folio: folio });
-      if (appointment.status == 'activa') {
+      if (appointment != null && appointment.status == 'activa') {
         appointment.status = 'cancelada-paciente';
         appointment.comments = `${appointment.comments} \n Cita cancelada por usuario ${formatISO(new Date())} \n Motivo ${reason}`
         const updatedAppointment = await this.appointmentRepository.save(appointment);
@@ -860,7 +870,6 @@ export class AppointmentService {
   }
 
 
-
   reminderPad = async () => {
     try {
       const date = new Date();
@@ -932,4 +941,78 @@ export class AppointmentService {
       HandleException.exception(error);
     }
   }
+
+
+  testWhatsappMessage = async (body: SendWhatsappConfirmationDTO) => {
+    try {
+      await this.messageService.sendWhatsAppConfirmation(body);
+    } catch (error) {
+      console.log(`Error sending whatsapp message : ${error}`);
+      return {};
+    }
+  }
+
+
+
+  registerAppointmentCallCenter = async (body: RegisterCallCenterAppointmentDTO): Promise<string> => {
+    try {
+      const branchOffice = await this.branchOfficeRepository.findOneBy({ id: body.branchId });
+      let prospect: ProspectEntity;
+      if (body.name != '' && body.phone != '') {
+        const newProspect = new ProspectEntity();
+        newProspect.name = capitalizeAllCharacters(body.name);
+        newProspect.email = body.email;
+        newProspect.primaryContact = body.phone;
+        newProspect.createdAt = new Date();
+        console.log('Registrando prospecto');
+        prospect = await this.prospectRepository.save(newProspect);
+      }
+
+      const entity = new AppointmentEntity();
+      entity.appointment = body.date.toString().split("T")[0]
+      entity.branchId = branchOffice.id;
+      entity.branchName = branchOffice.name;
+      entity.scheduleBranchOfficeId = body.time.scheduleBranchOfficeId;
+      entity.time = body.time.simpleTime;
+      entity.scheduledAt = getTodayDate()
+      const folio = randomUUID().replace(/-/g, getRandomInt()).substring(0, 20).toUpperCase()
+      entity.folio = folio;
+      if (prospect != null && prospect != undefined) {
+        entity.prospectId = prospect.id;
+      } else {
+        entity.patientId = body.patientId;
+      }
+      entity.comments = `Cita registrada por call center ${body.date.toString().split("T")[0]} ${body.time.simpleTime}`;
+      entity.hasCabinet = 0;
+      entity.hasLabs = 0;
+
+      const response = await this.appointmentRepository.save(entity);
+
+      if (body.email != null && body.email != '') {
+        await this.emailService.sendAppointmentEmail(
+          new AppointmentTemplateMail(
+            capitalizeAllCharacters(body.name),
+            `${body.date.toString().split("T")[0]} ${body.time.simpleTime}`,
+            `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
+            `${branchOffice.name}`,
+            `${branchOffice.primaryContact}`,
+            `${folio}`,
+            `${body.phone ?? '-'}`
+          ),
+          body.email);
+      }
+
+      const whatsapp = await this.messageService.sendWhatsAppConfirmation(
+        new SendWhatsappConfirmationDTO(
+          body.phone, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${body.time.time}`
+        )
+      );
+      console.log(`Whatsapp sender ${whatsapp}`);
+      return response.folio;
+    } catch (exception) {
+      console.log(exception);
+      HandleException.exception(exception);
+    }
+  }
+
 }

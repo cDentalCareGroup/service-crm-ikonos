@@ -59,9 +59,8 @@ export class CallsService {
         try {
             const result = await this.callRepository.findOneBy({ id: id });
             result.status = 'resuelta';
-            result.description = `${result.description ?? ''} \n${description}`;
             result.effectiveDate = new Date();
-            result.comments = `LLamada resuelta por call center - ${new Date()}`;
+            result.comments = `${result?.comments ?? '-'} \n ${description}`;
             return await this.callRepository.save(result);
         } catch (error) {
             HandleException.exception(error);
@@ -94,13 +93,10 @@ export class CallsService {
         }
     }
 
-    registerCall = async ({ patientId, appointmentId, description, date, type }: RegisterCallDTO) => {
+    registerCall = async ({ patientId, description, date, type }: RegisterCallDTO) => {
         try {
             const call = new CallEntity();
             call.patientId = patientId;
-            if (appointmentId != null && appointmentId != 0) {
-                call.appointmentId = appointmentId;
-            }
             call.description = description;
             call.dueDate = new Date(date);
             call.caltalogId = Number(type);
@@ -114,8 +110,6 @@ export class CallsService {
 
     getCallDetail = async ({ patientId, prospectId }: GetCallDetailDTO) => {
         try {
-            console.log(patientId);
-            console.log(prospectId);
 
             if (patientId != null && patientId != 0) {
                 const patient = await this.patientRepository.findOneBy({ id: patientId });
@@ -124,12 +118,12 @@ export class CallsService {
                 for await (const item of calls) {
                     const catalog = await this.catalogRepository.findOneBy({ id: item.caltalogId });
                     data.push({
-                        'catalogName':catalog.name,
-                        'catalogId':catalog.id,
+                        'catalogName': catalog.name,
+                        'catalogId': catalog.id,
                         'callId': item.id,
                         'callDueDate': item.dueDate,
-                        'appointment':item.appointmentId,
-                        'callStatus':item.status,
+                        'appointment': item.appointmentId,
+                        'callStatus': item.status,
                     })
                 }
                 return data;

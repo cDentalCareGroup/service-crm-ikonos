@@ -66,6 +66,16 @@ export class RegisterAppointmentDTO {
   }
 }
 
+export class RegisterCallCenterAppointmentDTO {
+  name?: string;
+  phone?: string;
+  date?: Date;
+  time?: AvailableHoursDTO;
+  email?: string;
+  branchId?: number;
+  patientId?: number;
+}
+
 export class GetAppointmentDetailDTO {
   appointment: AppointmentEntity;
   branchOffice: BranchOfficeEntity;
@@ -184,4 +194,18 @@ export class RegisterExtendAppointmentDTO {
   id: number;
   times: string[];
   appointment: string;
+}
+
+export class SendWhatsappConfirmationDTO {
+  number: string;
+  branchOffice: string;
+  time: string;
+
+  constructor(number: string,
+    branchOffice: string,
+    time: string) {
+    this.number = number;
+    this.branchOffice = branchOffice;
+    this.time = time;
+  }
 }

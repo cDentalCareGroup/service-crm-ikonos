@@ -1,8 +1,8 @@
 import { Body, Controller, Get, Post, Query, Res } from '@nestjs/common';
-import { ApiBody } from '@nestjs/swagger';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { randomUUID } from 'crypto';
 import { AppointmentService } from './appointment.service';
-import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
+import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 
 @Controller('appointment')
 export class AppointmentController {
@@ -21,6 +21,12 @@ export class AppointmentController {
         return this.appointmentService.registerAppointment(body);
     }
 
+    @Post('register/callcenter')
+    @ApiBody({ type: RegisterCallCenterAppointmentDTO })
+    async registerCallCenterAppointment(@Body() body: RegisterCallCenterAppointmentDTO): Promise<string> {
+        return this.appointmentService.registerAppointmentCallCenter(body);
+    }
+
     @Post('detail')
     @ApiBody({ type: AppointmentDetailDTO })
     async getAppointmentDetail(@Body() body: AppointmentDetailDTO): Promise<GetNextAppointmentDetailDTO> {
@@ -32,12 +38,6 @@ export class AppointmentController {
     async getAppointmentDetailPatienti(@Body() body: AppointmentDetailDTO): Promise<GetAppointmentDetailDTO> {
         return this.appointmentService.getAppointmentDetailPatient(body);
     }
-
-    // @Get('ttttt')
-    // @ApiBody({type: AppointmentDetailDTO})
-    // async tt(): Promise<any> {
-    //     return this.appointmentService.appointmentReminders();
-    // }
 
     @Post('branchoffice')
     @ApiBody({ type: GetAppointmentsByBranchOfficeDTO })
@@ -88,7 +88,7 @@ export class AppointmentController {
     }
 
     @Post('update/hasCabinet')
-    @ApiBody({type: UpdateHasCabinetAppointmentDTO})
+    @ApiBody({ type: UpdateHasCabinetAppointmentDTO })
     async updateHasCabinet(@Body() body: UpdateHasCabinetAppointmentDTO) {
         return this.appointmentService.updateHasCabinet(body);
     }
@@ -99,23 +99,20 @@ export class AppointmentController {
         return this.appointmentService.sendAppointmentNotification(body);
     }
 
-    //   @Get('webhooks')
-    //   async hook(@Query() query: any) {
-    //     return query['hub.challenge'];
-    //   }
+    @Get('webhooks')
+    async hook(@Query() query: any) {
+        //TOKEN WTS_TOKEN
+        return query['hub.challenge'];
+    }
 
-    //   @Post('webhooks')
-    //   async post(@Body() body: any) {
-    //     for  (const entry of body.entry) {
+    // @Post('webhooks')
+    // async post(@Body() body: any) {
+    //     for (const entry of body.entry) {
     //         console.log(entry.changes[0].value.messages[0]);
     //     }
     //     return 200;
-    //   }
+    // }
 
-    @Get('test')
-    async hook() {
-        return this.appointmentService.test();
-    }
 
     @Get('services')
     async getServices() {
@@ -126,10 +123,15 @@ export class AppointmentController {
         return this.appointmentService.getPaymentMethods();
     }
 
-
     @Post('extend')
-    @ApiBody({type: RegisterExtendAppointmentDTO})
+    @ApiBody({ type: RegisterExtendAppointmentDTO })
     async extendAppointment(@Body() body: RegisterExtendAppointmentDTO) {
         return this.appointmentService.extendAppointment(body);
+    }
+
+    @Post('whatsapp/confirmation')
+    @ApiBody({ type: SendWhatsappConfirmationDTO })
+    async testWhatsappMessage(@Body() body: SendWhatsappConfirmationDTO) {
+        return this.appointmentService.testWhatsappMessage(body);
     }
 }

@@ -60,4 +60,26 @@ const capitalizeAllCharacters = (value: string | undefined): string => {
         return ''
 }
 
-export { isNumber, addHours, getDiff, getRandomInt, getTodayDate, capitalizeFirstLetter,capitalizeAllCharacters };
+const getDayName = (date: Date): string => {
+        var days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        return days[date.getDay() + 1];
+}
+
+const getMonthName = (date: Date): string => {
+        const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        ];
+        return monthNames[date.getMonth()];
+}
+
+
+const formatDateToWhatsapp = (date: string): string => {
+        const newDate = new Date(date);
+        const dayOfMonth = newDate.getDate() + 1;
+        const dayName = getDayName(newDate);
+        const monthName = getMonthName(newDate);
+        const year = newDate.getFullYear();
+        return `${dayName} ${dayOfMonth}, ${monthName} ${year}`;
+}
+
+export { isNumber, addHours, getDiff, getRandomInt, getTodayDate, capitalizeFirstLetter, capitalizeAllCharacters, getDayName, formatDateToWhatsapp };
