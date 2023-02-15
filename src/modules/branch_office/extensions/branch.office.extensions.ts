@@ -9,8 +9,8 @@ const registerBranchOfficeScheduleToEntity = (data: RegisterBranchOfficeSchedule
 
   const startTime = new Date();
   const endTime = new Date();
-  startTime.setHours(Number(data.startTime.split(":")[0]),Number(data.startTime.split(":")[1]),Number(data.startTime.split(":")[2]));
-  endTime.setHours(Number(data.endTime.split(":")[0]),Number(data.endTime.split(":")[1]),Number(data.endTime.split(":")[2]));
+  startTime.setHours(Number(data.startTime.split(":")[0]), Number(data.startTime.split(":")[1]), Number(data.startTime.split(":")[2]));
+  endTime.setHours(Number(data.endTime.split(":")[0]), Number(data.endTime.split(":")[1]), Number(data.endTime.split(":")[2]));
 
   const schedule = new BranchOfficeScheduleEntity();
   schedule.dayName = data.dayName;
@@ -57,4 +57,13 @@ const branchOfficeScheduleToEntity = (data: any): BranchOfficeScheduleEntity[] =
   return schedules;
 }
 
-export { registerBranchOfficeScheduleToEntity, branchOfficesToEntity, branchOfficeScheduleToEntity };
+const branchOfficesToMessage = (data: BranchOfficeEntity[]): string => {
+  let value: string = ''
+  for (const item of data) {
+    const address = `${item?.street ?? ''} ${item?.number ?? ''} ${item?.colony ?? ''}, CP.${item?.cp ?? ''}`;
+    value += `📍 ${item.name} - ${address}\n`
+  }
+  return value;
+}
+
+export { registerBranchOfficeScheduleToEntity, branchOfficesToEntity, branchOfficeScheduleToEntity, branchOfficesToMessage };

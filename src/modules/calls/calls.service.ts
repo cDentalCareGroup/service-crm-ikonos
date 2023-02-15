@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { async } from 'rxjs';
 import { HandleException } from 'src/common/exceptions/general.exception';
+import { capitalizeAllCharacters } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
+import { AppointmentService } from '../appointment/appointment.service';
+import { AppointmentDetailDTO, GetAppointmentDetailDTO } from '../appointment/models/appointment.dto';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';
 import { ProspectEntity } from '../appointment/models/prospect.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
@@ -20,7 +23,7 @@ export class CallsService {
         @InjectRepository(AppointmentEntity) private appointmentRepository: Repository<AppointmentEntity>,
         @InjectRepository(CallCatalogEntity) private catalogRepository: Repository<CallCatalogEntity>,
         @InjectRepository(ProspectEntity) private prospectRepository: Repository<ProspectEntity>,
-
+        private readonly appointmentService: AppointmentService
     ) { }
 
     getCalls = async () => {
@@ -93,10 +96,20 @@ export class CallsService {
         }
     }
 
-    registerCall = async ({ patientId, description, date, type }: RegisterCallDTO) => {
+    registerCall = async ({ patientId, description, date, type, name, phone, email }: RegisterCallDTO) => {
         try {
             const call = new CallEntity();
-            call.patientId = patientId;
+            if (name != null && name != '' && phone != null && phone != '') {
+                const prospect = new ProspectEntity();
+                prospect.name = capitalizeAllCharacters(name);
+                prospect.email = email;
+                prospect.primaryContact = phone;
+                prospect.createdAt = new Date();
+                const newProspect = await this.prospectRepository.save(prospect);
+                call.prospectId = newProspect.id;
+            } else {
+                call.patientId = patientId;
+            }
             call.description = description;
             call.dueDate = new Date(date);
             call.caltalogId = Number(type);
@@ -110,10 +123,12 @@ export class CallsService {
 
     getCallDetail = async ({ patientId, prospectId }: GetCallDetailDTO) => {
         try {
-
+            console.log('aqui')
             if (patientId != null && patientId != 0) {
                 const patient = await this.patientRepository.findOneBy({ id: patientId });
                 const calls = await this.callRepository.findBy({ patientId: patient.id });
+                const appointments = await this.appointmentRepository.findBy({ patientId: patient.id });
+
                 let data: any[] = [];
                 for await (const item of calls) {
                     const catalog = await this.catalogRepository.findOneBy({ id: item.caltalogId });
@@ -124,9 +139,19 @@ export class CallsService {
                         'callDueDate': item.dueDate,
                         'appointment': item.appointmentId,
                         'callStatus': item.status,
+                        'description': item.description
                     })
                 }
-                return data;
+
+                let appointmentData: GetAppointmentDetailDTO[] = [];
+                for await (const item of appointments) {
+                    const element = await this.appointmentService.getAppointment(item);
+                    appointmentData.push(element);
+                }
+                return {
+                    'calls': data,
+                    'appointments': appointmentData
+                }
             }
         } catch (error) {
             HandleException.exception(error);

@@ -23,7 +23,7 @@ import { MessageService } from '../messages/message.service';
 import { PadComponentUsedEntity } from '../pad/models/pad.component.used.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { AppointmentDetailEntity } from './models/appointment.detail.entity';
-import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
+import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, SendWhatsappSimpleTextDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 import { AppointmentEntity } from './models/appointment.entity';
 import { AppointmentReferralEntity } from './models/appointment.referral.entity';
 import { AppointmentServiceEntity } from './models/appointment.service.entity';
@@ -140,7 +140,7 @@ export class AppointmentService {
             status: 'activa'
           });
 
-          const allAppointments = appointments.length + extendedAppointments.length
+          const allAppointments = appointments.length + extendedAppointments.length;
           if (allAppointments < hour.seat) {
             data.push(hour);
           }
@@ -213,7 +213,6 @@ export class AppointmentService {
       );
       console.log(`Whatsapp sender ${whatsapp}`);
 
-
       return response.folio;
     } catch (exception) {
       console.log(exception);
@@ -277,10 +276,12 @@ export class AppointmentService {
           }
         } else if (body.status == 'finalizada') {
           const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: 'finalizada', nextAppointmentId: IsNull() });
-
           for await (const appointment of appointments) {
-            const result = await this.getAppointment(appointment);
-            data.push(result);
+            const calls = await this.callRepository.findBy({ patientId: appointment.patientId, status: 'activa' });
+            if (calls.length == 0) {
+              const result = await this.getAppointment(appointment);
+              data.push(result);
+            }
           }
         } else {
           const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: body.status });
@@ -431,6 +432,22 @@ export class AppointmentService {
           ),
           email
         );
+      }
+
+      if (response.patient != null && response.patient != undefined) {
+        const whatsapp = await this.messageService.sendWhatsAppRescheduleAppointment(
+          new SendWhatsappConfirmationDTO(
+            response.patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(updatedAppointment.appointment)} - ${time.time}`
+          )
+        );
+        console.log(`Whatsapp patient ${whatsapp}`);
+      } else{
+        const whatsapp = await this.messageService.sendWhatsAppRescheduleAppointment(
+          new SendWhatsappConfirmationDTO(
+            response.prospect.primaryContact, branchOffice.name, `${formatDateToWhatsapp(updatedAppointment.appointment)} - ${time.time}`
+          )
+        );
+        console.log(`Whatsapp prospect ${whatsapp}`);
       }
 
       return response;
@@ -626,6 +643,14 @@ export class AppointmentService {
           ),
           patient.email);
       }
+
+      const whatsapp = await this.messageService.sendWhatsAppNextAppointment(
+        new SendWhatsappConfirmationDTO(
+          patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${time.time}`
+        )
+      );
+      console.log(`Whatsapp status ${whatsapp}`);
+
       let updatedAppointment = await this.getAppointment(response);
       return updatedAppointment;
     } catch (exception) {
@@ -682,7 +707,7 @@ export class AppointmentService {
     }
   }
 
-  private getAppointment = async (appointment: AppointmentEntity): Promise<GetAppointmentDetailDTO> => {
+  getAppointment = async (appointment: AppointmentEntity): Promise<GetAppointmentDetailDTO> => {
     const branchOffice = await this.branchOfficeRepository.findOneBy({ id: appointment.branchId });
 
     let prospect: ProspectEntity;
@@ -816,32 +841,6 @@ export class AppointmentService {
     }
   }
 
-
-  test = async () => {
-    try {
-      const response = await fetch('https://graph.facebook.com/v15.0/112314965085672/messages', {
-        headers: {
-          "Authorization": 'Bearer EAAvaI0aTk5wBAKV5VRfwTTBl3ChPjnXfWpuZBh4CYKqzHavkonKQPvmaskPZCCmtkIucgTXjcBx7VZBYcw4joOXeimMX33r7yD2YqMcQmOgpfeS1HqqsuszTALVI02WNJQmKZCRoZCnfm2FyXMyf9RbhZBaoARj7Eo6IAAL4HUXIKRMJyLev3K6MQNdBP38rQDy4pvAJsuFQZDZD',
-          "Content-Type": 'application/json',
-        },
-        method: "POST",
-        body: JSON.stringify(
-          {
-            "messaging_product": "whatsapp",
-            "to": "527773510031",
-            "type": "template",
-            "template": {
-              "name": "confirm_appointment",
-              "language": { "code": "es_MX" }
-            }
-          }
-        )
-      },)
-      return response;
-    } catch (error) {
-      console.log(error);
-    }
-  }
 
 
   callFromAppointmentNotAttended = async (appointment: AppointmentEntity) => {
@@ -1015,4 +1014,25 @@ export class AppointmentService {
     }
   }
 
+
+  // processWhatsappMessages = async (body: any) => {
+  //   try {
+  //     if (body == undefined || body == null) return;
+  //     for (const entry of body.entry) {
+  //       if (entry.changes != null && entry.changes != undefined && entry.changes.length > 0
+  //         && entry.changes[0].value != null && entry.changes[0].value != undefined &&
+  //         entry.changes[0].value.messages != null && entry.changes[0].value.messages != undefined &&
+  //         entry.changes[0].value.messages.length > 0) {
+  //         let message = entry.changes[0].value.messages[0];
+  //         if (message.type == 'interactive') {
+  //           await this.messageService.checkInteractiveMessages(message);
+  //         } else {
+  //           await this.messageService.checkTextMessages(message);
+  //         }
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }
 }

@@ -19,6 +19,8 @@ import { HttpModule } from '@nestjs/axios';
 import { CallsModule } from './modules/calls/calls.module';
 import { PadModule } from './modules/pad/pad.module';
 import { ServicesModule } from './modules/services/services.module';
+import { ProspectModule } from './modules/prospect/prospect.module';
+
 
 
 @Module({
@@ -51,6 +53,7 @@ import { ServicesModule } from './modules/services/services.module';
     CallsModule,
     PadModule,
     ServicesModule,
+    ProspectModule,
   ],
   controllers: [AppController],
   providers: [AppService, TaskServiceService],

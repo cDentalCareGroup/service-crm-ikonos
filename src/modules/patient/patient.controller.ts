@@ -15,6 +15,7 @@ export class PatientController {
     async getAllPatients(): Promise<PatientEntity[]> {
         return this.patientService.getAllPatients();
     }
+    
 
     @Post('byBranchOffice')
     @ApiBody({ type: GetPatientsByBranchOfficeDTO })

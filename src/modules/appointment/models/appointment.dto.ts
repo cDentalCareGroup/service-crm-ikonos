@@ -209,3 +209,15 @@ export class SendWhatsappConfirmationDTO {
     this.time = time;
   }
 }
+
+export class SendWhatsappSimpleTextDTO {
+  number: string;
+  text: string;
+  hideTitle?:boolean;
+  constructor(number: string,
+    text: string, hideTitle?: boolean) {
+    this.number = number;
+    this.text = text;
+    this.hideTitle = hideTitle;
+  }
+}

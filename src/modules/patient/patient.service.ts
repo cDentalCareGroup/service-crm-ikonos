@@ -210,31 +210,34 @@ export class PatientService {
   updatePatient = async (body: UpdatePatientDTO) => {
     try {
       const patient = await this.patientRepository.findOneBy({ id: body.patientId });
-      patient.name = capitalizeAllCharacters(body.name);
-      patient.lastname = capitalizeAllCharacters(body.lastname);
-      patient.secondLastname = capitalizeAllCharacters(body.secondLastname);
-      patient.birthDay = new Date(body.birthDate);
-      patient.gender = body.gender;
-      patient.maritalStatus = body.civilStatus;
-      patient.street = capitalizeAllCharacters(body.street);
-      patient.number = body.streetNumber;
-      patient.colony = capitalizeAllCharacters(body.colony);
-      patient.cp = body.zipCode;
-      patient.primaryContact = body.phone;
-      patient.email = body.email;
-      patient.originBranchOfficeId = body.branchOfficeId;
-      patient.country = 'MX';
-      patient.state = capitalizeAllCharacters(body.state);
-      patient.lat = body.lat;
-      patient.lng = body.lon;
-      patient.job = body.occupation;
-      patient.sourceClient = body.originId;
-      patient.city = capitalizeAllCharacters(body.city);
-      patient.organizationClient = body.organization;
-      patient.startDate = body.startDate;
-      patient.updatedAt = new Date();
-      patient.comments = `${patient.comments} \n Paciente Actualizado ${formatISO(new Date())}`
-      return await this.patientRepository.save(patient);
+      if (patient != null && patient != undefined) {
+        patient.name = capitalizeAllCharacters(body.name);
+        patient.lastname = capitalizeAllCharacters(body.lastname);
+        patient.secondLastname = capitalizeAllCharacters(body.secondLastname);
+        patient.birthDay = new Date(body.birthDate);
+        patient.gender = body.gender;
+        patient.maritalStatus = body.civilStatus;
+        patient.street = capitalizeAllCharacters(body.street);
+        patient.number = body.streetNumber;
+        patient.colony = capitalizeAllCharacters(body.colony);
+        patient.cp = body.zipCode;
+        patient.primaryContact = body.phone;
+        patient.email = body.email;
+        patient.originBranchOfficeId = body.branchOfficeId;
+        patient.country = 'MX';
+        patient.state = capitalizeAllCharacters(body.state);
+        patient.lat = body.lat;
+        patient.lng = body.lon;
+        patient.job = body.occupation;
+        patient.sourceClient = body.originId;
+        patient.city = capitalizeAllCharacters(body.city);
+        patient.organizationClient = body.organization;
+        patient.startDate = body.startDate;
+        patient.updatedAt = new Date();
+        patient.comments = `${patient.comments} \n Paciente Actualizado ${formatISO(new Date())}`
+        return await this.patientRepository.save(patient);
+      }
+      return 200;
     } catch (error) {
       console.log(error);
       HandleException.exception(error);

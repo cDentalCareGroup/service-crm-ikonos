@@ -45,6 +45,9 @@ export class RegisterCallDTO {
     description: string;
     date: string;
     type: string;
+    name?: string;
+    email?: string;
+    phone?:string;
 }
 
 

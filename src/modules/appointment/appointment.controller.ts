@@ -99,20 +99,18 @@ export class AppointmentController {
         return this.appointmentService.sendAppointmentNotification(body);
     }
 
-    @Get('webhooks')
-    async hook(@Query() query: any) {
-        //TOKEN WTS_TOKEN
-        return query['hub.challenge'];
-    }
+    // @Get('webhooks')
+    // async hook(@Query() query: any) {
+    //     //TOKEN WTS_TOKEN
+    //     console.log('Connecting with the hook')
+    //     return query['hub.challenge'];
+    // }
 
     // @Post('webhooks')
     // async post(@Body() body: any) {
-    //     for (const entry of body.entry) {
-    //         console.log(entry.changes[0].value.messages[0]);
-    //     }
-    //     return 200;
+    //     console.log(body);
+    //     return this.appointmentService.processWhatsappMessages(body);
     // }
-
 
     @Get('services')
     async getServices() {
