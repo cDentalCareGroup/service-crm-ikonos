@@ -99,12 +99,10 @@ export class AppointmentController {
         return this.appointmentService.sendAppointmentNotification(body);
     }
 
-    // @Get('webhooks')
-    // async hook(@Query() query: any) {
-    //     //TOKEN WTS_TOKEN
-    //     console.log('Connecting with the hook')
-    //     return query['hub.challenge'];
-    // }
+    @Get('webhooks')
+    async hook(@Body() body: any) {
+        return this.appointmentService.processWhatsappMessages(body);
+    }
 
     // @Post('webhooks')
     // async post(@Body() body: any) {

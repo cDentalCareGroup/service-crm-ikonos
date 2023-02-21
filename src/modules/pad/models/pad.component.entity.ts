@@ -17,7 +17,7 @@ export class PadComponenEntity {
     @Column({ name: 'max_peruser_quantity', type: 'int' })
     maxPatientQuantity: number;
 
-    @Column({ name: 'discount', type: 'int' })
+    @Column({ name: 'discount_1', type: 'int' })
     discount: number;
 
 }

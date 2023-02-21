@@ -441,7 +441,7 @@ export class AppointmentService {
           )
         );
         console.log(`Whatsapp patient ${whatsapp}`);
-      } else{
+      } else {
         const whatsapp = await this.messageService.sendWhatsAppRescheduleAppointment(
           new SendWhatsappConfirmationDTO(
             response.prospect.primaryContact, branchOffice.name, `${formatDateToWhatsapp(updatedAppointment.appointment)} - ${time.time}`
@@ -1015,24 +1015,14 @@ export class AppointmentService {
   }
 
 
-  // processWhatsappMessages = async (body: any) => {
-  //   try {
-  //     if (body == undefined || body == null) return;
-  //     for (const entry of body.entry) {
-  //       if (entry.changes != null && entry.changes != undefined && entry.changes.length > 0
-  //         && entry.changes[0].value != null && entry.changes[0].value != undefined &&
-  //         entry.changes[0].value.messages != null && entry.changes[0].value.messages != undefined &&
-  //         entry.changes[0].value.messages.length > 0) {
-  //         let message = entry.changes[0].value.messages[0];
-  //         if (message.type == 'interactive') {
-  //           await this.messageService.checkInteractiveMessages(message);
-  //         } else {
-  //           await this.messageService.checkTextMessages(message);
-  //         }
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // }
+  processWhatsappMessages = async (body: any) => {
+    try {
+      console.log(body)
+      if (body.type == 'text') {
+        this.messageService.checkTextMessages(body);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
 }
