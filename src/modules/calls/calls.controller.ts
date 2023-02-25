@@ -50,4 +50,11 @@ export class CallsController {
     async getCallDetail(@Body() body: GetCallDetailDTO) {
         return this.callsService.getCallDetail(body);
     }
+
+
+    @Post('/notattended')
+    @ApiBody({type: UpdateCallDTO})
+    async updateNotAttendedCall(@Body() body: UpdateCallDTO) {
+        return this.callsService.updateNotAttendedCall(body);
+    }
 }

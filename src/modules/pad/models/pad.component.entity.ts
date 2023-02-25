@@ -20,4 +20,7 @@ export class PadComponenEntity {
     @Column({ name: 'discount_1', type: 'int' })
     discount: number;
 
+    @Column({ name: 'discount_2', type: 'int' })
+    discountTwo: number;
+
 }

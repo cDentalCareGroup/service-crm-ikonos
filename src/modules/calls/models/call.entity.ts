@@ -31,9 +31,9 @@ export class CallEntity {
 
     @Column({
         name: 'call_due_date',
-        type: 'date',
+        type: 'varchar',
     })
-    dueDate: Date;
+    dueDate: string;
 
     @Column({
         name: 'call_description',
@@ -58,9 +58,9 @@ export class CallEntity {
 
     @Column({
         name: 'call_effective_date',
-        type: 'datetime',
+        type: 'varchar',
     })
-    effectiveDate: Date;
+    effectiveDate: string;
 
     @Column({
         name: 'comments',
@@ -75,6 +75,13 @@ export class CallEntity {
         default: CallResult.ACTIVE
     })
     result: CallResult;
+
+
+    @Column({
+        name: 'call_comments',
+        type: 'varchar',
+    })
+    callComments: string;
 }
 
 

@@ -130,4 +130,10 @@ export class AppointmentController {
     async testWhatsappMessage(@Body() body: SendWhatsappConfirmationDTO) {
         return this.appointmentService.testWhatsappMessage(body);
     }
+
+
+    @Post('patient')
+    async getAppointmentByPatient(@Body() body: any) {
+        return this.appointmentService.getAppointmentByPatient(body);
+    }
 }

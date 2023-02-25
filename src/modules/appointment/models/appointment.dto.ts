@@ -74,6 +74,8 @@ export class RegisterCallCenterAppointmentDTO {
   email?: string;
   branchId?: number;
   patientId?: number;
+  prospectId?: number;
+  callId?: number;
 }
 
 export class GetAppointmentDetailDTO {
@@ -135,10 +137,11 @@ export class UpdateAppointmentStatusDTO {
   id: string | number;
   status: string;
   date: string;
-  amount: string;
-  paymentMethod: number;
-  services: any[];
   padId: number;
+  amount: string;
+  paid: string;
+  services: any[];
+  payments: any[];
 }
 
 

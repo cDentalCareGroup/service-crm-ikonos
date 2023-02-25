@@ -28,4 +28,9 @@ export class AuthController {
   async test() {
     return this.authService.test();
   }
+
+  @Get('logs')
+  async getUserLogs() {
+    return this.authService.getUserLogs();
+  }
 }

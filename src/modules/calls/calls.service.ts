@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { async } from 'rxjs';
 import { HandleException } from 'src/common/exceptions/general.exception';
-import { capitalizeAllCharacters } from 'src/utils/general.functions.utils';
+import { capitalizeAllCharacters, getTodayDate } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { AppointmentService } from '../appointment/appointment.service';
 import { AppointmentDetailDTO, GetAppointmentDetailDTO } from '../appointment/models/appointment.dto';
@@ -61,9 +61,15 @@ export class CallsService {
     updateCall = async ({ id, description }: UpdateCallDTO) => {
         try {
             const result = await this.callRepository.findOneBy({ id: id });
-            result.status = 'resuelta';
-            result.effectiveDate = new Date();
+            // result.status = 'resuelta';
+            result.effectiveDate = getTodayDate()
             result.comments = `${result?.comments ?? '-'} \n ${description}`;
+
+            if (result.callComments == null || result.callComments == '') {
+                result.callComments = `- ${description}`;
+            } else {
+                result.callComments = `${result.callComments} - ${description}`;
+            }
             return await this.callRepository.save(result);
         } catch (error) {
             HandleException.exception(error);
@@ -96,8 +102,11 @@ export class CallsService {
         }
     }
 
-    registerCall = async ({ patientId, description, date, type, name, phone, email }: RegisterCallDTO) => {
+    registerCall = async ({ patientId, description, date, type, name, phone, email, prospectId, callId }: RegisterCallDTO) => {
         try {
+            console.log(patientId)
+            console.log(prospectId);
+            console.log(callId);
             const call = new CallEntity();
             if (name != null && name != '' && phone != null && phone != '') {
                 const prospect = new ProspectEntity();
@@ -107,14 +116,27 @@ export class CallsService {
                 prospect.createdAt = new Date();
                 const newProspect = await this.prospectRepository.save(prospect);
                 call.prospectId = newProspect.id;
-            } else {
+            } else if (patientId != null && patientId > 0) {
                 call.patientId = patientId;
+            } else {
+                call.prospectId = prospectId;
             }
             call.description = description;
-            call.dueDate = new Date(date);
+            call.dueDate = date;
             call.caltalogId = Number(type);
             call.status = 'activa';
             call.result = CallResult.CALL;
+
+            if (callId != null && callId != undefined && callId > 0) {
+                const resolvedCall = await this.callRepository.findOneBy({ id: callId });
+                if (resolvedCall != null && resolvedCall != undefined) {
+                    resolvedCall.status = 'resuelta';
+                    resolvedCall.effectiveDate = getTodayDate()
+                    resolvedCall.comments = `${resolvedCall?.comments ?? '-'} \n Llamada resuelta ${new Date()} terminada con llamada`;
+                    await this.callRepository.save(resolvedCall);
+                }
+            }
+
             return await this.callRepository.save(call);
         } catch (error) {
             HandleException.exception(error);
@@ -123,7 +145,6 @@ export class CallsService {
 
     getCallDetail = async ({ patientId, prospectId }: GetCallDetailDTO) => {
         try {
-            console.log('aqui')
             if (patientId != null && patientId != 0) {
                 const patient = await this.patientRepository.findOneBy({ id: patientId });
                 const calls = await this.callRepository.findBy({ patientId: patient.id });
@@ -157,5 +178,24 @@ export class CallsService {
             HandleException.exception(error);
         }
     }
+
+
+    updateNotAttendedCall = async ({ id, description }: UpdateCallDTO) => {
+        try {
+            const result = await this.callRepository.findOneBy({ id: id });
+            // result.status = 'resuelta';
+            result.comments = `${result?.comments ?? '-'} \n ${description}`;
+
+            if (result.callComments == null || result.callComments == '') {
+                result.callComments = `- ${description}`;
+            } else {
+                result.callComments = `${result.callComments} - ${description}`;
+            }
+            return await this.callRepository.save(result);
+        } catch (error) {
+            HandleException.exception(error);
+        }
+    }
 }
+
 

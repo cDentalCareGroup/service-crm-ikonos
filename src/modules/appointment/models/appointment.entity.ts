@@ -61,12 +61,12 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
   })
   status: string;
 
-  @Column({
-    name: 'cost_amount',
-    type: 'decimal',
-    nullable: true,
-  })
-  costAmount: number;
+  // @Column({
+  //   name: 'cost_amount',
+  //   type: 'decimal',
+  //   nullable: true,
+  // })
+  // costAmount: number;
 
   @Column({
     name: 'price_amount',
@@ -155,11 +155,11 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
   hasCabinet: number;
 
 
-  @Column({
-    name: 'payment_method_id',
-    type: 'int'
-  })
-  paymentMethodId: number;
+  // @Column({
+  //   name: 'payment_method_id',
+  //   type: 'int'
+  // })
+  // paymentMethodId: number;
 
 
 

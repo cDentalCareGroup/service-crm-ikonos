@@ -12,10 +12,10 @@ export class AppointmentReferralEntity {
     appointmentId: number;
 
     @Column({
-        name: 'employee_id',
-        type: 'int',
+        name: 'referral_code',
+        type: 'varchar',
     })
-    employeeId: number;
+    referalCode: string;
 
     @Column({
         name: 'folio',

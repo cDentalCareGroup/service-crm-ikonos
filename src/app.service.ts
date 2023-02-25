@@ -1,16 +1,19 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { addMinutes, subMinutes } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { lastValueFrom, map } from 'rxjs';
+import { Repository } from 'typeorm';
 import { HandleException } from './common/exceptions/general.exception';
+import { UserLogsEntity } from './modules/auth/models/entities/user.logs.entity';
 import { capitalizeAllCharacters, formatDateToWhatsapp, getTodayDate } from './utils/general.functions.utils';
 
 
 @Injectable()
 export class AppService {
   constructor(
-    private readonly httpService: HttpService
+    private readonly httpService: HttpService,
   ) {
 
   }

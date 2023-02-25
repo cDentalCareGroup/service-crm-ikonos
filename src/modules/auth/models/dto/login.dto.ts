@@ -13,6 +13,8 @@ export class LoginDTO {
     minimum: 8,
   })
   password: string;
+
+  info:any
 }
 
 

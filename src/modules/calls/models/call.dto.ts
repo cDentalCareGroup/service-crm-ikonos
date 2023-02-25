@@ -48,6 +48,8 @@ export class RegisterCallDTO {
     name?: string;
     email?: string;
     phone?:string;
+    prospectId?: number;
+    callId?: number;
 }
 
 

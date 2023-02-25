@@ -22,6 +22,8 @@ import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
 import { MessageService } from '../messages/message.service';
 import { PadComponentUsedEntity } from '../pad/models/pad.component.used.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
+import { PaymentEntity } from '../payment/models/payment.entity';
+import { PaymentDetailEntity } from '../payment/payment.detail.entity';
 import { AppointmentDetailEntity } from './models/appointment.detail.entity';
 import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, SendWhatsappSimpleTextDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 import { AppointmentEntity } from './models/appointment.entity';
@@ -47,7 +49,9 @@ export class AppointmentService {
     @InjectRepository(EmployeeTypeEntity) private employeeTypeRepository: Repository<EmployeeTypeEntity>,
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin,
     @InjectRepository(ServiceEntity) private serviceRepository: Repository<ServiceEntity>,
-    @InjectRepository(PaymentMethodEntity) private paymentRepository: Repository<PaymentMethodEntity>,
+    @InjectRepository(PaymentMethodEntity) private paymentMethodRepository: Repository<PaymentMethodEntity>,
+    @InjectRepository(PaymentDetailEntity) private paymentDetailRepository: Repository<PaymentDetailEntity>,
+    @InjectRepository(PaymentEntity) private paymentRepository: Repository<PaymentEntity>,
     @InjectRepository(CallEntity) private callRepository: Repository<CallEntity>,
     @InjectRepository(CallCatalogEntity) private callCatalogRepository: Repository<CallCatalogEntity>,
     @InjectRepository(AppointmentServiceEntity) private appointmentServiceRepository: Repository<AppointmentServiceEntity>,
@@ -134,13 +138,21 @@ export class AppointmentService {
             time: hour.simpleTime,
             status: 'activa'
           });
+          const appointmentsProccess = await this.appointmentRepository.findBy({
+            branchId: branchOffice.id,
+            appointment: dateSended,
+            time: hour.simpleTime,
+            status: 'proceso'
+          });
           const extendedAppointments = await this.appointmentTimesRepository.findBy({
             appointment: dateSended,
             time: hour.simpleTime,
             status: 'activa'
           });
 
-          const allAppointments = appointments.length + extendedAppointments.length;
+          console.log(appointments.length);
+
+          const allAppointments = appointments.length + extendedAppointments.length + appointmentsProccess.length;
           if (allAppointments < hour.seat) {
             data.push(hour);
           }
@@ -202,7 +214,7 @@ export class AppointmentService {
         const appointmentReferral = new AppointmentReferralEntity();
         appointmentReferral.appointmentId = response.id;
         appointmentReferral.folio = response.folio;
-        appointmentReferral.employeeId = Number(referal);
+        appointmentReferral.referalCode = referal;
         await this.appointmentReferralEntityRepository.save(appointmentReferral);
       }
 
@@ -338,23 +350,22 @@ export class AppointmentService {
     }
   }
 
-  updateAppointmentStatus = async ({ id, status, amount, paymentMethod, services, padId }: UpdateAppointmentStatusDTO) => {
+  updateAppointmentStatus = async (body: UpdateAppointmentStatusDTO) => {
     try {
-      const appointment = await this.appointmentRepository.findOneBy({ id: Number(id) });
+      const appointment = await this.appointmentRepository.findOneBy({ id: Number(body.id) });
 
-      if (status == 'proceso') {
+      if (body.status == 'proceso') {
         appointment.startedAt = formatISO(new Date())
         appointment.status = 'proceso';
         appointment.comments = `${appointment.comments} \n Estatus: proceso ${formatISO(new Date())}`;
       }
-      if (status == 'finalizada') {
+      if (body.status == 'finalizada') {
         const patient = await this.patientRepository.findOneBy({ id: appointment.patientId });
         appointment.finishedAt = formatISO(new Date());
         appointment.status = 'finalizada';
         appointment.comments = `${appointment.comments} \n Estatus: finalizada ${formatISO(new Date())}`;
-        appointment.priceAmount = Number(amount);
-        appointment.paymentMethodId = paymentMethod;
-        await this.patientRepository.save(patient);
+        appointment.priceAmount = Number(body.amount);
+        //  await this.patientRepository.save(patient);
 
         const extendedTimes = await this.appointmentTimesRepository.findBy({
           appointmentId: appointment.id,
@@ -368,7 +379,7 @@ export class AppointmentService {
           await this.appointmentTimesRepository.save(item);
         }
 
-        for await (const service of services) {
+        for await (const service of body.services) {
           const appointmentDetail = new AppointmentDetailEntity();
           appointmentDetail.appointmentId = appointment.id;
           appointmentDetail.patientId = appointment.patientId;
@@ -380,19 +391,75 @@ export class AppointmentService {
           appointmentDetail.price = Number(service.price);
           appointmentDetail.subTotal = Number(service.subtotal);
           appointmentDetail.comments = `Servicio registrado ${format(new Date(), 'yyyy-MM-dd')}`;
-          appointmentDetail.paid = Number(service.paid);
-          appointmentDetail.balance = Number(service.subtotal) - Number(service.paid);
           await this.appointmentDetailRepository.save(appointmentDetail);
 
-          if (padId != null && padId != 0 && Number(service.disscount) > 0) {
-            const padComponent = new PadComponentUsedEntity();
-            padComponent.patientId = appointment.patientId;
-            padComponent.serviceId = Number(service.key);
-            padComponent.padId = padId;
-            await this.padComponentUsedRepository.save(padComponent);
-          }
+          // if (body.padId != null && body.padId != 0 && Number(service.disscount) > 0) {
+          //   const padComponent = new PadComponentUsedEntity();
+          //   padComponent.patientId = appointment.patientId;
+          //   padComponent.serviceId = Number(service.key);
+          //   padComponent.padId = padId;
+          //   await this.padComponentUsedRepository.save(padComponent);
+          // }
         }
+
+        let status = 'A';
+        if (Number(body.paid) >= Number(body.amount)) {
+          status = 'C'
+        }
+        const payment = new PaymentEntity();
+        payment.patientId = patient.id;
+        payment.referenceId = appointment.id;
+        payment.movementTypeId = 2;
+        payment.amount = Number(body.amount);
+        payment.movementType = 'C';
+        payment.movementSign = '1';
+        payment.createdAt = new Date();
+        payment.status = status;
+
+        const newPayment = await this.paymentRepository.save(payment);
+
+        let index = 1;
+        //let paymentToAdd = [];
+        for await (const paymentDetail of body.payments) {
+          //  console.log(paymentDetail);
+          let payAmount = 0;
+          if (Number(paymentDetail.amount) >= Number(body.amount)) {
+            payAmount = Number(body.amount);
+            // if (body.paymentMethodType != 'efectivo') {
+            //   paymentToAdd.push(Number(paymentDetail.amount));
+            // }
+          } else {
+            payAmount = Number(paymentDetail.amount);
+          }
+          const paymentItem = new PaymentDetailEntity();
+          paymentItem.patientId = patient.id;
+          paymentItem.paymentId = newPayment.id;
+          paymentItem.referenceId = appointment.id;
+          paymentItem.movementTypeApplicationId = 2;
+          paymentItem.movementType = 'A'
+          paymentItem.amount = payAmount;
+          paymentItem.createdAt = new Date();
+          paymentItem.paymentMethodId = paymentDetail.key;
+          paymentItem.sign = '-1'
+          paymentItem.order = index;
+          index += 1;
+          await this.paymentDetailRepository.save(paymentItem);
+        }
+
+        // for await (const iterator of paymentToAdd) {
+        //   const paymentNew = new PaymentEntity();
+        //   paymentNew.patientId = patient.id;
+        //   paymentNew.referenceId = appointment.id;
+        //   paymentNew.movementTypeId = 3;
+        //   paymentNew.amount = iterator;
+        //   paymentNew.movementType = 'A';
+        //   paymentNew.movementSign = '-1';
+        //   paymentNew.createdAt = new Date();
+        //   paymentNew.status = 'A';
+        //   await this.paymentRepository.save(paymentNew);
+        // }
       }
+
       const updatedAppointment = await this.appointmentRepository.save(appointment);
       return this.getAppointment(updatedAppointment);
     } catch (exception) {
@@ -860,7 +927,7 @@ export class AppointmentService {
 
       const today = new Date();
       today.setDate(today.getDate() + 1);
-      call.dueDate = today;
+      call.dueDate = today.toString();
       return await this.callRepository.save(call);
     } catch (exception) {
       console.log(exception);
@@ -885,7 +952,7 @@ export class AppointmentService {
           call.patientId = patient.id;
           call.comments = `Registro de llamada automatico pad vencido ${new Date()}`;
           call.caltalogId = callPad.id;
-          call.dueDate = today;
+          call.dueDate = today.toString();
           call.result = CallResult.CALL;
           await this.callRepository.save(call);
           console.log(`Llamada registrada`);
@@ -908,7 +975,7 @@ export class AppointmentService {
 
   getPaymentMethods = async () => {
     try {
-      const result = await this.paymentRepository.find();
+      const result = await this.paymentMethodRepository.find();
       return result;
     } catch (error) {
       HandleException.exception(error);
@@ -955,6 +1022,7 @@ export class AppointmentService {
 
   registerAppointmentCallCenter = async (body: RegisterCallCenterAppointmentDTO): Promise<string> => {
     try {
+
       const branchOffice = await this.branchOfficeRepository.findOneBy({ id: body.branchId });
       let prospect: ProspectEntity;
       if (body.name != '' && body.phone != '') {
@@ -963,8 +1031,11 @@ export class AppointmentService {
         newProspect.email = body.email;
         newProspect.primaryContact = body.phone;
         newProspect.createdAt = new Date();
-        console.log('Registrando prospecto');
         prospect = await this.prospectRepository.save(newProspect);
+        console.log(`Register prospect`)
+      } else if (body.prospectId != null && body.prospectId > 0) {
+        prospect = await this.prospectRepository.findOneBy({ id: body.prospectId });
+        console.log(`Register getting prospect`);
       }
 
       const entity = new AppointmentEntity();
@@ -1001,12 +1072,33 @@ export class AppointmentService {
           body.email);
       }
 
-      const whatsapp = await this.messageService.sendWhatsAppConfirmation(
-        new SendWhatsappConfirmationDTO(
-          body.phone, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${body.time.time}`
-        )
-      );
+      let whatsapp: any;
+      if (prospect != null && prospect != undefined) {
+        whatsapp = await this.messageService.sendWhatsAppConfirmation(
+          new SendWhatsappConfirmationDTO(
+            prospect.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${body.time.time}`
+          )
+        );
+      } else {
+        const patient = await this.patientRepository.findOneBy({ id: body.patientId });
+        whatsapp = await this.messageService.sendWhatsAppConfirmation(
+          new SendWhatsappConfirmationDTO(
+            patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${body.time.time}`
+          )
+        );
+      }
+
+      if (body.callId != null && body.callId > 0) {
+        const call = await this.callRepository.findOneBy({ id: body.callId });
+        if (call != null && call != undefined) {
+          call.status = 'resuelta';
+          call.effectiveDate = getTodayDate()
+          call.comments = `${call?.comments ?? '-'} \n Llamada resuelta  ${new Date()} terminada con cita ${response.folio}`;
+          await this.callRepository.save(call);
+      }
+      }
       console.log(`Whatsapp sender ${whatsapp}`);
+      console.log(response.folio);
       return response.folio;
     } catch (exception) {
       console.log(exception);
@@ -1023,6 +1115,15 @@ export class AppointmentService {
       }
     } catch (error) {
       console.log(error);
+    }
+  }
+
+
+  getAppointmentByPatient = async (body: any) => {
+    try {
+      return await this.appointmentRepository.findBy({ patientId: body.patientId, status: 'finalizada' });
+    } catch (error) {
+      HandleException.exception(error);
     }
   }
 }

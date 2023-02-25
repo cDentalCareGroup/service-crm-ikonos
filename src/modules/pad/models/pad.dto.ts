@@ -28,4 +28,5 @@ export class RegisterPadComponentDTO {
     globalQuantity: number;
     maxPatientQuantity: number;
     discount: number;
+    discountTwo: number;
 }

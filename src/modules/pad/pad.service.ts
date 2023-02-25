@@ -90,7 +90,7 @@ export class PadService {
                 patient.padAcquisitionDate = body.adquisitionDate;
                 patient.padAcquisitionBranch = body.branchId;
                 patient.padExpirationDate = format(padDueDate, 'yyyy-MM-dd')
-                patient.padType = padCatalogue.type;
+                patient.padType = padCatalogue.name;
                 patient.currentPadId = newPad.id;
                 patient.comments = `${patient.comments} \n Pad Registrado ${body.adquisitionDate}`;
                 await this.patientRepository.save(patient);
@@ -150,7 +150,9 @@ export class PadService {
             padComponent.globalQuantity = body.globalQuantity;
             padComponent.maxPatientQuantity = body.maxPatientQuantity;
             padComponent.discount = body.discount;
+            padComponent.discountTwo = body.discountTwo;
 
+            console.log(padComponent);
             await this.padComponentRepository.save(padComponent);
             return await this.getPadCatalogueDetail(body.padCatalogueId);
         } catch (error) {
@@ -209,6 +211,7 @@ export class PadService {
                     'globalQuantity': component.globalQuantity,
                     'maxPatientQuantity': component.maxPatientQuantity,
                     'discount': component.discount,
+                    'discountTwo': component.discountTwo,
                     'serviceName': service.name,
                 });
             }
@@ -242,12 +245,11 @@ export class PadService {
                 for await (const component of padComponents) {
                     const service = await this.serviceRepository.findOneBy({ id: component.serviceId });
                     const serviceUsed = await this.padComponentUsedRepository.findBy({ serviceId: service.id, padId: pad.id, patientId: body.patientId });
-                    if (serviceUsed.length < component.maxPatientQuantity) {
-                        services.push({
-                            'service': service,
-                            'component': component,
-                        });
-                    }
+                    services.push({
+                        'service': service,
+                        'component': component,
+                        'availableUsage': component.maxPatientQuantity - serviceUsed.length
+                    });
                 }
                 return {
                     'pad': pad,

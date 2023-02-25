@@ -7,11 +7,12 @@ import { ConfigModule } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
 import { UserEntity } from './models/entities/user.entity';
 import { RolEntity, UserRolEntity } from './models/entities/rol.entity';
+import { UserLogsEntity } from './models/entities/user.logs.entity';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
-    TypeOrmModule.forFeature([UserEntity,RolEntity, UserRolEntity]),
+    TypeOrmModule.forFeature([UserEntity,RolEntity, UserRolEntity, UserLogsEntity]),
     JwtModule.register({
       secret: process.env.CRM_TOKEN_SECRET,
       signOptions: { expiresIn: '18h' },

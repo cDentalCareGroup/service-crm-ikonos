@@ -15,6 +15,8 @@ import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
 import { MessageService } from '../messages/message.service';
 import { PadComponentUsedEntity } from '../pad/models/pad.component.used.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
+import { PaymentEntity } from '../payment/models/payment.entity';
+import { PaymentDetailEntity } from '../payment/payment.detail.entity';
 import { AppointmentController } from './appointment.controller';
 import { AppointmentService } from './appointment.service';
 import { AppointmentDetailEntity } from './models/appointment.detail.entity';
@@ -47,7 +49,9 @@ import { ServiceEntity } from './models/service.entity';
       AppointmentTimesEntity,
       AppointmentDetailEntity,
       PadComponentUsedEntity,
-      AppointmentReferralEntity
+      AppointmentReferralEntity,
+      PaymentEntity,
+      PaymentDetailEntity
     ]),
     EmailModule,
     HttpModule

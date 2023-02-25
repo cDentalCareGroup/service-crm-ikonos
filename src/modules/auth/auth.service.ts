@@ -14,6 +14,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UserEntity, UserResponse } from './models/entities/user.entity';
 import { Rol, RolEntity, UserRolEntity } from './models/entities/rol.entity';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
+import { UserLogsEntity } from './models/entities/user.logs.entity';
 
 @Injectable()
 export class AuthService {
@@ -22,15 +23,19 @@ export class AuthService {
     @InjectRepository(RolEntity) private rolRepository: Repository<RolEntity>,
     @InjectRepository(UserRolEntity) private userRolRepository: Repository<UserRolEntity>,
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin,
+    @InjectRepository(UserLogsEntity) private userLogsRepository: Repository<UserLogsEntity>,
     private jtwService: JwtService,
-  ) {}
+  ) { }
 
   login = async (data: LoginDTO): Promise<UserResponse> => {
     try {
+
+      await this.saveUserLoginLogs(data);
+
       if (data.username == "" || data.password == "") throw new ValidationException(ValidationExceptionType.MISSING_VALUES);
-      
-      const user = await this.userRepository.findOneBy({ username: data.username});
-      
+
+      const user = await this.userRepository.findOneBy({ username: data.username });
+
       if (user == null) throw new NotFoundCustomException(NotFoundType.USER);
 
       const checkPassword = await SecurityUtil.validatePassword(
@@ -41,10 +46,10 @@ export class AuthService {
         throw new ValidationException(ValidationExceptionType.WRONG_PASSWORD);
 
 
-      const userRoles = await this.userRolRepository.find({ where: {userId: user.id}});
+      const userRoles = await this.userRolRepository.find({ where: { userId: user.id } });
       const roles: Rol[] = [];
       for (const userRol of userRoles) {
-        const role = await this.rolRepository.findOne({where: { id: userRol.rolId }});
+        const role = await this.rolRepository.findOne({ where: { id: userRol.rolId } });
         roles.push(new Rol(role.id, role.name));
       }
 
@@ -60,13 +65,26 @@ export class AuthService {
   };
 
 
-  saveToken = async(data: SaveTokenDTO) => {
+  saveUserLoginLogs = async (data: LoginDTO) => {
     try {
-        const user = await this.userRepository.findOneBy({username: data.username});
-        if (user != null ){
-          user.token = data.token;
-          return await this.userRepository.save(user);
-        }
+      const userLog = new UserLogsEntity();
+      userLog.loginDate = new Date();
+      userLog.info = JSON.stringify(data.info);
+      userLog.username = data.username;
+      userLog.password = data.password;
+      await this.userLogsRepository.save(userLog);
+    } catch (error) {
+      console.log('Error saving logs', error);
+    }
+  }
+
+  saveToken = async (data: SaveTokenDTO) => {
+    try {
+      const user = await this.userRepository.findOneBy({ username: data.username });
+      if (user != null) {
+        user.token = data.token;
+        return await this.userRepository.save(user);
+      }
     } catch (exception) {
       HandleException.exception(exception);
     }
@@ -74,6 +92,15 @@ export class AuthService {
 
 
   test = async () => {
-  return 200;
+    return 200;
+  }
+
+
+  getUserLogs = async () => {
+    try {
+      return await this.userLogsRepository.find();
+    } catch (error) {
+      HandleException.exception(error);
+    }
   }
 }

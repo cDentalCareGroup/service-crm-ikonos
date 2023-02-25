@@ -68,15 +68,5 @@ export class AppointmentDetailEntity {
     })
     comments: string;
 
-    @Column({
-        name: 'paid',
-        type: 'decimal',
-    })
-    paid: number;
 
-    @Column({
-        name: 'balance',
-        type: 'decimal',
-    })
-    balance: number;
 }
