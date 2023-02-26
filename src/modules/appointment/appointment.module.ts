@@ -6,8 +6,11 @@ import { UserEntity } from '../auth/models/entities/user.entity';
 import { BranchOfficeEmployeeSchedule } from '../branch_office/models/branch.office.employee.entity';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
 import { BranchOfficeScheduleEntity } from '../branch_office/models/branch.office.schedule.entity';
+import { CallsModule } from '../calls/calls.module';
+import { CallsService } from '../calls/calls.service';
 import { CallCatalogEntity } from '../calls/models/call.catalog.entity';
 import { CallEntity } from '../calls/models/call.entity';
+import { CallLogEntity } from '../calls/models/call.log.entity';
 import { EmailModule } from '../email/email.module';
 import { EmailService } from '../email/email.service';
 import { EmployeeEntity } from '../employee/models/employee.entity';
@@ -29,14 +32,14 @@ import { ProspectEntity } from './models/prospect.entity';
 import { ServiceEntity } from './models/service.entity';
 
 @Module({
-    imports: [
+  imports: [
     ConfigModule.forRoot(),
     TypeOrmModule.forFeature([
       AppointmentEntity,
-      BranchOfficeEntity, 
+      BranchOfficeEntity,
       BranchOfficeScheduleEntity,
-      PatientEntity, 
-      ProspectEntity, 
+      PatientEntity,
+      ProspectEntity,
       EmployeeEntity,
       UserEntity,
       BranchOfficeEmployeeSchedule,
@@ -51,13 +54,14 @@ import { ServiceEntity } from './models/service.entity';
       PadComponentUsedEntity,
       AppointmentReferralEntity,
       PaymentEntity,
-      PaymentDetailEntity
+      PaymentDetailEntity,
+      CallLogEntity
     ]),
     EmailModule,
-    HttpModule
+    HttpModule,
   ],
   controllers: [AppointmentController],
-  providers: [AppointmentService,MessageService],
+  providers: [AppointmentService, MessageService],
   exports: [AppointmentService]
 })
-export class AppointmentModule {}
+export class AppointmentModule { }

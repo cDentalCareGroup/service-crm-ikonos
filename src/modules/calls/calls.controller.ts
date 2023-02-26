@@ -57,4 +57,9 @@ export class CallsController {
     async updateNotAttendedCall(@Body() body: UpdateCallDTO) {
         return this.callsService.updateNotAttendedCall(body);
     }
+
+    @Post('/log')
+    async registerCallLog(@Body() body: any) {
+        return this.callsService.registerCallLog(body);
+    }
 }

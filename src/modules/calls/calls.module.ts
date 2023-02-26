@@ -10,17 +10,18 @@ import { CallsController } from './calls.controller';
 import { CallsService } from './calls.service';
 import { CallCatalogEntity } from './models/call.catalog.entity';
 import { CallEntity } from './models/call.entity';
+import { CallLogEntity } from './models/call.log.entity';
 
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
-    TypeOrmModule.forFeature([CallEntity, PatientEntity, AppointmentEntity, CallCatalogEntity, ProspectEntity]),
+    TypeOrmModule.forFeature([CallEntity, PatientEntity, AppointmentEntity, CallCatalogEntity, ProspectEntity, CallLogEntity]),
     AppointmentModule
   ],
   controllers: [CallsController],
   providers: [CallsService,],
-  exports: []
+  exports: [CallsService]
 })
 export class CallsModule { }
 

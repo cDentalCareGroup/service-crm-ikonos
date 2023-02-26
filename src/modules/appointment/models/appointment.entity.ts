@@ -1,6 +1,7 @@
 // import { BranchOffice } from "src/modules/branch_office/models/branch.office.entity";
 // import { Employees } from "src/modules/employee/models/employee.entity";
 // import { Patient } from "src/modules/patient/models/patient.entity";
+import { CallEntity } from "src/modules/calls/models/call.entity";
 import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
  @Entity('appointment')
@@ -177,6 +178,7 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
   })
   nextAppointmentDate: string;
 
+  call?: CallEntity;
   
 
 

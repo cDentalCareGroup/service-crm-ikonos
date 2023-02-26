@@ -13,6 +13,7 @@ import { PatientEntity } from '../patient/models/patient.entity';
 import { CallCatalogEntity } from './models/call.catalog.entity';
 import { GetCallDetailDTO, GetCallsDTO, RegisterCallDTO, RegisterCatalogDTO, UpdateCallDTO, UpdateCatalogDTO } from './models/call.dto';
 import { CallEntity, CallResult } from './models/call.entity';
+import { CallLogEntity } from './models/call.log.entity';
 
 @Injectable()
 export class CallsService {
@@ -24,6 +25,7 @@ export class CallsService {
         @InjectRepository(AppointmentEntity) private appointmentRepository: Repository<AppointmentEntity>,
         @InjectRepository(CallCatalogEntity) private catalogRepository: Repository<CallCatalogEntity>,
         @InjectRepository(ProspectEntity) private prospectRepository: Repository<ProspectEntity>,
+        @InjectRepository(CallLogEntity) private callLogRepository: Repository<CallLogEntity>,
         private readonly appointmentService: AppointmentService
     ) { }
 
@@ -103,7 +105,7 @@ export class CallsService {
         }
     }
 
-    registerCall = async ({ patientId, description, date, type, name, phone, email, prospectId, callId }: RegisterCallDTO) => {
+    registerCall = async ({ patientId, description, date, type, name, phone, email, prospectId, callId, appointmentId }: RegisterCallDTO) => {
         try {
             const call = new CallEntity();
             if (name != null && name != '' && phone != null && phone != '') {
@@ -125,6 +127,10 @@ export class CallsService {
             call.status = 'activa';
             call.result = CallResult.CALL;
 
+            if (appointmentId != null && appointmentId > 0) {
+                call.appointmentId = appointmentId;
+            }
+
             if (callId != null && callId != undefined && callId > 0) {
                 const resolvedCall = await this.callRepository.findOneBy({ id: callId });
                 if (resolvedCall != null && resolvedCall != undefined) {
@@ -133,6 +139,7 @@ export class CallsService {
                     resolvedCall.comments = `${resolvedCall?.comments ?? '-'} \n Llamada resuelta ${new Date()} terminada con llamada`;
                     await this.callRepository.save(resolvedCall);
                 }
+                await this.updateCallLog(callId, 'llamada');
             }
 
             return await this.callRepository.save(call);
@@ -189,9 +196,46 @@ export class CallsService {
             } else {
                 result.callComments = `${result.callComments} - ${description}`;
             }
+
+            await this.updateCallLog(id, 'noContesto');
+
             return await this.callRepository.save(result);
         } catch (error) {
             HandleException.exception(error);
+        }
+    }
+
+    private updateCallLog = async (id: number, type: string) => {
+        try {
+            const logs = await this.callLogRepository.find({
+                order: { id: 'DESC' },
+                where: { callId: id },
+                take: 1
+            });
+
+            if (logs.length > 0) {
+                const lastlog = await this.callLogRepository.findOneBy({ id: logs[0].id });
+                if (lastlog) {
+                    lastlog.finishedAt = getTodayDate();
+                    lastlog.result = type;
+                    await this.callLogRepository.save(lastlog);
+                }
+            }
+            return 200;
+        } catch (error) {
+            console.log(`updateCallLog`, error);
+        }
+    }
+
+    registerCallLog = async (body: any) => {
+        try {
+            const callLog = new CallLogEntity();
+            callLog.callId = body.id;
+            callLog.startedAt = getTodayDate();
+            return await this.callLogRepository.save(callLog);
+        } catch (error) {
+            HandleException.exception(error);
+
         }
     }
 }

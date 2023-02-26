@@ -50,6 +50,7 @@ export class RegisterCallDTO {
     phone?:string;
     prospectId?: number;
     callId?: number;
+    appointmentId?: number;
 }
 
 

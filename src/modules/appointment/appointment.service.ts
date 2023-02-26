@@ -14,8 +14,10 @@ import { branchOfficeScheduleToEntity } from '../branch_office/extensions/branch
 import { BranchOfficeEmployeeSchedule } from '../branch_office/models/branch.office.employee.entity';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
 import { BranchOfficeScheduleEntity } from '../branch_office/models/branch.office.schedule.entity';
+import { CallsService } from '../calls/calls.service';
 import { CallCatalogEntity } from '../calls/models/call.catalog.entity';
 import { CallEntity, CallResult } from '../calls/models/call.entity';
+import { CallLogEntity } from '../calls/models/call.log.entity';
 import { AppointmentTemplateMail, EmailService } from '../email/email.service';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
@@ -60,7 +62,8 @@ export class AppointmentService {
     @InjectRepository(PadComponentUsedEntity) private padComponentUsedRepository: Repository<PadComponentUsedEntity>,
     @InjectRepository(AppointmentReferralEntity) private appointmentReferralEntityRepository: Repository<AppointmentReferralEntity>,
     private emailService: EmailService,
-    private readonly messageService: MessageService
+    private readonly messageService: MessageService,
+    @InjectRepository(CallLogEntity) private callLogRepository: Repository<CallLogEntity>,
   ) { }
 
   getAppointmentsAvailability = async ({ branchOfficeName, dayName, date, filterHours }: AppointmentAvailabilityDTO): Promise<AvailableHoursDTO[]> => {
@@ -150,7 +153,7 @@ export class AppointmentService {
             status: 'activa'
           });
 
-         // console.log(appointments.length);
+          // console.log(appointments.length);
 
           const allAppointments = appointments.length + extendedAppointments.length + appointmentsProccess.length;
           if (allAppointments < hour.seat) {
@@ -279,6 +282,16 @@ export class AppointmentService {
       if (body.status != null && body.status != '') {
         if (body.status == 'finalizada-cita') {
           const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: 'finalizada', nextAppointmentId: Not(IsNull()) });
+          const activeCalls = await this.callRepository.findBy({ status: 'activa', appointmentId: Not(IsNull()) });
+
+          for await (const item of activeCalls) {
+            const appointment = await this.appointmentRepository.findOneBy({ id: item.appointmentId });
+            const newAppointment = appointment;
+            newAppointment.call = item;
+            const result = await this.getAppointment(newAppointment);
+            data.push(result)
+          }
+
           for await (const appointment of appointments) {
             const existsNext = appointments.find((value, _) => value.id == appointment.nextAppointmentId);
             if (existsNext == null || existsNext == undefined) {
@@ -1099,6 +1112,7 @@ export class AppointmentService {
           call.effectiveDate = getTodayDate()
           call.comments = `${call?.comments ?? '-'} \n Llamada resuelta  ${new Date()} terminada con cita ${response.folio}`;
           await this.callRepository.save(call);
+          await this.updateCallLog(call.id, 'cita');
         }
       }
       console.log(`Whatsapp sender ${whatsapp}`);
@@ -1134,4 +1148,26 @@ export class AppointmentService {
       HandleException.exception(error);
     }
   }
+
+  private updateCallLog = async (id: number, type: string) => {
+    try {
+        const logs = await this.callLogRepository.find({
+            order: { id: 'DESC' },
+            where: { callId: id },
+            take: 1
+        });
+
+        if (logs.length > 0) {
+            const lastlog = await this.callLogRepository.findOneBy({ id: logs[0].id });
+            if (lastlog) {
+                lastlog.finishedAt = getTodayDate();
+                lastlog.result = type;
+                await this.callLogRepository.save(lastlog);
+            }
+        }
+        return 200;
+    } catch (error) {
+        console.log(`updateCallLog`, error);
+    }
+}
 }
