@@ -128,7 +128,7 @@ export class AppointmentService {
         }
 
       }
-      console.log(`Filtering ${filterHours}`)
+      //console.log(`Filtering ${filterHours}`)
       const dateSended = date.split("T")[0];
       if (filterHours == true) {
         for await (const hour of availableHours) {
@@ -150,7 +150,7 @@ export class AppointmentService {
             status: 'activa'
           });
 
-          console.log(appointments.length);
+         // console.log(appointments.length);
 
           const allAppointments = appointments.length + extendedAppointments.length + appointmentsProccess.length;
           if (allAppointments < hour.seat) {
@@ -360,7 +360,7 @@ export class AppointmentService {
         appointment.comments = `${appointment.comments} \n Estatus: proceso ${formatISO(new Date())}`;
       }
       if (body.status == 'finalizada') {
-        const patient = await this.patientRepository.findOneBy({ id: appointment.patientId });
+        //const patient = await this.patientRepository.findOneBy({ id: appointment.patientId });
         appointment.finishedAt = formatISO(new Date());
         appointment.status = 'finalizada';
         appointment.comments = `${appointment.comments} \n Estatus: finalizada ${formatISO(new Date())}`;
@@ -390,7 +390,7 @@ export class AppointmentService {
           appointmentDetail.discount = Number(service.disscount);
           appointmentDetail.price = Number(service.price);
           appointmentDetail.subTotal = Number(service.subtotal);
-          appointmentDetail.comments = `Servicio registrado ${format(new Date(), 'yyyy-MM-dd')}`;
+          appointmentDetail.comments = `Servicio registrado ${getTodayDate()}`;
           await this.appointmentDetailRepository.save(appointmentDetail);
 
           // if (body.padId != null && body.padId != 0 && Number(service.disscount) > 0) {
@@ -407,7 +407,7 @@ export class AppointmentService {
           status = 'C'
         }
         const payment = new PaymentEntity();
-        payment.patientId = patient.id;
+        payment.patientId = appointment.patientId;
         payment.referenceId = appointment.id;
         payment.movementTypeId = 2;
         payment.amount = Number(body.amount);
@@ -432,7 +432,7 @@ export class AppointmentService {
             payAmount = Number(paymentDetail.amount);
           }
           const paymentItem = new PaymentDetailEntity();
-          paymentItem.patientId = patient.id;
+          paymentItem.patientId = appointment.patientId;
           paymentItem.paymentId = newPayment.id;
           paymentItem.referenceId = appointment.id;
           paymentItem.movementTypeApplicationId = 2;
@@ -923,11 +923,15 @@ export class AppointmentService {
       call.status = 'activa';
       call.result = CallResult.APPOINTMENT;
       call.caltalogId = catalog.id;
-      call.comments = `${call.comments} \n Registro de llamada automatico ${new Date()}`;
+      if (call.comments != null && call.comments != '') {
+        call.comments = `${call.comments} \n Registro de llamada automatico ${getTodayDate()}`;
+      } else {
+        call.comments = `Registro de llamada automatico ${getTodayDate()}`;
+      }
 
       const today = new Date();
       today.setDate(today.getDate() + 1);
-      call.dueDate = today.toString();
+      call.dueDate = format(today, 'yyyy-MM-dd HH:mm:ss')
       return await this.callRepository.save(call);
     } catch (exception) {
       console.log(exception);
@@ -1095,7 +1099,7 @@ export class AppointmentService {
           call.effectiveDate = getTodayDate()
           call.comments = `${call?.comments ?? '-'} \n Llamada resuelta  ${new Date()} terminada con cita ${response.folio}`;
           await this.callRepository.save(call);
-      }
+        }
       }
       console.log(`Whatsapp sender ${whatsapp}`);
       console.log(response.folio);
@@ -1109,8 +1113,12 @@ export class AppointmentService {
 
   processWhatsappMessages = async (body: any) => {
     try {
-      console.log(body)
-      if (body.type == 'text') {
+      console.log(`Data`, body)
+      if (body != null && body.type == 'text' && body.client_name == 'SMSMasivos') {
+        console.log(`Webhook test`)
+        return;
+      }
+      if (body != null && body.type == 'text') {
         this.messageService.checkTextMessages(body);
       }
     } catch (error) {

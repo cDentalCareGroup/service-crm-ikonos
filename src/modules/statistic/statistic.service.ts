@@ -3,8 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomInt } from 'crypto';
 import { async } from 'rxjs';
 import { HandleException } from 'src/common/exceptions/general.exception';
+import { getTodayDate } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
-import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
+import { AppointmentEntity } from '../appointment/models/appointment.entity';
+import { AppointmentStatistic, BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
+import { CallEntity } from '../calls/models/call.entity';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 
@@ -14,62 +17,45 @@ export class StatisticService {
         @InjectRepository(BranchOfficeEntity) private branchOfficeRepository: Repository<BranchOfficeEntity>,
         @InjectRepository(PatientEntity) private patientsRepository: Repository<PatientEntity>,
         @InjectRepository(EmployeeEntity) private employeeRepository: Repository<EmployeeEntity>,
-
-      ) {}
+        @InjectRepository(CallEntity) private callRepository: Repository<CallEntity>,
+        @InjectRepository(AppointmentEntity) private appointmentRepository: Repository<AppointmentEntity>,
+    ) { }
 
 
     getGeneralStatistics = async () => {
         try {
-            const branchOffices = await this.branchOfficeRepository.count({where: { status: 1 }});
-            console.log("Offices", branchOffices);
+            const calls = await this.callRepository.find();
+            const attendedDate = getTodayDate().split(' ')[0];
+            const pendingCallsToday = calls.filter((value, _) => value.status == 'activa' && value.dueDate == attendedDate);
+            const solvedCallsToday = calls.filter((value, _) => value.status == 'resuelta' && value.dueDate == attendedDate);
 
-            const patients = await this.patientsRepository.find();
-            // const activePatients = patients.filter((value, _) => value.patientStatus == 1).length;
-            // const suspendPatients = patients.filter((value, _) => value.patientStatus == 2).length;
-            // const inactivePatients = patients.filter((value, _) => value.patientStatus == 3).length;
+            const data = await this.branchOfficeRepository.find({ where: { status: 1 } });
+            let branchOffices: BranchOfficeEntity[] = [];
+            for await (const branchOffice of data) {
+                const appointments = await this.appointmentRepository.findBy({ branchId: branchOffice.id });
+                const active = appointments.filter((value, _) => value.status == 'activa');
+                const proccess = appointments.filter((value, _) => value.status == 'proceso');
+                const finished = appointments.filter((value, _) => value.status == 'finalizada');
+                const noAttended = appointments.filter((value, _) => value.status == 'no-atendida');
+                const item = branchOffice;
+                item.appointment = new AppointmentStatistic(active.length, proccess.length, finished.length, noAttended.length);
+                branchOffices.push(item);
+            }
 
-            // console.log("Active", activePatients);
-            // console.log("Inactive", inactivePatients);
-            // console.log("Suspend", suspendPatients);
 
-
-            const employees = await this.employeeRepository.find({where:{status: 1}});
-
-            const dentalDoctor = employees.filter((value, _) => value.typeId == 11).length;
-            const axuDentalDoctor = employees.filter((value, _) => value.typeId == 12).length;
-
-            console.log("Dental", dentalDoctor);
-            console.log("Aux", axuDentalDoctor);
-
-            const dates = [];
-            for (let i = 0; i < 7; i++) {
-                const date = new Date();
-                date.setDate(date.getDate() + i);
-                dates.push({
-                    'date':date.toLocaleDateString(),
-                    'active': i + randomInt(10),
-                    'cancelled': i + randomInt(5),
-                    'inProgress': i + randomInt(7),
-                });
-              }
-              console.table(dates);
-
-              return {
-                'branch_offices': branchOffices,
-                'patients': {
-                    'active':0,
-                    'inactive': 0,
-                    'suspend':0
+            return {
+                'calls': {
+                    'pending': pendingCallsToday,
+                    'attended': solvedCallsToday
                 },
-                'employees':{
-                    'dental_doctor': dentalDoctor,
-                    'aux_dental_doctor': axuDentalDoctor,
-                },
-                'dates': dates
-                          }
+                'branchOffices': branchOffices
+            }
 
         } catch (exception) {
             HandleException.exception(exception);
         }
     }
+
+
+
 }

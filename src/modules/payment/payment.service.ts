@@ -22,7 +22,7 @@ export class PaymentService {
     registerPayment = async (body: any) => {
         try {
 
-            console.log(body);
+            //console.log(body);
             const appointment = await this.appointmentRepository.findOneBy({ id: body.appointmentId });
             const payment = await this.paymentRepository.findOneBy({ referenceId: appointment.id, patientId: appointment.patientId });
             const payments = await this.paymentDetailRepository.findBy({ paymentId: payment.id });

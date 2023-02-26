@@ -99,7 +99,7 @@ export class AppointmentController {
         return this.appointmentService.sendAppointmentNotification(body);
     }
 
-    @Get('webhooks')
+    @Post('webhooks')
     async hook(@Body() body: any) {
         return this.appointmentService.processWhatsappMessages(body);
     }

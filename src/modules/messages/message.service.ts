@@ -1,11 +1,14 @@
 import { HttpService } from "@nestjs/axios";
 import { Body, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { FirebaseAdmin, InjectFirebaseAdmin } from "nestjs-firebase";
 import { lastValueFrom } from "rxjs";
+import { HandleException } from "src/common/exceptions/general.exception";
 import { Repository } from "typeorm";
 import { SendWhatsappConfirmationDTO, SendWhatsappSimpleTextDTO } from "../appointment/models/appointment.dto";
 import { branchOfficesToMessage } from "../branch_office/extensions/branch.office.extensions";
 import { BranchOfficeEntity } from "../branch_office/models/branch.office.entity";
+import { EmployeeEntity } from "../employee/models/employee.entity";
 
 
 @Injectable()
@@ -14,6 +17,8 @@ export class MessageService {
     constructor(
         private readonly httpService: HttpService,
         @InjectRepository(BranchOfficeEntity) private branchOfficeRepository: Repository<BranchOfficeEntity>,
+        @InjectRepository(EmployeeEntity) private employeeRepository: Repository<EmployeeEntity>,
+        @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin,
     ) {
 
     }
@@ -236,7 +241,7 @@ export class MessageService {
 
     checkTextMessages = async (data: any) => {
         try {
-
+            console.log(`checking message`)
             let firstMessage = ['Hola', 'buenos dias', 'buenas tardes', 'buenas noches', 'holi', 'holaa', 'hey', 'buen dia', 'buena tarde']
             let menu = ['menu', 'menú', 'MENU', 'MENÚ']
             const isFirstMessage = firstMessage.some(substring => data.message.toLowerCase().includes(substring.toLowerCase()));
@@ -303,6 +308,7 @@ export class MessageService {
                         "🩺 En unos minutos alguien de nuestro personal te atendera \n \n Para regresar al menu de opciones escribe 'menu'"
                     )
                 );
+                await this.sendAppointmentNotification();
             } else {
                 await this.sendGenericMessage(
                     new SendGenericMessageDTO(
@@ -310,6 +316,7 @@ export class MessageService {
                         "❎ No pudimos procesar tu respuesta, dejanos tu mensaje y te atenderemos a la brevedad \n \n Para regresar al menu de opciones escribe 'menu'"
                     )
                 );
+                await this.sendAppointmentNotification();
             }
         } catch (error) {
             console.log(`sendWhatsappButtonActions `,error);
@@ -414,6 +421,30 @@ export class MessageService {
             return 200;
         }
     }
+
+
+    sendAppointmentNotification = async () => {
+        try {
+          const employee = await this.employeeRepository.findOneBy({ typeId: 16 });
+          //   const employee = await this.employeeRepository.findOneBy({ id: 21 });
+          const message = {
+            notification: {
+              title: `Nueva solicitud de mensaje entrante`,
+              body: 'Un paciente solicita hablar con alguien, revisa WhatsApp Web.'
+            },
+            data: {
+              type: 'WHATSAPP',
+            },
+            token: employee.token
+          };
+          await this.firebase.messaging.send(message);
+          console.log(`Notification sent`);
+          return 200;
+        } catch (exception) {
+          console.log(`Error sending notification ${exception}`);
+          HandleException.exception(exception);
+        }
+      }
 }
 
 class SendGenericMessageDTO {

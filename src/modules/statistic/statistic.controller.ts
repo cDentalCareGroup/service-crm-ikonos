@@ -6,7 +6,7 @@ export class StatisticController {
 
     constructor(private statisticsService: StatisticService){}
 
-    @Get('all')
+    @Get('')
     async getGeneralStatistics() {
         return this.statisticsService.getGeneralStatistics();
     }

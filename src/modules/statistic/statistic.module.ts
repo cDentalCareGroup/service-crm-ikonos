@@ -6,10 +6,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { EmployeeEntity } from '../employee/models/employee.entity';
+import { CallEntity } from '../calls/models/call.entity';
+import { AppointmentEntity } from '../appointment/models/appointment.entity';
 
 @Module({
   imports:[ ConfigModule.forRoot(),
-    TypeOrmModule.forFeature([BranchOfficeEntity, PatientEntity, EmployeeEntity]),],
+    TypeOrmModule.forFeature([BranchOfficeEntity, PatientEntity, EmployeeEntity, CallEntity, AppointmentEntity]),],
   providers: [StatisticService],
   controllers: [StatisticController]
 })

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { format } from 'date-fns';
 import { async } from 'rxjs';
 import { HandleException } from 'src/common/exceptions/general.exception';
 import { capitalizeAllCharacters, getTodayDate } from 'src/utils/general.functions.utils';
@@ -104,9 +105,6 @@ export class CallsService {
 
     registerCall = async ({ patientId, description, date, type, name, phone, email, prospectId, callId }: RegisterCallDTO) => {
         try {
-            console.log(patientId)
-            console.log(prospectId);
-            console.log(callId);
             const call = new CallEntity();
             if (name != null && name != '' && phone != null && phone != '') {
                 const prospect = new ProspectEntity();
