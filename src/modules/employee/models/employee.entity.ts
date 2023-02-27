@@ -153,4 +153,10 @@ export class EmployeeEntity {
 
   @Column({name:'sex', type:'varchar'})
   gender: string;
+
+
+  @Column({name:'referred_code', type:'varchar'})
+  referredCode: string;
+
+
 }
