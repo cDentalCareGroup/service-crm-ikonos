@@ -19,7 +19,7 @@ export class AppService {
   }
   async getHello() {
     return {
-      'version': 'Version 1.0.36.1',
+      'version': 'Version 1.0.36.2',
       'date': new Date().toISOString().split("T")[0],
       'whatsapptime': `${formatDateToWhatsapp('2023-02-14')} - 10:30 AM`
     }

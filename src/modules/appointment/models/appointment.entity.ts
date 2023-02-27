@@ -179,8 +179,20 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
   nextAppointmentDate: string;
 
   call?: CallEntity;
-  
 
+
+  // @Column({
+  //   name: 'dentist_comments',
+  //   type: 'text',
+  // })
+  // dentistComments: string;
+
+  // @Column({
+  //   name: 'receptionist_comments',
+  //   type: 'text',
+  // })
+  // receptionistComments: string;
+  
 
 //   @Column({
 //     name: 'dentist_id',

@@ -199,6 +199,7 @@ export class PatientService {
       patient.organizationClient = body.organization;
       patient.startDate = formatISO(new Date());
       patient.comments = `Paciente Registrado ${formatISO(new Date())}`
+      patient.historicalFolio = body.folio;
 
       return await this.patientRepository.save(patient);
     } catch (error) {
@@ -235,6 +236,7 @@ export class PatientService {
         patient.startDate = body.startDate;
         patient.updatedAt = new Date();
         patient.comments = `${patient.comments} \n Paciente Actualizado ${formatISO(new Date())}`
+        patient.historicalFolio = body.folio;
         return await this.patientRepository.save(patient);
       }
       return 200;
