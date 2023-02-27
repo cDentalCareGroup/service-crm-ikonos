@@ -155,8 +155,7 @@ export class EmployeeEntity {
   gender: string;
 
 
-  @Column({name:'referred_code', type:'varchar'})
-  referredCode: string;
+
 
 
 }

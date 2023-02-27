@@ -224,7 +224,6 @@ export class EmployeeService {
       employee.email = body.email;
       employee.gender = body.gender;
       employee.status = 1;
-      employee.referredCode = await SecurityUtil.encryptPassword(`${employee.name},${employee.lastname}`);
 
       const result = await this.employeeRepository.save(employee);
 
