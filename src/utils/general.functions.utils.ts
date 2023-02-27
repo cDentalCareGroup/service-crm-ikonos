@@ -55,7 +55,10 @@ const capitalizeFirstLetter = (value: string | undefined): string => {
 
 const capitalizeAllCharacters = (value: string | undefined): string => {
         if (value != undefined) {
-                return value.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+                //return value.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+                return value.toLocaleLowerCase().replace(/(^|\s)\S/g, function (match) {
+                        return match.toUpperCase();
+                });
         }
         return ''
 }
