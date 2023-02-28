@@ -389,7 +389,7 @@ export class AppointmentService {
         for await (const time of extendedTimes) {
           const item = time;
           item.status = 'finalizada';
-          await this.appointmentTimesRepository.save(item);
+    //      await this.appointmentTimesRepository.save(item);
         }
 
         for await (const service of body.services) {
@@ -404,15 +404,17 @@ export class AppointmentService {
           appointmentDetail.price = Number(service.price);
           appointmentDetail.subTotal = Number(service.subtotal);
           appointmentDetail.comments = `Servicio registrado ${getTodayDate()}`;
-          await this.appointmentDetailRepository.save(appointmentDetail);
-
-          // if (body.padId != null && body.padId != 0 && Number(service.disscount) > 0) {
-          //   const padComponent = new PadComponentUsedEntity();
-          //   padComponent.patientId = appointment.patientId;
-          //   padComponent.serviceId = Number(service.key);
-          //   padComponent.padId = padId;
-          //   await this.padComponentUsedRepository.save(padComponent);
-          // }
+          console.log(service);
+        //  await this.appointmentDetailRepository.save(appointmentDetail);
+ 
+          if (body.padId != null && body.padId != 0 && Number(service.disscount) > 0) {
+            const padComponent = new PadComponentUsedEntity();
+            padComponent.patientId = appointment.patientId;
+            padComponent.serviceId = Number(service.key);
+            padComponent.padId = body.padId;
+            //console.log(padComponent);
+            await this.padComponentUsedRepository.save(padComponent);
+          }
         }
 
         let status = 'A';
@@ -429,7 +431,7 @@ export class AppointmentService {
         payment.createdAt = new Date();
         payment.status = status;
 
-        const newPayment = await this.paymentRepository.save(payment);
+       // const newPayment = await this.paymentRepository.save(payment);
 
         let index = 1;
         //let paymentToAdd = [];
@@ -446,7 +448,7 @@ export class AppointmentService {
           }
           const paymentItem = new PaymentDetailEntity();
           paymentItem.patientId = appointment.patientId;
-          paymentItem.paymentId = newPayment.id;
+         // paymentItem.paymentId = newPayment.id;
           paymentItem.referenceId = appointment.id;
           paymentItem.movementTypeApplicationId = 2;
           paymentItem.movementType = 'A'
@@ -456,7 +458,7 @@ export class AppointmentService {
           paymentItem.sign = '-1'
           paymentItem.order = index;
           index += 1;
-          await this.paymentDetailRepository.save(paymentItem);
+          //await this.paymentDetailRepository.save(paymentItem);
         }
 
         // for await (const iterator of paymentToAdd) {
@@ -473,8 +475,8 @@ export class AppointmentService {
         // }
       }
 
-      const updatedAppointment = await this.appointmentRepository.save(appointment);
-      return this.getAppointment(updatedAppointment);
+   //   const updatedAppointment = await this.appointmentRepository.save(appointment);
+      return this.getAppointment(appointment);
     } catch (exception) {
       console.log(exception);
       HandleException.exception(exception);
@@ -967,7 +969,7 @@ export class AppointmentService {
           today.setDate(today.getDate() + 1);
           const call = new CallEntity();
           call.patientId = patient.id;
-          call.comments = `Registro de llamada automatico pad vencido ${new Date()}`;
+          call.comments = `Registro de llamada automatico pad vencido ${getTodayDate()}`;
           call.caltalogId = callPad.id;
           call.dueDate = today.toString();
           call.result = CallResult.CALL;

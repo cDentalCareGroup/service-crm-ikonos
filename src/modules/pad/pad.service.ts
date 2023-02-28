@@ -237,6 +237,7 @@ export class PadService {
 
     getPadServicesByPatient = async (body: any) => {
         try {
+            console.log('aqui')
             const padMember = await this.padMemeberRepository.findOneBy({ patientId: body.patientId });
             const pad = await this.padRepository.findOneBy({ id: padMember.padId });
             if (pad.status == 'activo') {
