@@ -397,7 +397,7 @@ export class AppointmentService {
           appointmentDetail.appointmentId = appointment.id;
           appointmentDetail.patientId = appointment.patientId;
           appointmentDetail.dentistId = appointment.dentistId;
-          appointmentDetail.serviceId = Number(service.key);
+          appointmentDetail.serviceId = Number(service.serviceId);
           appointmentDetail.quantity = Number(service.quantity);
           appointmentDetail.unitPrice = Number(service.unitPrice);
           appointmentDetail.discount = Number(service.disscount);
