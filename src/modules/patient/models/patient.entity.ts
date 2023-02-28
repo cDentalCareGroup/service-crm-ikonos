@@ -97,12 +97,12 @@ export class PatientEntity {
   })
   email: string;
 
-  @Column({
-    name: 'folio',
-    type: 'varchar',
-    length: 45,
-  })
-  folio: string;
+  // @Column({
+  //   name: 'folio',
+  //   type: 'varchar',
+  //   length: 45,
+  // })
+  // folio: string;
 
   @Column({
     name: 'folio_historico',
