@@ -200,7 +200,7 @@ export class EmployeeService {
   registerEmployee = async (body: RegisterEmployeeDTO) => {
     try {
 
-      const pass = await SecurityUtil.encryptPassword(body.password);
+      const pass = await SecurityUtil.encryptText(body.password);
       const employee = new EmployeeEntity();
       employee.user = body.user;
       employee.password = pass;
@@ -246,7 +246,7 @@ export class EmployeeService {
       const employee = await this.employeeRepository.findOneBy({ id: body.id });
 
       if (body.password != null && body.password != "") {
-        pass = await SecurityUtil.encryptPassword(body.password);
+        pass = await SecurityUtil.encryptText(body.password);
       } else {
         pass = employee.password;
       }

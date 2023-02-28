@@ -38,9 +38,9 @@ export class AuthService {
 
       if (user == null) throw new NotFoundCustomException(NotFoundType.USER);
 
-      const checkPassword = await SecurityUtil.validatePassword(
-        data.password,
-        user.password
+      const checkPassword = await SecurityUtil.compareText(
+        user.password,
+        data.password
       );
       if (!checkPassword)
         throw new ValidationException(ValidationExceptionType.WRONG_PASSWORD);
@@ -92,6 +92,10 @@ export class AuthService {
 
 
   test = async () => {
+    const pass = await SecurityUtil.encryptText('cqzu3XQLcNNw6zJL')
+    console.log(pass);
+
+   
     return 200;
   }
 
