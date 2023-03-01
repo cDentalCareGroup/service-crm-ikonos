@@ -373,12 +373,10 @@ export class AppointmentService {
         appointment.comments = `${appointment.comments} \n Estatus: proceso ${formatISO(new Date())}`;
       }
       if (body.status == 'finalizada') {
-        //const patient = await this.patientRepository.findOneBy({ id: appointment.patientId });
         appointment.finishedAt = formatISO(new Date());
         appointment.status = 'finalizada';
         appointment.comments = `${appointment.comments} \n Estatus: finalizada ${formatISO(new Date())}`;
         appointment.priceAmount = Number(body.amount);
-        //  await this.patientRepository.save(patient);
 
         const extendedTimes = await this.appointmentTimesRepository.findBy({
           appointmentId: appointment.id,
@@ -389,7 +387,7 @@ export class AppointmentService {
         for await (const time of extendedTimes) {
           const item = time;
           item.status = 'finalizada';
-    //      await this.appointmentTimesRepository.save(item);
+          await this.appointmentTimesRepository.save(item);
         }
 
         for await (const service of body.services) {
@@ -404,16 +402,18 @@ export class AppointmentService {
           appointmentDetail.price = Number(service.price);
           appointmentDetail.subTotal = Number(service.subtotal);
           appointmentDetail.comments = `Servicio registrado ${getTodayDate()}`;
-          console.log(service);
-        //  await this.appointmentDetailRepository.save(appointmentDetail);
- 
+          //console.log(service);
+          await this.appointmentDetailRepository.save(appointmentDetail);
+
           if (body.padId != null && body.padId != 0 && Number(service.disscount) > 0) {
-            const padComponent = new PadComponentUsedEntity();
-            padComponent.patientId = appointment.patientId;
-            padComponent.serviceId = Number(service.key);
-            padComponent.padId = body.padId;
-            //console.log(padComponent);
-            await this.padComponentUsedRepository.save(padComponent);
+            for (let i = 0; i < Number(service.quantity); i++) {
+              const padComponent = new PadComponentUsedEntity();
+              padComponent.patientId = appointment.patientId;
+              padComponent.serviceId = Number(service.serviceId);
+              padComponent.padId = body.padId;
+              //console.log(padComponent);
+              await this.padComponentUsedRepository.save(padComponent);
+            }
           }
         }
 
@@ -431,24 +431,19 @@ export class AppointmentService {
         payment.createdAt = new Date();
         payment.status = status;
 
-       // const newPayment = await this.paymentRepository.save(payment);
+        const newPayment = await this.paymentRepository.save(payment);
 
         let index = 1;
-        //let paymentToAdd = [];
         for await (const paymentDetail of body.payments) {
-          //  console.log(paymentDetail);
           let payAmount = 0;
           if (Number(paymentDetail.amount) >= Number(body.amount)) {
             payAmount = Number(body.amount);
-            // if (body.paymentMethodType != 'efectivo') {
-            //   paymentToAdd.push(Number(paymentDetail.amount));
-            // }
           } else {
             payAmount = Number(paymentDetail.amount);
           }
           const paymentItem = new PaymentDetailEntity();
           paymentItem.patientId = appointment.patientId;
-         // paymentItem.paymentId = newPayment.id;
+          paymentItem.paymentId = newPayment.id;
           paymentItem.referenceId = appointment.id;
           paymentItem.movementTypeApplicationId = 2;
           paymentItem.movementType = 'A'
@@ -458,25 +453,12 @@ export class AppointmentService {
           paymentItem.sign = '-1'
           paymentItem.order = index;
           index += 1;
-          //await this.paymentDetailRepository.save(paymentItem);
+          await this.paymentDetailRepository.save(paymentItem);
         }
-
-        // for await (const iterator of paymentToAdd) {
-        //   const paymentNew = new PaymentEntity();
-        //   paymentNew.patientId = patient.id;
-        //   paymentNew.referenceId = appointment.id;
-        //   paymentNew.movementTypeId = 3;
-        //   paymentNew.amount = iterator;
-        //   paymentNew.movementType = 'A';
-        //   paymentNew.movementSign = '-1';
-        //   paymentNew.createdAt = new Date();
-        //   paymentNew.status = 'A';
-        //   await this.paymentRepository.save(paymentNew);
-        // }
       }
 
-   //   const updatedAppointment = await this.appointmentRepository.save(appointment);
-      return this.getAppointment(appointment);
+      const updatedAppointment = await this.appointmentRepository.save(appointment);
+      return this.getAppointment(updatedAppointment);
     } catch (exception) {
       console.log(exception);
       HandleException.exception(exception);
@@ -1153,23 +1135,23 @@ export class AppointmentService {
 
   private updateCallLog = async (id: number, type: string) => {
     try {
-        const logs = await this.callLogRepository.find({
-            order: { id: 'DESC' },
-            where: { callId: id },
-            take: 1
-        });
+      const logs = await this.callLogRepository.find({
+        order: { id: 'DESC' },
+        where: { callId: id },
+        take: 1
+      });
 
-        if (logs.length > 0) {
-            const lastlog = await this.callLogRepository.findOneBy({ id: logs[0].id });
-            if (lastlog) {
-                lastlog.finishedAt = getTodayDate();
-                lastlog.result = type;
-                await this.callLogRepository.save(lastlog);
-            }
+      if (logs.length > 0) {
+        const lastlog = await this.callLogRepository.findOneBy({ id: logs[0].id });
+        if (lastlog) {
+          lastlog.finishedAt = getTodayDate();
+          lastlog.result = type;
+          await this.callLogRepository.save(lastlog);
         }
-        return 200;
+      }
+      return 200;
     } catch (error) {
-        console.log(`updateCallLog`, error);
+      console.log(`updateCallLog`, error);
     }
-}
+  }
 }
