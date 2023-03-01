@@ -6,13 +6,13 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
-import { LoginDTO, SaveTokenDTO } from './models/dto/login.dto';
+import { LoginDTO, SaveTokenDTO, UpdatePasswordDTO } from './models/dto/login.dto';
 import { UserResponse } from './models/entities/user.entity';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-   constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Post('login')
   @ApiBody({ type: LoginDTO })
@@ -32,5 +32,11 @@ export class AuthController {
   @Get('logs')
   async getUserLogs() {
     return this.authService.getUserLogs();
+  }
+
+  @Post('update/password')
+  @ApiBody({ type: UpdatePasswordDTO })
+  async updatePassword(@Body() body: UpdatePasswordDTO) {
+    return this.authService.updatePassword(body);
   }
 }

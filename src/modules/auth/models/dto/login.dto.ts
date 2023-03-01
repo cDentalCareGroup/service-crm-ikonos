@@ -31,3 +31,10 @@ export class SaveTokenDTO {
   })
   token: string;
 }
+
+
+export class UpdatePasswordDTO {
+  username: string;
+  password: string;
+
+}
