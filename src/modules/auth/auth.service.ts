@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SecurityUtil, TokenPayload } from 'src/utils/security.util';
-import { LoginDTO, SaveTokenDTO } from './models/dto/login.dto';
+import { LoginDTO, SaveTokenDTO, UpdatePasswordDTO } from './models/dto/login.dto';
 import {
   HandleException,
   NotFoundCustomException,
@@ -15,6 +15,7 @@ import { UserEntity, UserResponse } from './models/entities/user.entity';
 import { Rol, RolEntity, UserRolEntity } from './models/entities/rol.entity';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { UserLogsEntity } from './models/entities/user.logs.entity';
+import { async } from 'rxjs';
 
 @Injectable()
 export class AuthService {
@@ -95,7 +96,7 @@ export class AuthService {
     const pass = await SecurityUtil.encryptText('cqzu3XQLcNNw6zJL')
     console.log(pass);
 
-   
+
     return 200;
   }
 
@@ -103,6 +104,20 @@ export class AuthService {
   getUserLogs = async () => {
     try {
       return await this.userLogsRepository.find();
+    } catch (error) {
+      HandleException.exception(error);
+    }
+  }
+
+  updatePassword = async (body: UpdatePasswordDTO) => {
+    try {
+      const user = await this.userRepository.findOneBy({ username: body.username });
+      if (user) {
+        const pass = await SecurityUtil.encryptText(body.password);
+        user.password = pass;
+        return this.userRepository.save(user);
+      }
+      return 200;
     } catch (error) {
       HandleException.exception(error);
     }

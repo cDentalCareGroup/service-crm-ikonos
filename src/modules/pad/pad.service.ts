@@ -143,7 +143,7 @@ export class PadService {
 
     registerPadCatalogComponent = async (body: RegisterPadComponentDTO) => {
         try {
-            console.log(body);
+           // console.log(body);
             const padComponent = new PadComponenEntity();
             padComponent.padCatalogueId = body.padCatalogueId;
             padComponent.serviceId = body.serviceId;
@@ -152,7 +152,7 @@ export class PadService {
             padComponent.discount = body.discount;
             padComponent.discountTwo = body.discountTwo;
 
-            console.log(padComponent);
+           // console.log(padComponent);
             await this.padComponentRepository.save(padComponent);
             return await this.getPadCatalogueDetail(body.padCatalogueId);
         } catch (error) {
@@ -237,7 +237,7 @@ export class PadService {
 
     getPadServicesByPatient = async (body: any) => {
         try {
-            console.log('aqui', process.env.IS_DEV)
+           // console.log('aqui', process.env.IS_DEV)
             const padMember = await this.padMemeberRepository.findOneBy({ patientId: body.patientId });
             const pad = await this.padRepository.findOneBy({ id: padMember.padId });
             if (pad.status == 'activo') {
@@ -291,6 +291,36 @@ export class PadService {
             return 200;
         } catch (error) {
             console.log(error);
+            HandleException.exception(error);
+        }
+    }
+
+    registerPadAditionalMember = async (body: any) => {
+        try {
+            const pad = this.padRepository.findOneBy({ id: body.padId });
+            if(pad) {
+                // const padMember = new PadMemberEntity();
+                // padMember.padCatalogueId = body.padCatalogueId;
+                // padMember.padId = newPad.id;
+                // padMember.patientId = item;
+                // if (index == 0) {
+                //     padMember.isPrincipal = 1;
+                //     index++;
+                // } else {
+                //     padMember.isPrincipal = 0;
+                // }
+                // await this.padMemeberRepository.save(padMember);
+                // const patient = await this.patientRepository.findOneBy({ id: item });
+                // patient.pad = 1;
+                // patient.padAcquisitionDate = body.adquisitionDate;
+                // patient.padAcquisitionBranch = body.branchId;
+                // patient.padExpirationDate = format(padDueDate, 'yyyy-MM-dd')
+                // patient.padType = padCatalogue.name;
+                // patient.currentPadId = newPad.id;
+                // patient.comments = `${patient.comments} \n Pad Registrado ${body.adquisitionDate}`;
+                // await this.patientRepository.save(patient);
+            }
+        } catch (error) {
             HandleException.exception(error);
         }
     }

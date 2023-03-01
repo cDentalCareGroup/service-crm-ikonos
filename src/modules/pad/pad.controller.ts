@@ -57,4 +57,8 @@ export class PadController {
         return this.padService.getPadServicesByPatient(body);
     }
 
+    @Post('register/aditional') 
+    async registerPadAditionalMember(@Body() body: any) {
+        return this.padService.registerPadAditionalMember(body);
+    }
 }
