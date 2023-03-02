@@ -319,7 +319,7 @@ export class MessageService {
                 await this.sendAppointmentNotification();
             }
         } catch (error) {
-            console.log(`sendWhatsappButtonActions `,error);
+            console.log(`sendWhatsappButtonActions `, error);
         }
     }
 
@@ -355,12 +355,13 @@ export class MessageService {
 
     sendWhatsAppConfirmation = async (body: SendWhatsappConfirmationDTO) => {
         try {
+            //console.log(body);
             const payload = {
                 "instance_id": process.env.WTS_INSTANCE_ID,
                 "type": "text",
                 "number": body.number,
                 "country_code": 52,
-                "message": `🏥 Bienvenido(a) CDental Care Group \n 📎 Tu cita ha sido confirmada. \n 🗓 Fecha y Hora: ${body.time} \n 📍 Sucursal: ${body.branchOffice} \n \n Por favor llega 10 minutos antes de la hora indicada.`
+                "message": `¡Tu cita ha sido confirmada! \n🦷 C Dental Care Group agradece tu preferencia y te da la bienvenida. \n🗓️Te esperamos en nuestra Sucursal ${body.branchOffice} el ${body.time} \nMantenemos sonrisas 😁`
             }
             const request = this.httpService.post(process.env.WTS_API_URL, payload, {
                 method: 'POST',
@@ -383,7 +384,7 @@ export class MessageService {
                 "type": "text",
                 "number": body.number,
                 "country_code": 52,
-                "message": `🏥 CDental Care Group \n 📎 Tu próxima ha sido agendada. \n 🗓 Fecha y Hora: ${body.time} \n 📍 Sucursal: ${body.branchOffice} \n \n Por favor llega 10 minutos antes de la hora indicada.`
+                "message": `¡Tu siguiente cita ha sido confirmada! \n🦷 C Dental Care Group agradece tu preferencia. \n🗓️Te esperamos en nuestra Sucursal ${body.branchOffice} el ${body.time} \nMantenemos sonrisas 😁`
             }
             const request = this.httpService.post(process.env.WTS_API_URL, payload, {
                 method: 'POST',
@@ -406,7 +407,7 @@ export class MessageService {
                 "type": "text",
                 "number": body.number,
                 "country_code": 52,
-                "message": `🏥 CDental Care Group \n 📎 Tu cita ha sido re agendada. \n 🗓 Fecha y Hora: ${body.time} \n 📍 Sucursal: ${body.branchOffice} \n \n Por favor llega 10 minutos antes de la hora indicada.`
+                "message": `Tu cita ha sido reagendada ✅ Gracias por confiar en C Dental Care Group. \n🦷 Te esperamos en nuestra sucursal ${body.branchOffice} el día ${body.time}. 🕣`
             }
             const request = this.httpService.post(process.env.WTS_API_URL, payload, {
                 method: 'POST',
@@ -423,28 +424,51 @@ export class MessageService {
     }
 
 
+    sendWhatsAppCancelAppointment = async (body: SendWhatsappConfirmationDTO) => {
+        try {
+            const payload = {
+                "instance_id": process.env.WTS_INSTANCE_ID,
+                "type": "text",
+                "number": body.number,
+                "country_code": 52,
+                "message": `Tú visita a C Dental Care Group ha sido cancelada. ❌ \n📞 En breve nuestro Call Center se pondrá en contacto contigo para reagendar tu cita y brindarte nuestro apoyo. \n🦷¡Te esperamos próximamente!`
+            }
+            const request = this.httpService.post(process.env.WTS_API_URL, payload, {
+                method: 'POST',
+                headers: {
+                    'apikey': process.env.MSJ_TOKEN,
+                },
+            });
+            return await lastValueFrom(request);
+        } catch (error) {
+            console.log(`sendWhatsAppConfirmation ${error}`)
+            this.sendMsjConfirmation(body);
+            return 200;
+        }
+    }
+
     sendAppointmentNotification = async () => {
         try {
-          const employee = await this.employeeRepository.findOneBy({ typeId: 16 });
-          //   const employee = await this.employeeRepository.findOneBy({ id: 21 });
-          const message = {
-            notification: {
-              title: `Nueva solicitud de mensaje entrante`,
-              body: 'Un paciente solicita hablar con alguien, revisa WhatsApp Web.'
-            },
-            data: {
-              type: 'WHATSAPP',
-            },
-            token: employee.token
-          };
-          await this.firebase.messaging.send(message);
-          console.log(`Notification sent`);
-          return 200;
+            const employee = await this.employeeRepository.findOneBy({ typeId: 16 });
+            //   const employee = await this.employeeRepository.findOneBy({ id: 21 });
+            const message = {
+                notification: {
+                    title: `Nueva solicitud de mensaje entrante`,
+                    body: 'Un paciente solicita hablar con alguien, revisa WhatsApp Web.'
+                },
+                data: {
+                    type: 'WHATSAPP',
+                },
+                token: employee.token
+            };
+            await this.firebase.messaging.send(message);
+            console.log(`Notification sent`);
+            return 200;
         } catch (exception) {
-          console.log(`Error sending notification ${exception}`);
-          HandleException.exception(exception);
+            console.log(`Error sending notification ${exception}`);
+            HandleException.exception(exception);
         }
-      }
+    }
 }
 
 class SendGenericMessageDTO {

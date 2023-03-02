@@ -99,10 +99,10 @@ export class AppointmentController {
         return this.appointmentService.sendAppointmentNotification(body);
     }
 
-    @Post('webhooks')
-    async hook(@Body() body: any) {
-        return this.appointmentService.processWhatsappMessages(body);
-    }
+    // @Post('webhooks')
+    // async hook(@Body() body: any) {
+    //     return this.appointmentService.processWhatsappMessages(body);
+    // }
 
     // @Post('webhooks')
     // async post(@Body() body: any) {
@@ -135,5 +135,11 @@ export class AppointmentController {
     @Post('patient')
     async getAppointmentByPatient(@Body() body: any) {
         return this.appointmentService.getAppointmentByPatient(body);
+    }
+
+
+    @Get('test/message')
+    async testWhatsapp() {
+        return this.appointmentService.testWhatsapp();
     }
 }

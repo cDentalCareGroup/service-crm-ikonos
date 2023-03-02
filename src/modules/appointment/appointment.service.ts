@@ -564,6 +564,21 @@ export class AppointmentService {
             email
           );
         }
+        if (response.patient != null && response.patient != undefined) {
+          const whatsapp = await this.messageService.sendWhatsAppCancelAppointment(
+            new SendWhatsappConfirmationDTO(
+              response.patient.primaryContact, ``, ``
+            )
+          );
+          console.log(`Whatsapp patient ${whatsapp}`);
+        } else {
+          const whatsapp = await this.messageService.sendWhatsAppCancelAppointment(
+            new SendWhatsappConfirmationDTO(
+              response.prospect.primaryContact, ``, ``
+            )
+          );
+          console.log(`Whatsapp prospect ${whatsapp}`);
+        }
       }
       return 200;
     } catch (exception) {
@@ -1151,23 +1166,34 @@ export class AppointmentService {
 
   private updateCallLog = async (id: number, type: string) => {
     try {
-        const logs = await this.callLogRepository.find({
-            order: { id: 'DESC' },
-            where: { callId: id },
-            take: 1
-        });
+      const logs = await this.callLogRepository.find({
+        order: { id: 'DESC' },
+        where: { callId: id },
+        take: 1
+      });
 
-        if (logs.length > 0) {
-            const lastlog = await this.callLogRepository.findOneBy({ id: logs[0].id });
-            if (lastlog) {
-                lastlog.finishedAt = getTodayDate();
-                lastlog.result = type;
-                await this.callLogRepository.save(lastlog);
-            }
+      if (logs.length > 0) {
+        const lastlog = await this.callLogRepository.findOneBy({ id: logs[0].id });
+        if (lastlog) {
+          lastlog.finishedAt = getTodayDate();
+          lastlog.result = type;
+          await this.callLogRepository.save(lastlog);
         }
-        return 200;
+      }
+      return 200;
     } catch (error) {
-        console.log(`updateCallLog`, error);
+      console.log(`updateCallLog`, error);
     }
-}
+  }
+
+  testWhatsapp = async () => {
+    try {
+      const res = await this.messageService.sendWhatsAppCancelAppointment(
+        new SendWhatsappConfirmationDTO('7773510031', 'Cuernavaca Plan de Ayala Plaza Ikonos', 'Lunes 6, Marzo 2023 - 08:00 AM ')
+      );
+      return res;
+    } catch (error) {
+      HandleException.exception(error);
+    }
+  }
 }
