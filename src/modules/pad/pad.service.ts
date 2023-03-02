@@ -3,13 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { addDays, format } from 'date-fns';
 import { async } from 'rxjs';
 import { HandleException, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
+import { getTodayDate } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { ServiceEntity } from '../appointment/models/service.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { getPadType, PadCatalogueEntity } from './models/pad.catalogue.entity';
 import { PadComponenEntity } from './models/pad.component.entity';
 import { PadComponentUsedEntity } from './models/pad.component.used.entity';
-import { RegisterPadComponentDTO, RegisterPadDTO, UpdatePadDTO } from './models/pad.dto';
+import { RegisterAditionalMemberDTO, RegisterPadComponentDTO, RegisterPadDTO, UpdatePadDTO } from './models/pad.dto';
 import { PadEntity } from './models/pad.entity';
 import { PadMemberEntity } from './models/pad.member.entity';
 
@@ -143,7 +144,7 @@ export class PadService {
 
     registerPadCatalogComponent = async (body: RegisterPadComponentDTO) => {
         try {
-           // console.log(body);
+            // console.log(body);
             const padComponent = new PadComponenEntity();
             padComponent.padCatalogueId = body.padCatalogueId;
             padComponent.serviceId = body.serviceId;
@@ -152,7 +153,7 @@ export class PadService {
             padComponent.discount = body.discount;
             padComponent.discountTwo = body.discountTwo;
 
-           // console.log(padComponent);
+            // console.log(padComponent);
             await this.padComponentRepository.save(padComponent);
             return await this.getPadCatalogueDetail(body.padCatalogueId);
         } catch (error) {
@@ -237,7 +238,7 @@ export class PadService {
 
     getPadServicesByPatient = async (body: any) => {
         try {
-           // console.log('aqui', process.env.IS_DEV)
+            // console.log('aqui', process.env.IS_DEV)
             const padMember = await this.padMemeberRepository.findOneBy({ patientId: body.patientId });
             const pad = await this.padRepository.findOneBy({ id: padMember.padId });
             if (pad.status == 'activo') {
@@ -295,31 +296,30 @@ export class PadService {
         }
     }
 
-    registerPadAditionalMember = async (body: any) => {
+    registerPadAditionalMember = async (body: RegisterAditionalMemberDTO) => {
         try {
-            const pad = this.padRepository.findOneBy({ id: body.padId });
-            if(pad) {
-                // const padMember = new PadMemberEntity();
-                // padMember.padCatalogueId = body.padCatalogueId;
-                // padMember.padId = newPad.id;
-                // padMember.patientId = item;
-                // if (index == 0) {
-                //     padMember.isPrincipal = 1;
-                //     index++;
-                // } else {
-                //     padMember.isPrincipal = 0;
-                // }
-                // await this.padMemeberRepository.save(padMember);
-                // const patient = await this.patientRepository.findOneBy({ id: item });
-                // patient.pad = 1;
-                // patient.padAcquisitionDate = body.adquisitionDate;
-                // patient.padAcquisitionBranch = body.branchId;
-                // patient.padExpirationDate = format(padDueDate, 'yyyy-MM-dd')
-                // patient.padType = padCatalogue.name;
-                // patient.currentPadId = newPad.id;
-                // patient.comments = `${patient.comments} \n Pad Registrado ${body.adquisitionDate}`;
-                // await this.patientRepository.save(patient);
+            const pad = await this.padRepository.findOneBy({ id: body.padId });
+            const padCatalogue = await this.padCatalogueRepository.findOneBy({ id: pad.padCatalogueId });
+            if (pad != null) {
+                for await (const item of body.members) {
+                    const padMember = new PadMemberEntity();
+                    padMember.padCatalogueId = padCatalogue.id;
+                    padMember.padId = pad.id;
+                    padMember.patientId = item;
+                    padMember.isPrincipal = 0;
+                    await this.padMemeberRepository.save(padMember);
+                    const patient = await this.patientRepository.findOneBy({ id: item });
+                    patient.pad = 1;
+                    patient.padAcquisitionDate = pad.padAdquisitionDate.toString();
+                    patient.padAcquisitionBranch = body.branchOfficeId;
+                    patient.padExpirationDate = pad.padDueDate.toString();
+                    patient.padType = padCatalogue.name;
+                    patient.currentPadId = pad.id;
+                    patient.comments = `${patient.comments} \n Pad Registrado ${getTodayDate()}`;
+                    await this.patientRepository.save(patient);
+                }
             }
+            return 200;
         } catch (error) {
             HandleException.exception(error);
         }

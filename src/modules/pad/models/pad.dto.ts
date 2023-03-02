@@ -30,3 +30,9 @@ export class RegisterPadComponentDTO {
     discount: number;
     discountTwo: number;
 }
+
+export class RegisterAditionalMemberDTO {
+    padId: number;
+    members: number[]
+    branchOfficeId: number;
+}
