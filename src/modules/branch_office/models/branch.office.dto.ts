@@ -73,6 +73,11 @@ export class DeleteBranchOfficeScheduleDTO {
 }
 
 
+export class UpdateAvailableTimeStatusDTO {
+  id: number;
+  status: string;
+}
+
 
 export const setFullDate = (object: BranchOfficeScheduleEntity): BranchOfficeScheduleEntity => {
 

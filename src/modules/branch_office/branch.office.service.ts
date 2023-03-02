@@ -11,7 +11,7 @@ import { AppointmentEntity } from '../appointment/models/appointment.entity';
 import { ScheduleBranchOfficeInfoDTO, SchedulesEmployeeDTO } from '../employee/models/employee.dto';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { branchOfficeScheduleToEntity, branchOfficesToEntity, registerBranchOfficeScheduleToEntity } from './extensions/branch.office.extensions';
-import { BranchOfficeSchedulesByIdDTO, BranchOfficeSchedulesDTO, DeleteBranchOfficeScheduleDTO, GetBranchOfficeScheduleDTO, RegisterBranchOfficeScheduleDTO, setFullDate } from './models/branch.office.dto';
+import { BranchOfficeSchedulesByIdDTO, BranchOfficeSchedulesDTO, DeleteBranchOfficeScheduleDTO, GetBranchOfficeScheduleDTO, RegisterBranchOfficeScheduleDTO, setFullDate, UpdateAvailableTimeStatusDTO } from './models/branch.office.dto';
 import { BranchOfficeEmployeeSchedule } from './models/branch.office.employee.entity';
 import { AppointmentStatistic, BranchOfficeEntity } from './models/branch.office.entity';
 import { BranchOfficeScheduleEntity } from './models/branch.office.schedule.entity';
@@ -35,10 +35,10 @@ export class BranchOfficeService {
       let branchOffices: BranchOfficeEntity[] = [];
       for await (const branchOffice of data) {
         const appointments = await this.appointmentRepository.findBy({ branchId: branchOffice.id });
-        const active = appointments.filter((value,_) => value.status == 'activa');
-        const proccess = appointments.filter((value,_) => value.status == 'proceso');
-        const finished = appointments.filter((value,_) => value.status == 'finalizada');
-        const noAttended = appointments.filter((value,_) => value.status == 'no-atendida');
+        const active = appointments.filter((value, _) => value.status == 'activa');
+        const proccess = appointments.filter((value, _) => value.status == 'proceso');
+        const finished = appointments.filter((value, _) => value.status == 'finalizada');
+        const noAttended = appointments.filter((value, _) => value.status == 'no-atendida');
         const item = branchOffice;
         item.appointment = new AppointmentStatistic(active.length, proccess.length, finished.length, noAttended.length);
         branchOffices.push(item);
@@ -155,7 +155,7 @@ export class BranchOfficeService {
 
       //1 for active, 2 for inactive, 3 unavailable 
       const branchOffice = await this.branchOfficeRepository.findOneBy({ id: Number(id) });
-      const schedule = await this.branchOfficeScheduleRepository.find({ where: { branchId: branchOffice.id, status: 'activo' } });
+      const schedule = await this.branchOfficeScheduleRepository.find({ where: { branchId: branchOffice.id} });
 
       return schedule;
     } catch (exception) {
@@ -166,7 +166,7 @@ export class BranchOfficeService {
 
   deleteBranchOfficeSchedule = async ({ scheduleId }: DeleteBranchOfficeScheduleDTO): Promise<any> => {
     try {
-      await this.branchOfficeEmployeeScheduleRepository.delete({branchScheduleId: Number(scheduleId)});
+      await this.branchOfficeEmployeeScheduleRepository.delete({ branchScheduleId: Number(scheduleId) });
       const schedule = await this.branchOfficeScheduleRepository.delete({ id: Number(scheduleId) });
       return schedule;
     } catch (exception) {
@@ -193,7 +193,7 @@ export class BranchOfficeService {
           .andWhere('bs.id = :scheduleId', { scheduleId: schedule.id })
           .getRawMany();
 
-        data.push(new GetBranchOfficeSchedulesEmployees(schedule, employeeSchedules.map((value,_) => this.employeeToEmployeEntity(value))))
+        data.push(new GetBranchOfficeSchedulesEmployees(schedule, employeeSchedules.map((value, _) => this.employeeToEmployeEntity(value))))
       }
       return data;
     } catch (exception) {
@@ -210,6 +210,20 @@ export class BranchOfficeService {
       employee.id = data.e_id;
       employee.branchOfficeId = data.e_branch_id;
       return employee;
+    }
+  }
+
+
+  updateScheduleStatus = async (body: UpdateAvailableTimeStatusDTO) => {
+    try {
+      const schedule = await this.branchOfficeScheduleRepository.findOneBy({ id: body.id });
+      if (schedule != null) {
+        schedule.status = body.status;
+        return await this.branchOfficeScheduleRepository.save(schedule);
+      }
+      return 200;
+    } catch (error) {
+      HandleException.exception(error);
     }
   }
 
@@ -280,10 +294,10 @@ export class GetBranchOfficeSchedulesEmployees {
   employees: EmployeeEntity[];
 
   constructor(schedule: BranchOfficeScheduleEntity,
-    employees: EmployeeEntity[]){
-      this.schedule = schedule;
-      this.employees = employees;
-    }
+    employees: EmployeeEntity[]) {
+    this.schedule = schedule;
+    this.employees = employees;
+  }
 }
 
 
