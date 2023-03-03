@@ -353,6 +353,7 @@ export class AppointmentService {
       appointment.receptionistId = receptionist.id;
       appointment.comments = `${appointment.comments} \n Dentista asignado ${id} \n Recepcionista ${receptionist.name}`;
       appointment.patientId = Number(patientId);
+      appointment.startedVisitAt = getTodayDate();
       const updatedAppointment = await this.appointmentRepository.save(appointment);
       return this.getAppointment(updatedAppointment);
     } catch (exception) {

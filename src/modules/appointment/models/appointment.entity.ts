@@ -178,6 +178,14 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
   })
   nextAppointmentDate: string;
 
+  @Column({
+    name: 'started_visit_at',
+    type: 'varchar',
+    nullable: true,
+  })
+  startedVisitAt: string;
+
+
   call?: CallEntity;
 
 
