@@ -85,4 +85,38 @@ const formatDateToWhatsapp = (date: string): string => {
         return `${dayName} ${dayOfMonth}, ${monthName} ${year}`;
 }
 
-export { isNumber, addHours, getDiff, getRandomInt, getTodayDate, capitalizeFirstLetter, capitalizeAllCharacters, getDayName, formatDateToWhatsapp };
+const STATUS_ACTIVE = 'active'
+const STATUS_PROCESS = 'process'
+const STATUS_INACTIVE = 'inactive'
+const STATUS_FINISHED = 'finished'
+const STATUS_NOT_ATTENDED = 'not-attended'
+const STATUS_CANCELLED = 'cancelled'
+const STATUS_FINISHED_APPOINTMENT_OR_CALL = 'finished-appointment-or-call'
+const STATUS_SOLVED = 'solved'
+const STATUS_ABANDOMENT= 'abandonment'
+const STATUS_MANUAL = 'manual'
+const STATUS_AUTOMATIC = 'automatic'
+
+
+export {
+        STATUS_MANUAL,
+        STATUS_AUTOMATIC,
+        isNumber,
+        addHours,
+        getDiff,
+        getRandomInt,
+        getTodayDate,
+        capitalizeFirstLetter,
+        capitalizeAllCharacters,
+        getDayName,
+        formatDateToWhatsapp,
+        STATUS_ACTIVE,
+        STATUS_INACTIVE,
+        STATUS_FINISHED,
+        STATUS_NOT_ATTENDED,
+        STATUS_CANCELLED,
+        STATUS_PROCESS,
+        STATUS_FINISHED_APPOINTMENT_OR_CALL,
+        STATUS_SOLVED,
+        STATUS_ABANDOMENT
+};

@@ -1,12 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { format } from 'date-fns';
-import { async } from 'rxjs';
 import { HandleException } from 'src/common/exceptions/general.exception';
-import { capitalizeAllCharacters, getTodayDate } from 'src/utils/general.functions.utils';
+import { capitalizeAllCharacters, getTodayDate, STATUS_ACTIVE, STATUS_SOLVED } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { AppointmentService } from '../appointment/appointment.service';
-import { AppointmentDetailDTO, GetAppointmentDetailDTO } from '../appointment/models/appointment.dto';
+import {  GetAppointmentDetailDTO } from '../appointment/models/appointment.dto';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';
 import { ProspectEntity } from '../appointment/models/prospect.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
@@ -31,7 +29,7 @@ export class CallsService {
 
     getCalls = async () => {
         try {
-            const result = await this.callRepository.find({ order: { dueDate: { direction: 'ASC' } }, where: { status: 'activa' } });
+            const result = await this.callRepository.find({ order: { dueDate: { direction: 'ASC' } }, where: { status: STATUS_ACTIVE } });
             let data: GetCallsDTO[] = [];
             for await (const call of result) {
                 let patient: PatientEntity;
@@ -124,7 +122,7 @@ export class CallsService {
             call.description = description;
             call.dueDate = date;
             call.caltalogId = Number(type);
-            call.status = 'activa';
+            call.status = STATUS_ACTIVE;
             call.result = CallResult.CALL;
 
             if (appointmentId != null && appointmentId > 0) {
@@ -134,12 +132,12 @@ export class CallsService {
             if (callId != null && callId != undefined && callId > 0) {
                 const resolvedCall = await this.callRepository.findOneBy({ id: callId });
                 if (resolvedCall != null && resolvedCall != undefined) {
-                    resolvedCall.status = 'resuelta';
+                    resolvedCall.status = STATUS_SOLVED;
                     resolvedCall.effectiveDate = getTodayDate()
                     resolvedCall.comments = `${resolvedCall?.comments ?? '-'} \n Llamada resuelta ${new Date()} terminada con llamada`;
                     await this.callRepository.save(resolvedCall);
                 }
-                await this.updateCallLog(callId, 'llamada');
+                await this.updateCallLog(callId, 'call');
             }
 
             return await this.callRepository.save(call);
@@ -197,7 +195,7 @@ export class CallsService {
                 result.callComments = `${result.callComments} - ${description}`;
             }
 
-            await this.updateCallLog(id, 'noContesto');
+            await this.updateCallLog(id, 'not-answer');
 
             return await this.callRepository.save(result);
         } catch (error) {

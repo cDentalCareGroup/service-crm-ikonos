@@ -10,7 +10,7 @@ import {
   ValidationException,
   ValidationExceptionType,
 } from 'src/common/exceptions/general.exception';
-import { capitalizeAllCharacters, capitalizeFirstLetter, isNumber } from 'src/utils/general.functions.utils';
+import { capitalizeAllCharacters, capitalizeFirstLetter, isNumber, STATUS_ABANDOMENT, STATUS_ACTIVE } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { ServiceEntity } from '../appointment/models/service.entity';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
@@ -140,7 +140,7 @@ export class PatientService {
         }
 
         if (query == 500 || query == "500" || query == 300 || query == "300") {
-          const status = (query == 500 || query == "500") ? 'activo' : 'abandono'
+          const status = (query == 500 || query == "500") ? STATUS_ACTIVE : STATUS_ABANDOMENT
           const data = await this.patientRepository.find({ where: { status: status } });
           results = results.concat(data);
         }
@@ -200,6 +200,7 @@ export class PatientService {
       patient.startDate = formatISO(new Date());
       patient.comments = `Paciente Registrado ${formatISO(new Date())}`
       patient.historicalFolio = body.folio;
+      patient.status = STATUS_ACTIVE;
 
       return await this.patientRepository.save(patient);
     } catch (error) {
@@ -268,7 +269,7 @@ export class PatientService {
 
   getPatientById = async (body: GetPatientByIdDTO): Promise<any> => {
     try {
-      console.log('acaa')
+     // console.log('acaa')
       const result = await this.patientRepository.findOneBy({ id: Number(body.patientId) });
 
 

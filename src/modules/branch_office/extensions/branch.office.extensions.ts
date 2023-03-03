@@ -1,4 +1,5 @@
 import { formatInTimeZone } from "date-fns-tz";
+import { STATUS_ACTIVE } from "src/utils/general.functions.utils";
 import { RegisterBranchOfficeScheduleDTO } from "../models/branch.office.dto";
 import { BranchOfficeEntity } from "../models/branch.office.entity";
 import { BranchOfficeScheduleEntity } from "../models/branch.office.schedule.entity";
@@ -17,7 +18,7 @@ const registerBranchOfficeScheduleToEntity = (data: RegisterBranchOfficeSchedule
   schedule.startTime = startTime
   schedule.endTime = endTime;
   schedule.seat = Number(data.seat);
-  schedule.status = 'activo';
+  schedule.status = STATUS_ACTIVE;
   schedule.branchId = data.branchOfficeId;
   return schedule;
 }

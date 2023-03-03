@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { addDays, format } from 'date-fns';
-import { async } from 'rxjs';
 import { HandleException, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
+import { STATUS_ACTIVE, STATUS_INACTIVE } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { ServiceEntity } from '../appointment/models/service.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
-import { getPadType, PadCatalogueEntity } from './models/pad.catalogue.entity';
+import { getPadType, PadCatalogueEntity, PadStatus } from './models/pad.catalogue.entity';
 import { PadComponenEntity } from './models/pad.component.entity';
 import { PadComponentUsedEntity } from './models/pad.component.used.entity';
 import { RegisterPadComponentDTO, RegisterPadDTO, UpdatePadDTO } from './models/pad.dto';
@@ -70,7 +70,7 @@ export class PadService {
             pad.padPrice = padCatalogue.price;
             pad.padType = padCatalogue.type;
             pad.padDueDate = padDueDate;
-            pad.status = 'activo';
+            pad.status = STATUS_ACTIVE;
             const newPad = await this.padRepository.save(pad);
             let index = 0;
             for await (const item of body.members) {
@@ -115,8 +115,13 @@ export class PadService {
             padCatalogue.day = Number(body.day);
             padCatalogue.maxMember = body.maxMembers;
             padCatalogue.maxAdditional = body.maxAdditionals;
+            if (body.status) {
+                padCatalogue.status = PadStatus.ACTIVE;
+            } else {
+                padCatalogue.status = PadStatus.INACTIVE;
+            }
             const result = await this.padCatalogueRepository.save(padCatalogue);
-            console.log(result);
+            //console.log(result);
             return await this.getPadCatalogueDetail(result.id);
         } catch (error) {
             console.log(`PadService - Register ${error}`);
@@ -239,7 +244,7 @@ export class PadService {
         try {
             const padMember = await this.padMemeberRepository.findOneBy({ patientId: body.patientId });
             const pad = await this.padRepository.findOneBy({ id: padMember.padId });
-            if (pad.status == 'activo') {
+            if (pad.status == STATUS_ACTIVE) {
                 let services = [];
                 const padComponents = await this.padComponentRepository.findBy({ padCatalogueId: pad.padCatalogueId });
                 for await (const component of padComponents) {
@@ -257,7 +262,7 @@ export class PadService {
                     'components': services,
                 }
             } else {
-                console.log('inactivo');
+                console.log(STATUS_INACTIVE);
                 return {}
             }
             return 200;

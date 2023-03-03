@@ -1,9 +1,9 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 export enum CallResult {
-    CALL = 'llamada',
-    ACTIVE = 'activa',
-    APPOINTMENT = 'cita'
+    CALL = 'call',
+    ACTIVE = 'active',
+    APPOINTMENT = 'appointment'
 }
 
 @Entity('call')

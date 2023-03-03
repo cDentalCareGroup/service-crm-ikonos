@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { HandleException, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
+import { STATUS_ACTIVE } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { ServiceEntity } from '../appointment/models/service.entity';
 import { ServiceCategoryEntity } from './models/service.category.entity';
@@ -46,7 +47,7 @@ export class ServicesService {
             service.name = body.name;
             service.price = body.price;
             service.categoryId = body.categoryId;
-            service.status = 'activo'
+            service.status = STATUS_ACTIVE;
             return await this.serviceRepository.save(service);
         } catch (error) {
             HandleException.exception(error);

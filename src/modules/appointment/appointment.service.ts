@@ -1,20 +1,16 @@
-import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { format, formatISO } from 'date-fns';
-import { id } from 'date-fns/locale';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
-import { async, lastValueFrom, map } from 'rxjs';
 import { HandleException, NotFoundCustomException, NotFoundType, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
-import { capitalizeAllCharacters, formatDateToWhatsapp, getDayName, getDiff, getRandomInt, getTodayDate } from 'src/utils/general.functions.utils';
+import { capitalizeAllCharacters, formatDateToWhatsapp, getDayName, getDiff, getRandomInt, getTodayDate, STATUS_ACTIVE, STATUS_CANCELLED, STATUS_FINISHED, STATUS_FINISHED_APPOINTMENT_OR_CALL, STATUS_NOT_ATTENDED, STATUS_PROCESS, STATUS_SOLVED } from 'src/utils/general.functions.utils';
 import { IsNull, Not, Repository } from 'typeorm';
 import { UserEntity } from '../auth/models/entities/user.entity';
 import { branchOfficeScheduleToEntity } from '../branch_office/extensions/branch.office.extensions';
 import { BranchOfficeEmployeeSchedule } from '../branch_office/models/branch.office.employee.entity';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
 import { BranchOfficeScheduleEntity } from '../branch_office/models/branch.office.schedule.entity';
-import { CallsService } from '../calls/calls.service';
 import { CallCatalogEntity } from '../calls/models/call.catalog.entity';
 import { CallEntity, CallResult } from '../calls/models/call.entity';
 import { CallLogEntity } from '../calls/models/call.log.entity';
@@ -69,7 +65,7 @@ export class AppointmentService {
   getAppointmentsAvailability = async ({ branchOfficeName, dayName, date, filterHours }: AppointmentAvailabilityDTO): Promise<AvailableHoursDTO[]> => {
     try {
       const branchOffice = await this.branchOfficeRepository.findOneBy({ name: branchOfficeName });
-      const schedule = await this.branchOfficeScheduleRepository.find({ where: { branchId: branchOffice.id, status: 'activo', dayName: dayName } });
+      const schedule = await this.branchOfficeScheduleRepository.find({ where: { branchId: branchOffice.id, status: STATUS_ACTIVE, dayName: dayName } });
 
       let availableHours: AvailableHoursDTO[] = [];
       let data: AvailableHoursDTO[] = [];
@@ -139,18 +135,18 @@ export class AppointmentService {
             branchId: branchOffice.id,
             appointment: dateSended,
             time: hour.simpleTime,
-            status: 'activa'
+            status: STATUS_ACTIVE
           });
           const appointmentsProccess = await this.appointmentRepository.findBy({
             branchId: branchOffice.id,
             appointment: dateSended,
             time: hour.simpleTime,
-            status: 'proceso'
+            status: STATUS_PROCESS
           });
           const extendedAppointments = await this.appointmentTimesRepository.findBy({
             appointment: dateSended,
             time: hour.simpleTime,
-            status: 'activa'
+            status: STATUS_ACTIVE
           });
 
           // console.log(appointments.length);
@@ -196,6 +192,7 @@ export class AppointmentService {
       entity.comments = `Cita registrada ${date.toString().split("T")[0]} ${time.simpleTime}`;
       entity.hasCabinet = 0;
       entity.hasLabs = 0;
+      entity.status = STATUS_ACTIVE;
 
       const response = await this.appointmentRepository.save(entity);
 
@@ -251,7 +248,7 @@ export class AppointmentService {
 
   getNextAppointments = async (patientId: number): Promise<GetAppointmentDetailDTO[]> => {
     try {
-      const appointments = await this.appointmentRepository.findBy({ status: 'activa', patientId: patientId });
+      const appointments = await this.appointmentRepository.findBy({ status: STATUS_ACTIVE, patientId: patientId });
       let nextAppointments: GetAppointmentDetailDTO[] = [];
 
       for await (const item of appointments) {
@@ -266,7 +263,7 @@ export class AppointmentService {
   }
   getAppointmentDetailPatient = async (body: AppointmentDetailDTO): Promise<GetAppointmentDetailDTO> => {
     try {
-      const appointment = await this.appointmentRepository.findOneBy({ folio: body.folio, status: 'activa' });
+      const appointment = await this.appointmentRepository.findOneBy({ folio: body.folio, status: STATUS_ACTIVE });
       if (appointment == null) throw new NotFoundCustomException(NotFoundType.APPOINTMENT_NOT_FOUND);
       return this.getAppointment(appointment);
     } catch (exception) {
@@ -278,11 +275,12 @@ export class AppointmentService {
 
   getAllAppointmentByBranchOffice = async (body: GetAppointmentsByBranchOfficeDTO): Promise<GetAppointmentDetailDTO[]> => {
     try {
+      console.log(body)
       const data: GetAppointmentDetailDTO[] = [];
       if (body.status != null && body.status != '') {
-        if (body.status == 'finalizada-cita') {
-          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: 'finalizada', nextAppointmentId: Not(IsNull()) });
-          const activeCalls = await this.callRepository.findBy({ status: 'activa', appointmentId: Not(IsNull()) });
+        if (body.status == STATUS_FINISHED_APPOINTMENT_OR_CALL) {
+          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: STATUS_FINISHED, nextAppointmentId: Not(IsNull()) });
+          const activeCalls = await this.callRepository.findBy({ status: STATUS_ACTIVE, appointmentId: Not(IsNull()) });
 
           for await (const item of activeCalls) {
             const appointment = await this.appointmentRepository.findOneBy({ id: item.appointmentId });
@@ -299,10 +297,10 @@ export class AppointmentService {
               data.push(result);
             }
           }
-        } else if (body.status == 'finalizada') {
-          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: 'finalizada', nextAppointmentId: IsNull() });
+        } else if (body.status == STATUS_FINISHED) {
+          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: STATUS_FINISHED, nextAppointmentId: IsNull() });
           for await (const appointment of appointments) {
-            const calls = await this.callRepository.findBy({ patientId: appointment.patientId, status: 'activa' });
+            const calls = await this.callRepository.findBy({ patientId: appointment.patientId, status: STATUS_ACTIVE });
             if (calls.length == 0) {
               const result = await this.getAppointment(appointment);
               data.push(result);
@@ -366,29 +364,28 @@ export class AppointmentService {
   updateAppointmentStatus = async (body: UpdateAppointmentStatusDTO) => {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ id: Number(body.id) });
-
-      if (body.status == 'proceso') {
+      if (body.status == STATUS_PROCESS) {
         appointment.startedAt = formatISO(new Date())
-        appointment.status = 'proceso';
-        appointment.comments = `${appointment.comments} \n Estatus: proceso ${formatISO(new Date())}`;
+        appointment.status = STATUS_PROCESS;
+        appointment.comments = `${appointment.comments} \n Estatus: ${STATUS_PROCESS} ${formatISO(new Date())}`;
       }
-      if (body.status == 'finalizada') {
+      if (body.status == STATUS_FINISHED) {
         //const patient = await this.patientRepository.findOneBy({ id: appointment.patientId });
         appointment.finishedAt = formatISO(new Date());
-        appointment.status = 'finalizada';
-        appointment.comments = `${appointment.comments} \n Estatus: finalizada ${formatISO(new Date())}`;
+        appointment.status = STATUS_FINISHED;
+        appointment.comments = `${appointment.comments} \n Estatus: ${STATUS_FINISHED} ${formatISO(new Date())}`;
         appointment.priceAmount = Number(body.amount);
         //  await this.patientRepository.save(patient);
 
         const extendedTimes = await this.appointmentTimesRepository.findBy({
           appointmentId: appointment.id,
           appointment: appointment.appointment,
-          status: 'activa'
+          status: STATUS_ACTIVE
         });
 
         for await (const time of extendedTimes) {
           const item = time;
-          item.status = 'finalizada';
+          item.status = STATUS_FINISHED;
           await this.appointmentTimesRepository.save(item);
         }
 
@@ -490,7 +487,7 @@ export class AppointmentService {
       appointment.time = time.simpleTime;
       appointment.branchId = branchOffice.id;
       appointment.branchName = branchOffice.name;
-      appointment.status = 'activa';
+      appointment.status = STATUS_ACTIVE;
       appointment.dentistId = null;
       appointment.receptionistId = null;
       appointment.comments = `${appointment.comments} \n Cita reagendada a las ${getTodayDate()} - De ${appointment.appointment} ${appointment.time} para ${date.toString().split("T")[0]} ${time.time}`
@@ -541,8 +538,8 @@ export class AppointmentService {
   cancelAppointment = async ({ reason, folio }: CancelAppointmentDTO) => {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ folio: folio });
-      if (appointment != null && appointment.status == 'activa') {
-        appointment.status = 'cancelada-paciente';
+      if (appointment != null && appointment.status == STATUS_ACTIVE) {
+        appointment.status = STATUS_CANCELLED;
         appointment.comments = `${appointment.comments} \n Cita cancelada por usuario ${formatISO(new Date())} \n Motivo ${reason}`
         const updatedAppointment = await this.appointmentRepository.save(appointment);
         const response = await this.getAppointment(updatedAppointment);
@@ -710,6 +707,7 @@ export class AppointmentService {
       entity.comments = `Cita Agendada por Recepcionista ${date.toString().split("T")[0]} ${time.simpleTime}`
       entity.hasLabs = hasLabs;
       entity.hasCabinet = hasCabinet;
+      entity.status = STATUS_ACTIVE;
 
       const response = await this.appointmentRepository.save(entity);
 
@@ -841,7 +839,7 @@ export class AppointmentService {
       date.setDate(date.getDate() + 1);
 
       const nextDate = date.toISOString().split("T")[0];
-      const result = await this.appointmentRepository.find({ where: { appointment: nextDate, status: 'activa' } });
+      const result = await this.appointmentRepository.find({ where: { appointment: nextDate, status: STATUS_ACTIVE} });
       let failureEmails = [];
       for await (const appointment of result) {
         let prospect: ProspectEntity;
@@ -885,12 +883,12 @@ export class AppointmentService {
       const date = new Date();
       date.setDate(date.getDate() - 1);
       const nextDate = date.toISOString().split("T")[0];
-      const result = await this.appointmentRepository.find({ where: { appointment: nextDate, status: 'activa' } });
+      const result = await this.appointmentRepository.find({ where: { appointment: nextDate, status: STATUS_ACTIVE } });
       let failureEmails = [];
 
       for await (const appointment of result) {
         const item = appointment;
-        item.status = 'no-atendida';
+        item.status = STATUS_NOT_ATTENDED;
         item.comments = `${item.comments} \n Cita no atendida ${formatISO(new Date())}`
         await this.appointmentRepository.save(item);
 
@@ -948,7 +946,7 @@ export class AppointmentService {
       } else {
         call.prospectId = appointment.prospectId;
       }
-      call.status = 'activa';
+      call.status = STATUS_ACTIVE;
       call.result = CallResult.APPOINTMENT;
       call.caltalogId = catalog.id;
       if (call.comments != null && call.comments != '') {
@@ -998,7 +996,7 @@ export class AppointmentService {
 
   getServices = async () => {
     try {
-      const result = await this.serviceRepository.findBy({ status: 'activo' });
+      const result = await this.serviceRepository.findBy({ status: STATUS_ACTIVE });
       return result;
     } catch (error) {
       HandleException.exception(error);
@@ -1028,7 +1026,7 @@ export class AppointmentService {
           const appointmentTime = new AppointmentTimesEntity();
           appointmentTime.appointmentId = body.id;
           appointmentTime.appointment = body.appointment;
-          appointmentTime.status = 'activa';
+          appointmentTime.status = STATUS_ACTIVE;
           appointmentTime.time = time;
           await this.appointmentTimesRepository.save(appointmentTime);
         }
@@ -1087,6 +1085,7 @@ export class AppointmentService {
       entity.comments = `Cita registrada por call center ${body.date.toString().split("T")[0]} ${body.time.simpleTime}`;
       entity.hasCabinet = 0;
       entity.hasLabs = 0;
+      entity.status = STATUS_ACTIVE;
 
       const response = await this.appointmentRepository.save(entity);
 
@@ -1123,11 +1122,11 @@ export class AppointmentService {
       if (body.callId != null && body.callId > 0) {
         const call = await this.callRepository.findOneBy({ id: body.callId });
         if (call != null && call != undefined) {
-          call.status = 'resuelta';
+          call.status = STATUS_SOLVED;
           call.effectiveDate = getTodayDate()
           call.comments = `${call?.comments ?? '-'} \n Llamada resuelta  ${new Date()} terminada con cita ${response.folio}`;
           await this.callRepository.save(call);
-          await this.updateCallLog(call.id, 'cita');
+          await this.updateCallLog(call.id, 'appointment');
         }
       }
       console.log(`Whatsapp sender ${whatsapp}`);
@@ -1158,7 +1157,7 @@ export class AppointmentService {
 
   getAppointmentByPatient = async (body: any) => {
     try {
-      return await this.appointmentRepository.findBy({ patientId: body.patientId, status: 'finalizada' });
+      return await this.appointmentRepository.findBy({ patientId: body.patientId, status: STATUS_FINISHED });
     } catch (error) {
       HandleException.exception(error);
     }

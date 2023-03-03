@@ -1,8 +1,8 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 export enum PadMemberStatus {
-    ACTIVE = 'vigente',
-    INACTIVE = 'vencido',
+    ACTIVE = 'active',
+    EXPIRED = 'expired',
 }
 
 @Entity('pad_member')

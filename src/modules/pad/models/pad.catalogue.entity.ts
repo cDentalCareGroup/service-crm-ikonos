@@ -16,8 +16,8 @@ export const getPadType = (type: string): PadType => {
 
 
 export enum PadStatus {
-    ACTIVE = 'activo',
-    INACTIVE = 'inactivo',
+    ACTIVE = 'active',
+    INACTIVE = 'inactive',
 }
 
 @Entity('pad_catalogue')
@@ -44,11 +44,9 @@ export class PadCatalogueEntity {
 
     @Column({
         name: 'status',
-        type: 'enum',
-        enum: PadStatus,
-        default: PadStatus.ACTIVE
+        type: 'varchar',
     })
-    status: PadStatus;
+    status: string;
 
     @Column({ name: 'day', type: 'int' })
     day: number;
