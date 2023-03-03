@@ -242,6 +242,7 @@ export class PadService {
 
     getPadServicesByPatient = async (body: any) => {
         try {
+            console.log('aqui', process.env.IS_DEV)
             const padMember = await this.padMemeberRepository.findOneBy({ patientId: body.patientId });
             const pad = await this.padRepository.findOneBy({ id: padMember.padId });
             if (pad.status == STATUS_ACTIVE) {
@@ -249,11 +250,38 @@ export class PadService {
                 const padComponents = await this.padComponentRepository.findBy({ padCatalogueId: pad.padCatalogueId });
                 for await (const component of padComponents) {
                     const service = await this.serviceRepository.findOneBy({ id: component.serviceId });
-                    const serviceUsed = await this.padComponentUsedRepository.findBy({ serviceId: service.id, padId: pad.id, patientId: body.patientId });
+                    const serviceUsed = await this.padComponentUsedRepository.findBy({ serviceId: service.id, padId: pad.id });
+                    let available = 0;
+
+
+                    const totalUsed = component.globalQuantity - serviceUsed.length;
+                    const patientUsed = serviceUsed.filter((value, _) => value.patientId == padMember.patientId);
+
+                    // console.log(`${service.name} - GQ - ${component.globalQuantity} MX -${component.maxPatientQuantity} SU - ${serviceUsed.length} - PU $${patientUsed.length}`);
+
+                    //TU 2 - 3
+                    if (totalUsed > 0 && patientUsed.length < component.maxPatientQuantity) {
+                        //console.log('aun puede usar')
+                        // console.log(`${totalUsed} - ${component.maxPatientQuantity}`)
+                        if (totalUsed >= component.maxPatientQuantity) {
+                            available = component.maxPatientQuantity - patientUsed.length;
+                        } else if (component.maxPatientQuantity > totalUsed) {
+                            available = totalUsed;
+                        } else {
+                            available = component.maxPatientQuantity - totalUsed;
+                        }
+                        // if (patientUsed.length < component.maxPatientQuantity) {
+                        //     available = (component.maxPatientQuantity - patientUsed.length)
+                        // } else {
+                        //     available = component.maxPatientQuantity;
+                        // }
+                    } else {
+                        available = 0;
+                    }
                     services.push({
                         'service': service,
                         'component': component,
-                        'availableUsage': component.maxPatientQuantity - serviceUsed.length
+                        'availableUsage': available
                     });
                 }
                 return {

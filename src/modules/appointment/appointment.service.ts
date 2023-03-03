@@ -376,7 +376,6 @@ export class AppointmentService {
         appointment.status = STATUS_FINISHED;
         appointment.comments = `${appointment.comments} \n Estatus: ${STATUS_FINISHED} ${formatISO(new Date())}`;
         appointment.priceAmount = Number(body.amount);
-        //  await this.patientRepository.save(patient);
 
         const extendedTimes = await this.appointmentTimesRepository.findBy({
           appointmentId: appointment.id,
@@ -402,15 +401,19 @@ export class AppointmentService {
           appointmentDetail.price = Number(service.price);
           appointmentDetail.subTotal = Number(service.subtotal);
           appointmentDetail.comments = `Servicio registrado ${getTodayDate()}`;
+          //console.log(service);
           await this.appointmentDetailRepository.save(appointmentDetail);
 
-          // if (body.padId != null && body.padId != 0 && Number(service.disscount) > 0) {
-          //   const padComponent = new PadComponentUsedEntity();
-          //   padComponent.patientId = appointment.patientId;
-          //   padComponent.serviceId = Number(service.key);
-          //   padComponent.padId = padId;
-          //   await this.padComponentUsedRepository.save(padComponent);
-          // }
+          if (body.padId != null && body.padId != 0 && Number(service.disscount) > 0) {
+            for (let i = 0; i < Number(service.quantity); i++) {
+              const padComponent = new PadComponentUsedEntity();
+              padComponent.patientId = appointment.patientId;
+              padComponent.serviceId = Number(service.serviceId);
+              padComponent.padId = body.padId;
+              //console.log(padComponent);
+              await this.padComponentUsedRepository.save(padComponent);
+            }
+          }
         }
 
         let status = 'A';
@@ -430,15 +433,10 @@ export class AppointmentService {
         const newPayment = await this.paymentRepository.save(payment);
 
         let index = 1;
-        //let paymentToAdd = [];
         for await (const paymentDetail of body.payments) {
-          //  console.log(paymentDetail);
           let payAmount = 0;
           if (Number(paymentDetail.amount) >= Number(body.amount)) {
             payAmount = Number(body.amount);
-            // if (body.paymentMethodType != 'efectivo') {
-            //   paymentToAdd.push(Number(paymentDetail.amount));
-            // }
           } else {
             payAmount = Number(paymentDetail.amount);
           }
@@ -456,19 +454,6 @@ export class AppointmentService {
           index += 1;
           await this.paymentDetailRepository.save(paymentItem);
         }
-
-        // for await (const iterator of paymentToAdd) {
-        //   const paymentNew = new PaymentEntity();
-        //   paymentNew.patientId = patient.id;
-        //   paymentNew.referenceId = appointment.id;
-        //   paymentNew.movementTypeId = 3;
-        //   paymentNew.amount = iterator;
-        //   paymentNew.movementType = 'A';
-        //   paymentNew.movementSign = '-1';
-        //   paymentNew.createdAt = new Date();
-        //   paymentNew.status = 'A';
-        //   await this.paymentRepository.save(paymentNew);
-        // }
       }
 
       const updatedAppointment = await this.appointmentRepository.save(appointment);
@@ -981,7 +966,7 @@ export class AppointmentService {
           today.setDate(today.getDate() + 1);
           const call = new CallEntity();
           call.patientId = patient.id;
-          call.comments = `Registro de llamada automatico pad vencido ${new Date()}`;
+          call.comments = `Registro de llamada automatico pad vencido ${getTodayDate()}`;
           call.caltalogId = callPad.id;
           call.dueDate = today.toString();
           call.result = CallResult.CALL;
