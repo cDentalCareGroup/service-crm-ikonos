@@ -20,12 +20,12 @@ import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
 import { MessageService } from '../messages/message.service';
 import { PadComponentUsedEntity } from '../pad/models/pad.component.used.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
+import { PatientOriginEntity } from '../patient/models/patient.origin.entity';
 import { PaymentEntity } from '../payment/models/payment.entity';
 import { PaymentDetailEntity } from '../payment/payment.detail.entity';
 import { AppointmentDetailEntity } from './models/appointment.detail.entity';
-import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, SendWhatsappSimpleTextDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
+import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegiserAppointmentPatientDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, SendWhatsappSimpleTextDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 import { AppointmentEntity } from './models/appointment.entity';
-import { AppointmentReferralEntity } from './models/appointment.referral.entity';
 import { AppointmentServiceEntity } from './models/appointment.service.entity';
 import { AppointmentTimesEntity } from './models/appointment.times.entity';
 import { PaymentMethodEntity } from './models/payment.method.entity';
@@ -56,7 +56,7 @@ export class AppointmentService {
     @InjectRepository(AppointmentTimesEntity) private appointmentTimesRepository: Repository<AppointmentTimesEntity>,
     @InjectRepository(AppointmentDetailEntity) private appointmentDetailRepository: Repository<AppointmentDetailEntity>,
     @InjectRepository(PadComponentUsedEntity) private padComponentUsedRepository: Repository<PadComponentUsedEntity>,
-    @InjectRepository(AppointmentReferralEntity) private appointmentReferralEntityRepository: Repository<AppointmentReferralEntity>,
+    @InjectRepository(PatientOriginEntity) private patientOriginRepository: Repository<PatientOriginEntity>,
     private emailService: EmailService,
     private readonly messageService: MessageService,
     @InjectRepository(CallLogEntity) private callLogRepository: Repository<CallLogEntity>,
@@ -194,6 +194,10 @@ export class AppointmentService {
       entity.hasLabs = 0;
       entity.status = STATUS_ACTIVE;
 
+      if (referal != null && referal != undefined && referal != '') {
+        entity.referralCode = referal;
+      }
+
       const response = await this.appointmentRepository.save(entity);
 
       if (email != null && email != undefined) {
@@ -210,13 +214,6 @@ export class AppointmentService {
           email);
       }
 
-      if (referal != null && referal != undefined && referal != '') {
-        const appointmentReferral = new AppointmentReferralEntity();
-        appointmentReferral.appointmentId = response.id;
-        appointmentReferral.folio = response.folio;
-        appointmentReferral.referalCode = referal;
-        await this.appointmentReferralEntityRepository.save(appointmentReferral);
-      }
 
       const whatsapp = await this.messageService.sendWhatsAppConfirmation(
         new SendWhatsappConfirmationDTO(
@@ -401,6 +398,7 @@ export class AppointmentService {
           appointmentDetail.price = Number(service.price);
           appointmentDetail.subTotal = Number(service.subtotal);
           appointmentDetail.comments = `Servicio registrado ${getTodayDate()}`;
+          appointmentDetail.labCost = service.labCost;
           //console.log(service);
           await this.appointmentDetailRepository.save(appointmentDetail);
 
@@ -814,6 +812,12 @@ export class AppointmentService {
     }
     const extendedTimes = await this.appointmentTimesRepository.findBy({ appointmentId: appointment.id });
 
+    if (appointment.referralCode != null && appointment.referralCode != '') {
+      const origin = await this.patientOriginRepository.findOneBy({ referralCode: appointment.referralCode });
+      appointment.referralName = origin?.name ?? '';
+      appointment.referralId = origin?.id ?? 0;
+    }
+
     return new GetAppointmentDetailDTO(appointment, branchOffice, patient, prospect, dentist, services, extendedTimes);
   }
 
@@ -825,7 +829,7 @@ export class AppointmentService {
       date.setDate(date.getDate() + 1);
 
       const nextDate = date.toISOString().split("T")[0];
-      const result = await this.appointmentRepository.find({ where: { appointment: nextDate, status: STATUS_ACTIVE} });
+      const result = await this.appointmentRepository.find({ where: { appointment: nextDate, status: STATUS_ACTIVE } });
       let failureEmails = [];
       for await (const appointment of result) {
         let prospect: ProspectEntity;
@@ -1177,6 +1181,20 @@ export class AppointmentService {
         new SendWhatsappConfirmationDTO('7773510031', 'Cuernavaca Plan de Ayala Plaza Ikonos', 'Lunes 6, Marzo 2023 - 08:00 AM ')
       );
       return res;
+    } catch (error) {
+      HandleException.exception(error);
+    }
+  }
+
+  registerAppointmentPatient = async (body: RegiserAppointmentPatientDTO) => {
+    try {
+      const appointment = await this.appointmentRepository.findOneBy({ id: body.appointmentId });
+      if (appointment != null) {
+        appointment.patientId = body.patientId;
+        const updatedAppointment = await this.appointmentRepository.save(appointment);
+        return await this.getAppointment(updatedAppointment);
+      }
+      return null;
     } catch (error) {
       HandleException.exception(error);
     }

@@ -29,4 +29,18 @@ export class ServiceEntity {
         type: 'varchar',
     })
     status: string;
+
+    @Column({
+        name: 'lab_cost',
+        type: 'decimal',
+    })
+    labCost: number;
+
+    @Column({
+        name: 'minimum_percentage_payment',
+        type: 'decimal',
+    })
+    minimumPercentagePayment: number;
+    
+    
 }

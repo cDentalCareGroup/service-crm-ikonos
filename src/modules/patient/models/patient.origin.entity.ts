@@ -9,4 +9,7 @@ export class PatientOriginEntity {
 
     @Column({ name: 'description', type: 'varchar' })
     description: string;
+
+    @Column({ name: 'referral_code', type: 'varchar' })
+    referralCode: string;
 }

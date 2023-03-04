@@ -224,3 +224,9 @@ export class SendWhatsappSimpleTextDTO {
     this.hideTitle = hideTitle;
   }
 }
+
+
+export class RegiserAppointmentPatientDTO {
+  appointmentId: number;
+  patientId: number;
+}
