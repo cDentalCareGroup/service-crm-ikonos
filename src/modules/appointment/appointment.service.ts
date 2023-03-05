@@ -281,10 +281,12 @@ export class AppointmentService {
 
           for await (const item of activeCalls) {
             const appointment = await this.appointmentRepository.findOneBy({ id: item.appointmentId });
-            const newAppointment = appointment;
-            newAppointment.call = item;
-            const result = await this.getAppointment(newAppointment);
-            data.push(result)
+            if (appointment != null) {
+              const newAppointment = appointment;
+              newAppointment.call = item;
+              const result = await this.getAppointment(newAppointment);
+              data.push(result);
+            }
           }
 
           for await (const appointment of appointments) {
