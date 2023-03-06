@@ -20,12 +20,12 @@ import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
 import { MessageService } from '../messages/message.service';
 import { PadComponentUsedEntity } from '../pad/models/pad.component.used.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
+import { PatientOriginEntity } from '../patient/models/patient.origin.entity';
 import { PaymentEntity } from '../payment/models/payment.entity';
 import { PaymentDetailEntity } from '../payment/payment.detail.entity';
 import { AppointmentDetailEntity } from './models/appointment.detail.entity';
-import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, SendWhatsappSimpleTextDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
+import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegiserAppointmentPatientDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, SendWhatsappSimpleTextDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 import { AppointmentEntity } from './models/appointment.entity';
-import { AppointmentReferralEntity } from './models/appointment.referral.entity';
 import { AppointmentServiceEntity } from './models/appointment.service.entity';
 import { AppointmentTimesEntity } from './models/appointment.times.entity';
 import { PaymentMethodEntity } from './models/payment.method.entity';
@@ -56,7 +56,7 @@ export class AppointmentService {
     @InjectRepository(AppointmentTimesEntity) private appointmentTimesRepository: Repository<AppointmentTimesEntity>,
     @InjectRepository(AppointmentDetailEntity) private appointmentDetailRepository: Repository<AppointmentDetailEntity>,
     @InjectRepository(PadComponentUsedEntity) private padComponentUsedRepository: Repository<PadComponentUsedEntity>,
-    @InjectRepository(AppointmentReferralEntity) private appointmentReferralEntityRepository: Repository<AppointmentReferralEntity>,
+    @InjectRepository(PatientOriginEntity) private patientOriginRepository: Repository<PatientOriginEntity>,
     private emailService: EmailService,
     private readonly messageService: MessageService,
     @InjectRepository(CallLogEntity) private callLogRepository: Repository<CallLogEntity>,
@@ -194,6 +194,10 @@ export class AppointmentService {
       entity.hasLabs = 0;
       entity.status = STATUS_ACTIVE;
 
+      if (referal != null && referal != undefined && referal != '') {
+        entity.referralCode = referal;
+      }
+
       const response = await this.appointmentRepository.save(entity);
 
       if (email != null && email != undefined) {
@@ -210,13 +214,6 @@ export class AppointmentService {
           email);
       }
 
-      if (referal != null && referal != undefined && referal != '') {
-        const appointmentReferral = new AppointmentReferralEntity();
-        appointmentReferral.appointmentId = response.id;
-        appointmentReferral.folio = response.folio;
-        appointmentReferral.referalCode = referal;
-        await this.appointmentReferralEntityRepository.save(appointmentReferral);
-      }
 
       const whatsapp = await this.messageService.sendWhatsAppConfirmation(
         new SendWhatsappConfirmationDTO(
@@ -284,10 +281,12 @@ export class AppointmentService {
 
           for await (const item of activeCalls) {
             const appointment = await this.appointmentRepository.findOneBy({ id: item.appointmentId });
-            const newAppointment = appointment;
-            newAppointment.call = item;
-            const result = await this.getAppointment(newAppointment);
-            data.push(result)
+            if (appointment != null) {
+              const newAppointment = appointment;
+              newAppointment.call = item;
+              const result = await this.getAppointment(newAppointment);
+              data.push(result);
+            }
           }
 
           for await (const appointment of appointments) {
@@ -376,7 +375,6 @@ export class AppointmentService {
         appointment.status = STATUS_FINISHED;
         appointment.comments = `${appointment.comments} \n Estatus: ${STATUS_FINISHED} ${formatISO(new Date())}`;
         appointment.priceAmount = Number(body.amount);
-        //  await this.patientRepository.save(patient);
 
         const extendedTimes = await this.appointmentTimesRepository.findBy({
           appointmentId: appointment.id,
@@ -402,15 +400,20 @@ export class AppointmentService {
           appointmentDetail.price = Number(service.price);
           appointmentDetail.subTotal = Number(service.subtotal);
           appointmentDetail.comments = `Servicio registrado ${getTodayDate()}`;
+          appointmentDetail.labCost = service.labCost;
+          //console.log(service);
           await this.appointmentDetailRepository.save(appointmentDetail);
 
-          // if (body.padId != null && body.padId != 0 && Number(service.disscount) > 0) {
-          //   const padComponent = new PadComponentUsedEntity();
-          //   padComponent.patientId = appointment.patientId;
-          //   padComponent.serviceId = Number(service.key);
-          //   padComponent.padId = padId;
-          //   await this.padComponentUsedRepository.save(padComponent);
-          // }
+          if (body.padId != null && body.padId != 0 && Number(service.disscount) > 0) {
+            for (let i = 0; i < Number(service.quantity); i++) {
+              const padComponent = new PadComponentUsedEntity();
+              padComponent.patientId = appointment.patientId;
+              padComponent.serviceId = Number(service.serviceId);
+              padComponent.padId = body.padId;
+              //console.log(padComponent);
+              await this.padComponentUsedRepository.save(padComponent);
+            }
+          }
         }
 
         let status = 'A';
@@ -430,15 +433,10 @@ export class AppointmentService {
         const newPayment = await this.paymentRepository.save(payment);
 
         let index = 1;
-        //let paymentToAdd = [];
         for await (const paymentDetail of body.payments) {
-          //  console.log(paymentDetail);
           let payAmount = 0;
           if (Number(paymentDetail.amount) >= Number(body.amount)) {
             payAmount = Number(body.amount);
-            // if (body.paymentMethodType != 'efectivo') {
-            //   paymentToAdd.push(Number(paymentDetail.amount));
-            // }
           } else {
             payAmount = Number(paymentDetail.amount);
           }
@@ -456,19 +454,6 @@ export class AppointmentService {
           index += 1;
           await this.paymentDetailRepository.save(paymentItem);
         }
-
-        // for await (const iterator of paymentToAdd) {
-        //   const paymentNew = new PaymentEntity();
-        //   paymentNew.patientId = patient.id;
-        //   paymentNew.referenceId = appointment.id;
-        //   paymentNew.movementTypeId = 3;
-        //   paymentNew.amount = iterator;
-        //   paymentNew.movementType = 'A';
-        //   paymentNew.movementSign = '-1';
-        //   paymentNew.createdAt = new Date();
-        //   paymentNew.status = 'A';
-        //   await this.paymentRepository.save(paymentNew);
-        // }
       }
 
       const updatedAppointment = await this.appointmentRepository.save(appointment);
@@ -829,6 +814,12 @@ export class AppointmentService {
     }
     const extendedTimes = await this.appointmentTimesRepository.findBy({ appointmentId: appointment.id });
 
+    if (appointment.referralCode != null && appointment.referralCode != '') {
+      const origin = await this.patientOriginRepository.findOneBy({ referralCode: appointment.referralCode });
+      appointment.referralName = origin?.name ?? '';
+      appointment.referralId = origin?.id ?? 0;
+    }
+
     return new GetAppointmentDetailDTO(appointment, branchOffice, patient, prospect, dentist, services, extendedTimes);
   }
 
@@ -840,7 +831,7 @@ export class AppointmentService {
       date.setDate(date.getDate() + 1);
 
       const nextDate = date.toISOString().split("T")[0];
-      const result = await this.appointmentRepository.find({ where: { appointment: nextDate, status: STATUS_ACTIVE} });
+      const result = await this.appointmentRepository.find({ where: { appointment: nextDate, status: STATUS_ACTIVE } });
       let failureEmails = [];
       for await (const appointment of result) {
         let prospect: ProspectEntity;
@@ -981,7 +972,7 @@ export class AppointmentService {
           today.setDate(today.getDate() + 1);
           const call = new CallEntity();
           call.patientId = patient.id;
-          call.comments = `Registro de llamada automatico pad vencido ${new Date()}`;
+          call.comments = `Registro de llamada automatico pad vencido ${getTodayDate()}`;
           call.caltalogId = callPad.id;
           call.dueDate = today.toString();
           call.result = CallResult.CALL;
@@ -1105,19 +1096,21 @@ export class AppointmentService {
       }
 
       let whatsapp: any;
-      if (prospect != null && prospect != undefined) {
-        whatsapp = await this.messageService.sendWhatsAppConfirmation(
-          new SendWhatsappConfirmationDTO(
-            prospect.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${body.time.time}`
-          )
-        );
-      } else {
-        const patient = await this.patientRepository.findOneBy({ id: body.patientId });
-        whatsapp = await this.messageService.sendWhatsAppConfirmation(
-          new SendWhatsappConfirmationDTO(
-            patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${body.time.time}`
-          )
-        );
+      if (body.nofity != null && body.nofity == true) {
+        if (prospect != null && prospect != undefined) {
+          whatsapp = await this.messageService.sendWhatsAppConfirmation(
+            new SendWhatsappConfirmationDTO(
+              prospect.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${body.time.time}`
+            )
+          );
+        } else {
+          const patient = await this.patientRepository.findOneBy({ id: body.patientId });
+          whatsapp = await this.messageService.sendWhatsAppConfirmation(
+            new SendWhatsappConfirmationDTO(
+              patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${body.time.time}`
+            )
+          );
+        }
       }
 
       if (body.callId != null && body.callId > 0) {
@@ -1192,6 +1185,20 @@ export class AppointmentService {
         new SendWhatsappConfirmationDTO('7773510031', 'Cuernavaca Plan de Ayala Plaza Ikonos', 'Lunes 6, Marzo 2023 - 08:00 AM ')
       );
       return res;
+    } catch (error) {
+      HandleException.exception(error);
+    }
+  }
+
+  registerAppointmentPatient = async (body: RegiserAppointmentPatientDTO) => {
+    try {
+      const appointment = await this.appointmentRepository.findOneBy({ id: body.appointmentId });
+      if (appointment != null) {
+        appointment.patientId = body.patientId;
+        const updatedAppointment = await this.appointmentRepository.save(appointment);
+        return await this.getAppointment(updatedAppointment);
+      }
+      return null;
     } catch (error) {
       HandleException.exception(error);
     }

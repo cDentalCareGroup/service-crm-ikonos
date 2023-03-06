@@ -5,6 +5,7 @@ export class RegisterServiceDTO {
     name: string;
     price: number;
     categoryId: number;
+    labCost: number;
 }
 
 export class UpdateServiceDTO {

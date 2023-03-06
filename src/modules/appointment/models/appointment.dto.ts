@@ -76,6 +76,7 @@ export class RegisterCallCenterAppointmentDTO {
   patientId?: number;
   prospectId?: number;
   callId?: number;
+  nofity?: boolean;
 }
 
 export class GetAppointmentDetailDTO {
@@ -223,4 +224,10 @@ export class SendWhatsappSimpleTextDTO {
     this.text = text;
     this.hideTitle = hideTitle;
   }
+}
+
+
+export class RegiserAppointmentPatientDTO {
+  appointmentId: number;
+  patientId: number;
 }

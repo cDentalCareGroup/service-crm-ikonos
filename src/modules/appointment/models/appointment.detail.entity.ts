@@ -68,5 +68,11 @@ export class AppointmentDetailEntity {
     })
     comments: string;
 
+    @Column({
+        name: 'lab_cost',
+        type: 'decimal',
+    })
+    labCost: number;
 
+    
 }

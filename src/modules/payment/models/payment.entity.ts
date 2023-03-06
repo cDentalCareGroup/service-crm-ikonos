@@ -70,6 +70,6 @@ export class PaymentEntity {
         name: 'status',
         type: 'char',
     })
-    status: String;
+    status: string;
     
 }

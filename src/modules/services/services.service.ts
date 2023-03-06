@@ -48,6 +48,8 @@ export class ServicesService {
             service.price = body.price;
             service.categoryId = body.categoryId;
             service.status = STATUS_ACTIVE;
+            service.minimumPercentagePayment = 100;
+            service.labCost = body.labCost;
             return await this.serviceRepository.save(service);
         } catch (error) {
             HandleException.exception(error);

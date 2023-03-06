@@ -169,7 +169,7 @@ export class PatientService {
   registerPatient = async (body: RegisterPatientDTO) => {
     try {
 
-      const exists = await this.patientRepository.findOneBy({ name: body.name, lastname: body.lastname, secondLastname: body.secondLastname });
+      const exists = await this.patientRepository.findOneBy({ name: capitalizeAllCharacters(body.name), lastname: capitalizeAllCharacters(body.lastname), secondLastname: capitalizeAllCharacters(body.secondLastname) });
       if (exists) {
         throw new ValidationException(ValidationExceptionType.PATIENT_EXISTS);
       }
