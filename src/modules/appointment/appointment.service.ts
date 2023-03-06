@@ -2,12 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { format, formatISO } from 'date-fns';
-import { id } from 'date-fns/locale';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
-import { async } from 'rxjs';
 import { HandleException, NotFoundCustomException, NotFoundType, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
-import { capitalizeAllCharacters, getDiff, getRandomInt, getTodayDate } from 'src/utils/general.functions.utils';
-import { Repository } from 'typeorm';
+import { capitalizeAllCharacters, formatDateToWhatsapp, getDayName, getDiff, getRandomInt, getTodayDate, STATUS_ACTIVE, STATUS_CANCELLED, STATUS_FINISHED, STATUS_FINISHED_APPOINTMENT_OR_CALL, STATUS_NOT_ATTENDED, STATUS_PROCESS, STATUS_SOLVED } from 'src/utils/general.functions.utils';
+import { IsNull, Not, Repository } from 'typeorm';
 import { UserEntity } from '../auth/models/entities/user.entity';
 import { branchOfficeScheduleToEntity } from '../branch_office/extensions/branch.office.extensions';
 import { BranchOfficeEmployeeSchedule } from '../branch_office/models/branch.office.employee.entity';
@@ -15,12 +13,21 @@ import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity
 import { BranchOfficeScheduleEntity } from '../branch_office/models/branch.office.schedule.entity';
 import { CallCatalogEntity } from '../calls/models/call.catalog.entity';
 import { CallEntity, CallResult } from '../calls/models/call.entity';
+import { CallLogEntity } from '../calls/models/call.log.entity';
 import { AppointmentTemplateMail, EmailService } from '../email/email.service';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
+import { MessageService } from '../messages/message.service';
+import { PadComponentUsedEntity } from '../pad/models/pad.component.used.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
-import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
+import { PatientOriginEntity } from '../patient/models/patient.origin.entity';
+import { PaymentEntity } from '../payment/models/payment.entity';
+import { PaymentDetailEntity } from '../payment/payment.detail.entity';
+import { AppointmentDetailEntity } from './models/appointment.detail.entity';
+import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegiserAppointmentPatientDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, SendWhatsappSimpleTextDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 import { AppointmentEntity } from './models/appointment.entity';
+import { AppointmentServiceEntity } from './models/appointment.service.entity';
+import { AppointmentTimesEntity } from './models/appointment.times.entity';
 import { PaymentMethodEntity } from './models/payment.method.entity';
 import { ProspectEntity } from './models/prospect.entity';
 import { ServiceEntity } from './models/service.entity';
@@ -40,20 +47,28 @@ export class AppointmentService {
     @InjectRepository(EmployeeTypeEntity) private employeeTypeRepository: Repository<EmployeeTypeEntity>,
     @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin,
     @InjectRepository(ServiceEntity) private serviceRepository: Repository<ServiceEntity>,
-    @InjectRepository(PaymentMethodEntity) private paymentRepository: Repository<PaymentMethodEntity>,
+    @InjectRepository(PaymentMethodEntity) private paymentMethodRepository: Repository<PaymentMethodEntity>,
+    @InjectRepository(PaymentDetailEntity) private paymentDetailRepository: Repository<PaymentDetailEntity>,
+    @InjectRepository(PaymentEntity) private paymentRepository: Repository<PaymentEntity>,
     @InjectRepository(CallEntity) private callRepository: Repository<CallEntity>,
     @InjectRepository(CallCatalogEntity) private callCatalogRepository: Repository<CallCatalogEntity>,
-    private emailService: EmailService
+    @InjectRepository(AppointmentServiceEntity) private appointmentServiceRepository: Repository<AppointmentServiceEntity>,
+    @InjectRepository(AppointmentTimesEntity) private appointmentTimesRepository: Repository<AppointmentTimesEntity>,
+    @InjectRepository(AppointmentDetailEntity) private appointmentDetailRepository: Repository<AppointmentDetailEntity>,
+    @InjectRepository(PadComponentUsedEntity) private padComponentUsedRepository: Repository<PadComponentUsedEntity>,
+    @InjectRepository(PatientOriginEntity) private patientOriginRepository: Repository<PatientOriginEntity>,
+    private emailService: EmailService,
+    private readonly messageService: MessageService,
+    @InjectRepository(CallLogEntity) private callLogRepository: Repository<CallLogEntity>,
   ) { }
 
-  getAppointmentsAvailability = async ({ branchOfficeName, dayName, date }: AppointmentAvailabilityDTO): Promise<AvailableHoursDTO[]> => {
+  getAppointmentsAvailability = async ({ branchOfficeName, dayName, date, filterHours }: AppointmentAvailabilityDTO): Promise<AvailableHoursDTO[]> => {
     try {
-
       const branchOffice = await this.branchOfficeRepository.findOneBy({ name: branchOfficeName });
-      const schedule = await this.branchOfficeScheduleRepository.find({ where: { branchId: branchOffice.id, status: 'activo', dayName: dayName } });
+      const schedule = await this.branchOfficeScheduleRepository.find({ where: { branchId: branchOffice.id, status: STATUS_ACTIVE, dayName: dayName } });
 
       let availableHours: AvailableHoursDTO[] = [];
-      const data: AvailableHoursDTO[] = [];
+      let data: AvailableHoursDTO[] = [];
       const today = new Date();
       let currentDay = today.getDate();
 
@@ -112,17 +127,37 @@ export class AppointmentService {
         }
 
       }
+      //console.log(`Filtering ${filterHours}`)
       const dateSended = date.split("T")[0];
-      for await (const hour of availableHours) {
-        const appointments = await this.appointmentRepository.findBy({
-          branchId: branchOffice.id,
-          appointment: dateSended,
-          time: hour.simpleTime
-        });
-        //console.log(appointments.length)
-        if (appointments.length < hour.seat) {
-          data.push(hour);
+      if (filterHours == true) {
+        for await (const hour of availableHours) {
+          const appointments = await this.appointmentRepository.findBy({
+            branchId: branchOffice.id,
+            appointment: dateSended,
+            time: hour.simpleTime,
+            status: STATUS_ACTIVE
+          });
+          const appointmentsProccess = await this.appointmentRepository.findBy({
+            branchId: branchOffice.id,
+            appointment: dateSended,
+            time: hour.simpleTime,
+            status: STATUS_PROCESS
+          });
+          const extendedAppointments = await this.appointmentTimesRepository.findBy({
+            appointment: dateSended,
+            time: hour.simpleTime,
+            status: STATUS_ACTIVE
+          });
+
+          // console.log(appointments.length);
+
+          const allAppointments = appointments.length + extendedAppointments.length + appointmentsProccess.length;
+          if (allAppointments < hour.seat) {
+            data.push(hour);
+          }
         }
+      } else {
+        data = availableHours;
       }
       return data;
     } catch (exception) {
@@ -131,39 +166,18 @@ export class AppointmentService {
     }
   }
 
-  registerAppointment = async ({ date, branchName, time, phone, email, name }: RegisterAppointmentDTO): Promise<string> => {
+  registerAppointment = async ({ date, branchName, time, phone, email, name, referal }: RegisterAppointmentDTO): Promise<string> => {
     try {
       if (name == null || name == undefined || name == '' ||
         phone == null || phone == undefined || phone == '') throw new ValidationException(ValidationExceptionType.MISSING_VALUES);
 
       const branchOffice = await this.branchOfficeRepository.findOneBy({ name: branchName });
-      // let patient: PatientEntity;
-
-      // if (phone != null && phone != '') {
-      //   patient = await this.patientRepository.findOneBy({ primaryContact: phone });
-      // }
-      // if (email != null && email != '' && patient == null) {
-      //   patient = await this.patientRepository.findOneBy({ email: email });
-      // }
-
-      // if (patient == null || patient == undefined) {
       const newProspect = new ProspectEntity();
       newProspect.name = capitalizeAllCharacters(name);
       newProspect.email = email;
       newProspect.primaryContact = phone;
       newProspect.createdAt = new Date();
       const prospect = await this.prospectRepository.save(newProspect);
-
-      //}
-
-      // const exists = await this.appointmentRepository.findOneBy({
-      //   branchId: branchOffice.id,
-      //   branchName: branchOffice.name,
-      //   appointment: date.toString().split("T")[0],
-      //   time: time.simpleTime,
-      // });
-
-      // if (exists != null) throw new ValidationException(ValidationExceptionType.APPOINTMENT_EXISTS);
 
       const entity = new AppointmentEntity();
       entity.appointment = date.toString().split("T")[0]
@@ -175,8 +189,14 @@ export class AppointmentService {
       const folio = randomUUID().replace(/-/g, getRandomInt()).substring(0, 20).toUpperCase()
       entity.folio = folio;
       entity.prospectId = prospect.id;
-      // entity.patientId = patient?.id ?? null;
-      entity.comments = `Cita registrada ${date.toString().split("T")[0]} ${time.simpleTime}`
+      entity.comments = `Cita registrada ${date.toString().split("T")[0]} ${time.simpleTime}`;
+      entity.hasCabinet = 0;
+      entity.hasLabs = 0;
+      entity.status = STATUS_ACTIVE;
+
+      if (referal != null && referal != undefined && referal != '') {
+        entity.referralCode = referal;
+      }
 
       const response = await this.appointmentRepository.save(entity);
 
@@ -193,6 +213,15 @@ export class AppointmentService {
           ),
           email);
       }
+
+
+      const whatsapp = await this.messageService.sendWhatsAppConfirmation(
+        new SendWhatsappConfirmationDTO(
+          phone, branchName, `${formatDateToWhatsapp(response.appointment)} - ${time.time}`
+        )
+      );
+      console.log(`Whatsapp sender ${whatsapp}`);
+
       return response.folio;
     } catch (exception) {
       console.log(exception);
@@ -216,7 +245,7 @@ export class AppointmentService {
 
   getNextAppointments = async (patientId: number): Promise<GetAppointmentDetailDTO[]> => {
     try {
-      const appointments = await this.appointmentRepository.findBy({ status: 'activa', patientId: patientId });
+      const appointments = await this.appointmentRepository.findBy({ status: STATUS_ACTIVE, patientId: patientId });
       let nextAppointments: GetAppointmentDetailDTO[] = [];
 
       for await (const item of appointments) {
@@ -231,7 +260,7 @@ export class AppointmentService {
   }
   getAppointmentDetailPatient = async (body: AppointmentDetailDTO): Promise<GetAppointmentDetailDTO> => {
     try {
-      const appointment = await this.appointmentRepository.findOneBy({ folio: body.folio, status: 'activa' });
+      const appointment = await this.appointmentRepository.findOneBy({ folio: body.folio, status: STATUS_ACTIVE });
       if (appointment == null) throw new NotFoundCustomException(NotFoundType.APPOINTMENT_NOT_FOUND);
       return this.getAppointment(appointment);
     } catch (exception) {
@@ -243,13 +272,38 @@ export class AppointmentService {
 
   getAllAppointmentByBranchOffice = async (body: GetAppointmentsByBranchOfficeDTO): Promise<GetAppointmentDetailDTO[]> => {
     try {
+      console.log(body)
       const data: GetAppointmentDetailDTO[] = [];
       if (body.status != null && body.status != '') {
-        if (body.status == 'finalizada-cita' || body.status == 'finalizada') {
-          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: 'finalizada' });
+        if (body.status == STATUS_FINISHED_APPOINTMENT_OR_CALL) {
+          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: STATUS_FINISHED, nextAppointmentId: Not(IsNull()) });
+          const activeCalls = await this.callRepository.findBy({ status: STATUS_ACTIVE, appointmentId: Not(IsNull()) });
+
+          for await (const item of activeCalls) {
+            const appointment = await this.appointmentRepository.findOneBy({ id: item.appointmentId });
+            if (appointment != null) {
+              const newAppointment = appointment;
+              newAppointment.call = item;
+              const result = await this.getAppointment(newAppointment);
+              data.push(result);
+            }
+          }
+
           for await (const appointment of appointments) {
-            const result = await this.getAppointment(appointment);
-            data.push(result);
+            const existsNext = appointments.find((value, _) => value.id == appointment.nextAppointmentId);
+            if (existsNext == null || existsNext == undefined) {
+              const result = await this.getAppointment(appointment);
+              data.push(result);
+            }
+          }
+        } else if (body.status == STATUS_FINISHED) {
+          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: STATUS_FINISHED, nextAppointmentId: IsNull() });
+          for await (const appointment of appointments) {
+            const calls = await this.callRepository.findBy({ patientId: appointment.patientId, status: STATUS_ACTIVE });
+            if (calls.length == 0) {
+              const result = await this.getAppointment(appointment);
+              data.push(result);
+            }
           }
         } else {
           const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: body.status });
@@ -298,6 +352,7 @@ export class AppointmentService {
       appointment.receptionistId = receptionist.id;
       appointment.comments = `${appointment.comments} \n Dentista asignado ${id} \n Recepcionista ${receptionist.name}`;
       appointment.patientId = Number(patientId);
+      appointment.startedVisitAt = getTodayDate();
       const updatedAppointment = await this.appointmentRepository.save(appointment);
       return this.getAppointment(updatedAppointment);
     } catch (exception) {
@@ -306,27 +361,101 @@ export class AppointmentService {
     }
   }
 
-  updateAppointmentStatus = async ({ id, status, amount, paymentMethod, serviceId }: UpdateAppointmentStatusDTO) => {
+  updateAppointmentStatus = async (body: UpdateAppointmentStatusDTO) => {
     try {
-      const appointment = await this.appointmentRepository.findOneBy({ id: Number(id) });
-
-      if (status == 'proceso') {
+      const appointment = await this.appointmentRepository.findOneBy({ id: Number(body.id) });
+      if (body.status == STATUS_PROCESS) {
         appointment.startedAt = formatISO(new Date())
-        appointment.status = 'proceso';
-        appointment.comments = `${appointment.comments} \n Estatus: proceso ${formatISO(new Date())}`;
+        appointment.status = STATUS_PROCESS;
+        appointment.comments = `${appointment.comments} \n Estatus: ${STATUS_PROCESS} ${formatISO(new Date())}`;
       }
-      if (status == 'finalizada') {
-        const patient = await this.patientRepository.findOneBy({ id: appointment.patientId });
+      if (body.status == STATUS_FINISHED) {
+        //const patient = await this.patientRepository.findOneBy({ id: appointment.patientId });
         appointment.finishedAt = formatISO(new Date());
-        appointment.status = 'finalizada';
-        appointment.comments = `${appointment.comments} \n Estatus: finalizada ${formatISO(new Date())}`;
-        appointment.priceAmount = Number(amount);
-        patient.lastVisitDate = formatISO(new Date());
-        appointment.paymentMethodId = paymentMethod;
-        patient.nextDateAppointment = null;
-        appointment.serviceId = serviceId;
-        await this.patientRepository.save(patient);
+        appointment.status = STATUS_FINISHED;
+        appointment.comments = `${appointment.comments} \n Estatus: ${STATUS_FINISHED} ${formatISO(new Date())}`;
+        appointment.priceAmount = Number(body.amount);
+
+        const extendedTimes = await this.appointmentTimesRepository.findBy({
+          appointmentId: appointment.id,
+          appointment: appointment.appointment,
+          status: STATUS_ACTIVE
+        });
+
+        for await (const time of extendedTimes) {
+          const item = time;
+          item.status = STATUS_FINISHED;
+          await this.appointmentTimesRepository.save(item);
+        }
+
+        for await (const service of body.services) {
+          const appointmentDetail = new AppointmentDetailEntity();
+          appointmentDetail.appointmentId = appointment.id;
+          appointmentDetail.patientId = appointment.patientId;
+          appointmentDetail.dentistId = appointment.dentistId;
+          appointmentDetail.serviceId = Number(service.serviceId);
+          appointmentDetail.quantity = Number(service.quantity);
+          appointmentDetail.unitPrice = Number(service.unitPrice);
+          appointmentDetail.discount = Number(service.disscount);
+          appointmentDetail.price = Number(service.price);
+          appointmentDetail.subTotal = Number(service.subtotal);
+          appointmentDetail.comments = `Servicio registrado ${getTodayDate()}`;
+          appointmentDetail.labCost = service.labCost;
+          //console.log(service);
+          await this.appointmentDetailRepository.save(appointmentDetail);
+
+          if (body.padId != null && body.padId != 0 && Number(service.disscount) > 0) {
+            for (let i = 0; i < Number(service.quantity); i++) {
+              const padComponent = new PadComponentUsedEntity();
+              padComponent.patientId = appointment.patientId;
+              padComponent.serviceId = Number(service.serviceId);
+              padComponent.padId = body.padId;
+              //console.log(padComponent);
+              await this.padComponentUsedRepository.save(padComponent);
+            }
+          }
+        }
+
+        let status = 'A';
+        if (Number(body.paid) >= Number(body.amount)) {
+          status = 'C'
+        }
+        const payment = new PaymentEntity();
+        payment.patientId = appointment.patientId;
+        payment.referenceId = appointment.id;
+        payment.movementTypeId = 2;
+        payment.amount = Number(body.amount);
+        payment.movementType = 'C';
+        payment.movementSign = '1';
+        payment.createdAt = new Date();
+        payment.status = status;
+
+        const newPayment = await this.paymentRepository.save(payment);
+
+        let index = 1;
+        for await (const paymentDetail of body.payments) {
+          let payAmount = 0;
+          if (Number(paymentDetail.amount) >= Number(body.amount)) {
+            payAmount = Number(body.amount);
+          } else {
+            payAmount = Number(paymentDetail.amount);
+          }
+          const paymentItem = new PaymentDetailEntity();
+          paymentItem.patientId = appointment.patientId;
+          paymentItem.paymentId = newPayment.id;
+          paymentItem.referenceId = appointment.id;
+          paymentItem.movementTypeApplicationId = 2;
+          paymentItem.movementType = 'A'
+          paymentItem.amount = payAmount;
+          paymentItem.createdAt = new Date();
+          paymentItem.paymentMethodId = paymentDetail.key;
+          paymentItem.sign = '-1'
+          paymentItem.order = index;
+          index += 1;
+          await this.paymentDetailRepository.save(paymentItem);
+        }
       }
+
       const updatedAppointment = await this.appointmentRepository.save(appointment);
       return this.getAppointment(updatedAppointment);
     } catch (exception) {
@@ -344,7 +473,7 @@ export class AppointmentService {
       appointment.time = time.simpleTime;
       appointment.branchId = branchOffice.id;
       appointment.branchName = branchOffice.name;
-      appointment.status = 'activa';
+      appointment.status = STATUS_ACTIVE;
       appointment.dentistId = null;
       appointment.receptionistId = null;
       appointment.comments = `${appointment.comments} \n Cita reagendada a las ${getTodayDate()} - De ${appointment.appointment} ${appointment.time} para ${date.toString().split("T")[0]} ${time.time}`
@@ -368,6 +497,22 @@ export class AppointmentService {
         );
       }
 
+      if (response.patient != null && response.patient != undefined) {
+        const whatsapp = await this.messageService.sendWhatsAppRescheduleAppointment(
+          new SendWhatsappConfirmationDTO(
+            response.patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(updatedAppointment.appointment)} - ${time.time}`
+          )
+        );
+        console.log(`Whatsapp patient ${whatsapp}`);
+      } else {
+        const whatsapp = await this.messageService.sendWhatsAppRescheduleAppointment(
+          new SendWhatsappConfirmationDTO(
+            response.prospect.primaryContact, branchOffice.name, `${formatDateToWhatsapp(updatedAppointment.appointment)} - ${time.time}`
+          )
+        );
+        console.log(`Whatsapp prospect ${whatsapp}`);
+      }
+
       return response;
     } catch (exception) {
       console.log(exception);
@@ -379,8 +524,8 @@ export class AppointmentService {
   cancelAppointment = async ({ reason, folio }: CancelAppointmentDTO) => {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ folio: folio });
-      if (appointment.status == 'activa') {
-        appointment.status = 'cancelada-paciente';
+      if (appointment != null && appointment.status == STATUS_ACTIVE) {
+        appointment.status = STATUS_CANCELLED;
         appointment.comments = `${appointment.comments} \n Cita cancelada por usuario ${formatISO(new Date())} \n Motivo ${reason}`
         const updatedAppointment = await this.appointmentRepository.save(appointment);
         const response = await this.getAppointment(updatedAppointment);
@@ -401,6 +546,21 @@ export class AppointmentService {
             ),
             email
           );
+        }
+        if (response.patient != null && response.patient != undefined) {
+          const whatsapp = await this.messageService.sendWhatsAppCancelAppointment(
+            new SendWhatsappConfirmationDTO(
+              response.patient.primaryContact, ``, ``
+            )
+          );
+          console.log(`Whatsapp patient ${whatsapp}`);
+        } else {
+          const whatsapp = await this.messageService.sendWhatsAppCancelAppointment(
+            new SendWhatsappConfirmationDTO(
+              response.prospect.primaryContact, ``, ``
+            )
+          );
+          console.log(`Whatsapp prospect ${whatsapp}`);
         }
       }
       return 200;
@@ -483,19 +643,19 @@ export class AppointmentService {
       }
 
 
-      const filteredHours: AvailableHoursDTO[] = [];
-      for await (const hour of availableHours) {
-        const appointments = await this.appointmentRepository.findBy({
-          branchId: Number(branchOfficeId),
-          time: hour.simpleTime,
-          appointment: format(new Date(date), 'yyyy-MM-dd')
-        });
-        if (appointments.length == 0) {
-          filteredHours.push(hour);
-        }
-      }
+      // const filteredHours: AvailableHoursDTO[] = [];
+      // for await (const hour of availableHours) {
+      //   const appointments = await this.appointmentRepository.findBy({
+      //     branchId: Number(branchOfficeId),
+      //     time: hour.simpleTime,
+      //     appointment: format(new Date(date), 'yyyy-MM-dd')
+      //   });
+      //   if (appointments.length == 0) {
+      //     filteredHours.push(hour);
+      //   }
+      // }
 
-      return filteredHours;
+      return availableHours;
     } catch (exception) {
       console.log(exception);
       HandleException.exception(exception);
@@ -503,11 +663,7 @@ export class AppointmentService {
 
   }
 
-
-
-
-
-  registerNextAppointment = async ({ branchOfficeId, date, time, patientId, dentistId, hasLabs, hasCabinet, service }: RegisterNextAppointmentDTO) => {
+  registerNextAppointment = async ({ branchOfficeId, date, time, patientId, dentistId, hasLabs, hasCabinet, services, nextAppointmentId }: RegisterNextAppointmentDTO) => {
     try {
 
       const branchOffice = await this.branchOfficeRepository.findOneBy({ id: Number(branchOfficeId) });
@@ -537,15 +693,23 @@ export class AppointmentService {
       entity.comments = `Cita Agendada por Recepcionista ${date.toString().split("T")[0]} ${time.simpleTime}`
       entity.hasLabs = hasLabs;
       entity.hasCabinet = hasCabinet;
-      entity.serviceId = Number(service);
+      entity.status = STATUS_ACTIVE;
 
       const response = await this.appointmentRepository.save(entity);
 
-      patient.nextDateAppointment = `${date.toString().split("T")[0]} ${time.simpleTime}`;
-      await this.patientRepository.save(patient);
+      const previousAppointment = await this.appointmentRepository.findOneBy({ id: nextAppointmentId });
+      previousAppointment.nextAppointmentId = response.id;
+      previousAppointment.nextAppointmentDate = date.toString().split("T")[0];
+      await this.appointmentRepository.save(previousAppointment);
 
+      for await (const serviceId of services) {
+        const service = new AppointmentServiceEntity();
+        service.appointmentId = response.id;
+        service.serviceId = serviceId;
+        await this.appointmentServiceRepository.save(service);
+      }
 
-      if (patient.email != null && patient.email != undefined) {
+      if (patient.email != null && patient.email != undefined && patient.email != '') {
         await this.emailService.sendAppointmentEmail(
           new AppointmentTemplateMail(
             `${patient.name} ${patient.lastname} ${patient.secondLastname}`,
@@ -558,8 +722,15 @@ export class AppointmentService {
           ),
           patient.email);
       }
+
+      const whatsapp = await this.messageService.sendWhatsAppNextAppointment(
+        new SendWhatsappConfirmationDTO(
+          patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${time.time}`
+        )
+      );
+      console.log(`Whatsapp status ${whatsapp}`);
+
       let updatedAppointment = await this.getAppointment(response);
-      // let nextAppointments = await this.getNextAppointments(response.patientId);
       return updatedAppointment;
     } catch (exception) {
       HandleException.exception(exception);
@@ -615,13 +786,13 @@ export class AppointmentService {
     }
   }
 
-  private getAppointment = async (appointment: AppointmentEntity): Promise<GetAppointmentDetailDTO> => {
+  getAppointment = async (appointment: AppointmentEntity): Promise<GetAppointmentDetailDTO> => {
     const branchOffice = await this.branchOfficeRepository.findOneBy({ id: appointment.branchId });
 
     let prospect: ProspectEntity;
     let patient: PatientEntity;
     let dentist: EmployeeEntity;
-    let service: ServiceEntity;
+    let services: ServiceEntity[] = [];
 
     if (appointment.patientId == null || appointment.patientId == undefined) {
       prospect = await this.prospectRepository.findOneBy({ id: appointment.prospectId });
@@ -635,10 +806,21 @@ export class AppointmentService {
       previewDentist.typeName = type.name;
       dentist = previewDentist;
     }
-    if (appointment.serviceId != null && appointment.serviceId != undefined && appointment.serviceId != 0) {
-      service = await this.serviceRepository.findOneBy({ id: appointment.serviceId });
+
+    const appointmentServices = await this.appointmentServiceRepository.findBy({ appointmentId: appointment.id });
+    for await (const serviceId of appointmentServices) {
+      const res = await this.serviceRepository.findOneBy({ id: serviceId.serviceId });
+      if (res) services.push(res);
     }
-    return new GetAppointmentDetailDTO(appointment, branchOffice, patient, prospect, dentist, service);
+    const extendedTimes = await this.appointmentTimesRepository.findBy({ appointmentId: appointment.id });
+
+    if (appointment.referralCode != null && appointment.referralCode != '') {
+      const origin = await this.patientOriginRepository.findOneBy({ referralCode: appointment.referralCode });
+      appointment.referralName = origin?.name ?? '';
+      appointment.referralId = origin?.id ?? 0;
+    }
+
+    return new GetAppointmentDetailDTO(appointment, branchOffice, patient, prospect, dentist, services, extendedTimes);
   }
 
 
@@ -649,7 +831,7 @@ export class AppointmentService {
       date.setDate(date.getDate() + 1);
 
       const nextDate = date.toISOString().split("T")[0];
-      const result = await this.appointmentRepository.find({ where: { appointment: nextDate, status: 'activa' } });
+      const result = await this.appointmentRepository.find({ where: { appointment: nextDate, status: STATUS_ACTIVE } });
       let failureEmails = [];
       for await (const appointment of result) {
         let prospect: ProspectEntity;
@@ -693,12 +875,12 @@ export class AppointmentService {
       const date = new Date();
       date.setDate(date.getDate() - 1);
       const nextDate = date.toISOString().split("T")[0];
-      const result = await this.appointmentRepository.find({ where: { appointment: nextDate, status: 'activa' } });
+      const result = await this.appointmentRepository.find({ where: { appointment: nextDate, status: STATUS_ACTIVE } });
       let failureEmails = [];
 
       for await (const appointment of result) {
         const item = appointment;
-        item.status = 'no-atendida';
+        item.status = STATUS_NOT_ATTENDED;
         item.comments = `${item.comments} \n Cita no atendida ${formatISO(new Date())}`
         await this.appointmentRepository.save(item);
 
@@ -740,36 +922,10 @@ export class AppointmentService {
       }
       return failureEmails;
     } catch (exception) {
-      console.log(exception);
+      console.log(`Exception main method cancel appoitnments ${exception}`);
     }
   }
 
-
-  test = async () => {
-    try {
-      const response = await fetch('https://graph.facebook.com/v15.0/112314965085672/messages', {
-        headers: {
-          "Authorization": 'Bearer EAAvaI0aTk5wBAKV5VRfwTTBl3ChPjnXfWpuZBh4CYKqzHavkonKQPvmaskPZCCmtkIucgTXjcBx7VZBYcw4joOXeimMX33r7yD2YqMcQmOgpfeS1HqqsuszTALVI02WNJQmKZCRoZCnfm2FyXMyf9RbhZBaoARj7Eo6IAAL4HUXIKRMJyLev3K6MQNdBP38rQDy4pvAJsuFQZDZD',
-          "Content-Type": 'application/json',
-        },
-        method: "POST",
-        body: JSON.stringify(
-          {
-            "messaging_product": "whatsapp",
-            "to": "527773510031",
-            "type": "template",
-            "template": {
-              "name": "confirm_appointment",
-              "language": { "code": "es_MX" }
-            }
-          }
-        )
-      },)
-      return response;
-    } catch (error) {
-      console.log(error);
-    }
-  }
 
 
   callFromAppointmentNotAttended = async (appointment: AppointmentEntity) => {
@@ -782,21 +938,24 @@ export class AppointmentService {
       } else {
         call.prospectId = appointment.prospectId;
       }
-      call.status = 'activa';
+      call.status = STATUS_ACTIVE;
       call.result = CallResult.APPOINTMENT;
       call.caltalogId = catalog.id;
-      call.comments = `${call.comments} \n Registro de llamada automatico ${new Date()}`;
+      if (call.comments != null && call.comments != '') {
+        call.comments = `${call.comments} \n Registro de llamada automatico ${getTodayDate()}`;
+      } else {
+        call.comments = `Registro de llamada automatico ${getTodayDate()}`;
+      }
 
       const today = new Date();
       today.setDate(today.getDate() + 1);
-      call.dueDate = today;
+      call.dueDate = format(today, 'yyyy-MM-dd HH:mm:ss')
       return await this.callRepository.save(call);
     } catch (exception) {
       console.log(exception);
       return;
     }
   }
-
 
 
   reminderPad = async () => {
@@ -813,9 +972,9 @@ export class AppointmentService {
           today.setDate(today.getDate() + 1);
           const call = new CallEntity();
           call.patientId = patient.id;
-          call.comments = `Registro de llamada automatico pad vencido ${new Date()}`;
+          call.comments = `Registro de llamada automatico pad vencido ${getTodayDate()}`;
           call.caltalogId = callPad.id;
-          call.dueDate = today;
+          call.dueDate = today.toString();
           call.result = CallResult.CALL;
           await this.callRepository.save(call);
           console.log(`Llamada registrada`);
@@ -829,7 +988,7 @@ export class AppointmentService {
 
   getServices = async () => {
     try {
-      const result = await this.serviceRepository.find();
+      const result = await this.serviceRepository.findBy({ status: STATUS_ACTIVE });
       return result;
     } catch (error) {
       HandleException.exception(error);
@@ -838,8 +997,208 @@ export class AppointmentService {
 
   getPaymentMethods = async () => {
     try {
-      const result = await this.paymentRepository.find();
+      const result = await this.paymentMethodRepository.find();
       return result;
+    } catch (error) {
+      HandleException.exception(error);
+    }
+  }
+
+
+  extendAppointment = async (body: RegisterExtendAppointmentDTO) => {
+    try {
+
+      for await (const time of body.times) {
+        const exist = await this.appointmentTimesRepository.findBy({
+          appointmentId: body.id,
+          time: time,
+          appointment: body.appointment
+        });
+        if (exist == null || exist.length == 0) {
+          const appointmentTime = new AppointmentTimesEntity();
+          appointmentTime.appointmentId = body.id;
+          appointmentTime.appointment = body.appointment;
+          appointmentTime.status = STATUS_ACTIVE;
+          appointmentTime.time = time;
+          await this.appointmentTimesRepository.save(appointmentTime);
+        }
+      }
+      const appointment = await this.appointmentRepository.findOneBy({ id: body.id });
+      return this.getAppointment(appointment);
+    } catch (error) {
+      HandleException.exception(error);
+    }
+  }
+
+
+  testWhatsappMessage = async (body: SendWhatsappConfirmationDTO) => {
+    try {
+      await this.messageService.sendWhatsAppConfirmation(body);
+    } catch (error) {
+      console.log(`Error sending whatsapp message : ${error}`);
+      return {};
+    }
+  }
+
+
+
+  registerAppointmentCallCenter = async (body: RegisterCallCenterAppointmentDTO): Promise<string> => {
+    try {
+
+      const branchOffice = await this.branchOfficeRepository.findOneBy({ id: body.branchId });
+      let prospect: ProspectEntity;
+      if (body.name != '' && body.phone != '') {
+        const newProspect = new ProspectEntity();
+        newProspect.name = capitalizeAllCharacters(body.name);
+        newProspect.email = body.email;
+        newProspect.primaryContact = body.phone;
+        newProspect.createdAt = new Date();
+        prospect = await this.prospectRepository.save(newProspect);
+        console.log(`Register prospect`)
+      } else if (body.prospectId != null && body.prospectId > 0) {
+        prospect = await this.prospectRepository.findOneBy({ id: body.prospectId });
+        console.log(`Register getting prospect`);
+      }
+
+      const entity = new AppointmentEntity();
+      entity.appointment = body.date.toString().split("T")[0]
+      entity.branchId = branchOffice.id;
+      entity.branchName = branchOffice.name;
+      entity.scheduleBranchOfficeId = body.time.scheduleBranchOfficeId;
+      entity.time = body.time.simpleTime;
+      entity.scheduledAt = getTodayDate()
+      const folio = randomUUID().replace(/-/g, getRandomInt()).substring(0, 20).toUpperCase()
+      entity.folio = folio;
+      if (prospect != null && prospect != undefined) {
+        entity.prospectId = prospect.id;
+      } else {
+        entity.patientId = body.patientId;
+      }
+      entity.comments = `Cita registrada por call center ${body.date.toString().split("T")[0]} ${body.time.simpleTime}`;
+      entity.hasCabinet = 0;
+      entity.hasLabs = 0;
+      entity.status = STATUS_ACTIVE;
+
+      const response = await this.appointmentRepository.save(entity);
+
+      if (body.email != null && body.email != '') {
+        await this.emailService.sendAppointmentEmail(
+          new AppointmentTemplateMail(
+            capitalizeAllCharacters(body.name),
+            `${body.date.toString().split("T")[0]} ${body.time.simpleTime}`,
+            `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
+            `${branchOffice.name}`,
+            `${branchOffice.primaryContact}`,
+            `${folio}`,
+            `${body.phone ?? '-'}`
+          ),
+          body.email);
+      }
+
+      let whatsapp: any;
+      if (body.nofity != null && body.nofity == true) {
+        if (prospect != null && prospect != undefined) {
+          whatsapp = await this.messageService.sendWhatsAppConfirmation(
+            new SendWhatsappConfirmationDTO(
+              prospect.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${body.time.time}`
+            )
+          );
+        } else {
+          const patient = await this.patientRepository.findOneBy({ id: body.patientId });
+          whatsapp = await this.messageService.sendWhatsAppConfirmation(
+            new SendWhatsappConfirmationDTO(
+              patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${body.time.time}`
+            )
+          );
+        }
+      }
+
+      if (body.callId != null && body.callId > 0) {
+        const call = await this.callRepository.findOneBy({ id: body.callId });
+        if (call != null && call != undefined) {
+          call.status = STATUS_SOLVED;
+          call.effectiveDate = getTodayDate()
+          call.comments = `${call?.comments ?? '-'} \n Llamada resuelta  ${new Date()} terminada con cita ${response.folio}`;
+          await this.callRepository.save(call);
+          await this.updateCallLog(call.id, 'appointment');
+        }
+      }
+      console.log(`Whatsapp sender ${whatsapp}`);
+      console.log(response.folio);
+      return response.folio;
+    } catch (exception) {
+      console.log(exception);
+      HandleException.exception(exception);
+    }
+  }
+
+
+  processWhatsappMessages = async (body: any) => {
+    try {
+      console.log(`Data`, body)
+      if (body != null && body.type == 'text' && body.client_name == 'SMSMasivos') {
+        console.log(`Webhook test`)
+        return;
+      }
+      if (body != null && body.type == 'text') {
+        this.messageService.checkTextMessages(body);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+
+  getAppointmentByPatient = async (body: any) => {
+    try {
+      return await this.appointmentRepository.findBy({ patientId: body.patientId, status: STATUS_FINISHED });
+    } catch (error) {
+      HandleException.exception(error);
+    }
+  }
+
+  private updateCallLog = async (id: number, type: string) => {
+    try {
+      const logs = await this.callLogRepository.find({
+        order: { id: 'DESC' },
+        where: { callId: id },
+        take: 1
+      });
+
+      if (logs.length > 0) {
+        const lastlog = await this.callLogRepository.findOneBy({ id: logs[0].id });
+        if (lastlog) {
+          lastlog.finishedAt = getTodayDate();
+          lastlog.result = type;
+          await this.callLogRepository.save(lastlog);
+        }
+      }
+      return 200;
+    } catch (error) {
+      console.log(`updateCallLog`, error);
+    }
+  }
+
+  testWhatsapp = async () => {
+    try {
+      const res = await this.messageService.sendWhatsAppCancelAppointment(
+        new SendWhatsappConfirmationDTO('7773510031', 'Cuernavaca Plan de Ayala Plaza Ikonos', 'Lunes 6, Marzo 2023 - 08:00 AM ')
+      );
+      return res;
+    } catch (error) {
+      HandleException.exception(error);
+    }
+  }
+
+  registerAppointmentPatient = async (body: RegiserAppointmentPatientDTO) => {
+    try {
+      const appointment = await this.appointmentRepository.findOneBy({ id: body.appointmentId });
+      if (appointment != null) {
+        appointment.patientId = body.patientId;
+        const updatedAppointment = await this.appointmentRepository.save(appointment);
+        return await this.getAppointment(updatedAppointment);
+      }
+      return null;
     } catch (error) {
       HandleException.exception(error);
     }

@@ -1,11 +1,12 @@
 // import { BranchOffice } from "src/modules/branch_office/models/branch.office.entity";
 // import { Employees } from "src/modules/employee/models/employee.entity";
 // import { Patient } from "src/modules/patient/models/patient.entity";
+import { CallEntity } from "src/modules/calls/models/call.entity";
 import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
- @Entity('appointment')
- export class AppointmentEntity {
-  @PrimaryGeneratedColumn({name:'ID'})
+@Entity('appointment')
+export class AppointmentEntity {
+  @PrimaryGeneratedColumn({ name: 'ID' })
   id: number;
 
   @Column({
@@ -13,7 +14,7 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
     type: 'date',
   })
   appointment: string;
-  
+
   @Column({
     name: 'branch_id',
     type: 'int',
@@ -61,12 +62,12 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
   })
   status: string;
 
-  @Column({
-    name: 'cost_amount',
-    type: 'decimal',
-    nullable: true,
-  })
-  costAmount: number;
+  // @Column({
+  //   name: 'cost_amount',
+  //   type: 'decimal',
+  //   nullable: true,
+  // })
+  // costAmount: number;
 
   @Column({
     name: 'price_amount',
@@ -155,101 +156,143 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
   hasCabinet: number;
 
 
-  @Column({
-    name: 'payment_method_id',
-    type: 'int'
-  })
-  paymentMethodId: number;
+  // @Column({
+  //   name: 'payment_method_id',
+  //   type: 'int'
+  // })
+  // paymentMethodId: number;
+
+
 
   @Column({
-    name: 'service_id',
-    type: 'int'
+    name: 'next_appointment_id',
+    type: 'int',
+    nullable: true,
   })
-  serviceId: number;
+  nextAppointmentId: number;
 
-//   @Column({
-//     name: 'dentist_id',
-//     type: 'int',
-//     comment: 'id del dentista que atendera la cita',
-//   })
-//   dentistID: number;
-  
-//   @Column({
-//     name: 'receptionist_id',
-//     type: 'int',
-//     comment: 'id de la recepcionista que recibio al paciente',
-//   })
-//   receptionistID: number;
+  @Column({
+    name: 'next_appointment_date',
+    type: 'varchar',
+    nullable: true,
+  })
+  nextAppointmentDate: string;
 
-//   @Column({
-//     name: 'datetime_appointment', 
-//     type: 'datetime',
-//     comment: 'fecha hora de la cita',
-//   })
-//   dateTimeAppointdment: Date;
+  @Column({
+    name: 'started_visit_at',
+    type: 'varchar',
+    nullable: true,
+  })
+  startedVisitAt: string;
 
-//   @Column({
-//     name: 'appointment_type',
-//     type: 'varchar',
-//     length: 45,
-//     comment: 'tipo de cita: seguimiento, cita nueva, reposicion (se cancelo una anterior)',
-//   })
-//   appointmentType: string;
+  @Column({
+    name: 'referral_code',
+    type: 'varchar',
+    nullable: true,
+  })
+  referralCode: string;
 
-//   @Column({ 
-//     name: 'appointment_reason', 
-//     nullable: true })
-//   appointmentReason: string;
-
-//   @Column({ name: 'import_service', nullable: true })
-//   importService: number;
-
-//   @Column({ name: 'payment_method_service', nullable: true })
-//   paymentMethodService: string;
-
-//   @Column({ name: 'import_product', nullable: true })
-//   importProduct: number;
-
-//   @Column({ name: 'payment_method_product', nullable: true })
-//   paymentMethodProduct: string;
-
-//   @Column({ 
-//     name: 'status',
-//     type: "varchar",
-//     length: 10,
-//     nullable: false, 
-//   })
-//   status: string;
-
-//   @Column({
-//     name: 'comments', 
-//     type: 'varchar',
-//     nullable: true,
-//   })
-//   comments: string;
-
-//   @Column({
-//     name: 'created_at',
-//     type: 'timestamp',
-//     default: () => 'CURRENT_TIMESTAMP',
-//     nullable: false,
-//   })
-//   dateTime: Date;
+  call?: CallEntity;
+  referralName?: string;
+  referralId?: number;
 
 
-//   // @OneToMany(() => BranchOffice)
-//   // @JoinColumn({ name: 'branch_office_id' })
-//   // branchOffice: BranchOffice;
+  // @Column({
+  //   name: 'dentist_comments',
+  //   type: 'text',
+  // })
+  // dentistComments: string;
 
-//   // @OneToOne(() => Patient)
-//   // @JoinColumn({ name: 'client_id' })
-//   // patient: Patient;
+  // @Column({
+  //   name: 'receptionist_comments',
+  //   type: 'text',
+  // })
+  // receptionistComments: string;
 
-//   // @OneToOne(() => Employees)
-//   // @JoinColumn({ name: 'dentist_id' })
-//   // dentist: Employees;
 
-//   // @OneToOne(() => Employees)
-//   // @JoinColumn({ name: 'receptionist_id' })
-//   // receptionist: Employees;
- }
+  //   @Column({
+  //     name: 'dentist_id',
+  //     type: 'int',
+  //     comment: 'id del dentista que atendera la cita',
+  //   })
+  //   dentistID: number;
+
+  //   @Column({
+  //     name: 'receptionist_id',
+  //     type: 'int',
+  //     comment: 'id de la recepcionista que recibio al paciente',
+  //   })
+  //   receptionistID: number;
+
+  //   @Column({
+  //     name: 'datetime_appointment', 
+  //     type: 'datetime',
+  //     comment: 'fecha hora de la cita',
+  //   })
+  //   dateTimeAppointdment: Date;
+
+  //   @Column({
+  //     name: 'appointment_type',
+  //     type: 'varchar',
+  //     length: 45,
+  //     comment: 'tipo de cita: seguimiento, cita nueva, reposicion (se cancelo una anterior)',
+  //   })
+  //   appointmentType: string;
+
+  //   @Column({ 
+  //     name: 'appointment_reason', 
+  //     nullable: true })
+  //   appointmentReason: string;
+
+  //   @Column({ name: 'import_service', nullable: true })
+  //   importService: number;
+
+  //   @Column({ name: 'payment_method_service', nullable: true })
+  //   paymentMethodService: string;
+
+  //   @Column({ name: 'import_product', nullable: true })
+  //   importProduct: number;
+
+  //   @Column({ name: 'payment_method_product', nullable: true })
+  //   paymentMethodProduct: string;
+
+  //   @Column({ 
+  //     name: 'status',
+  //     type: "varchar",
+  //     length: 10,
+  //     nullable: false, 
+  //   })
+  //   status: string;
+
+  //   @Column({
+  //     name: 'comments', 
+  //     type: 'varchar',
+  //     nullable: true,
+  //   })
+  //   comments: string;
+
+  //   @Column({
+  //     name: 'created_at',
+  //     type: 'timestamp',
+  //     default: () => 'CURRENT_TIMESTAMP',
+  //     nullable: false,
+  //   })
+  //   dateTime: Date;
+
+
+  //   // @OneToMany(() => BranchOffice)
+  //   // @JoinColumn({ name: 'branch_office_id' })
+  //   // branchOffice: BranchOffice;
+
+  //   // @OneToOne(() => Patient)
+  //   // @JoinColumn({ name: 'client_id' })
+  //   // patient: Patient;
+
+  //   // @OneToOne(() => Employees)
+  //   // @JoinColumn({ name: 'dentist_id' })
+  //   // dentist: Employees;
+
+  //   // @OneToOne(() => Employees)
+  //   // @JoinColumn({ name: 'receptionist_id' })
+  //   // receptionist: Employees;
+}

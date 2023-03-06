@@ -43,7 +43,20 @@ export class RegisterCatalogDTO {
 export class RegisterCallDTO {
     patientId: number;
     description: string;
-    appointmentId: number;
     date: string;
     type: string;
+    name?: string;
+    email?: string;
+    phone?:string;
+    prospectId?: number;
+    callId?: number;
+    appointmentId?: number;
+}
+
+
+
+export class GetCallDetailDTO {
+    patientId: number;
+    prospectId: number;
+
 }

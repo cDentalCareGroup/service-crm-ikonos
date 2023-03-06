@@ -10,9 +10,14 @@ import {
   ValidationException,
   ValidationExceptionType,
 } from 'src/common/exceptions/general.exception';
-import { capitalizeAllCharacters, capitalizeFirstLetter, isNumber } from 'src/utils/general.functions.utils';
+import { capitalizeAllCharacters, capitalizeFirstLetter, isNumber, STATUS_ABANDOMENT, STATUS_ACTIVE } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
+import { ServiceEntity } from '../appointment/models/service.entity';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
+import { PadCatalogueEntity } from '../pad/models/pad.catalogue.entity';
+import { PadComponenEntity } from '../pad/models/pad.component.entity';
+import { PadEntity } from '../pad/models/pad.entity';
+import { PadMemberEntity } from '../pad/models/pad.member.entity';
 import {
   GetPatientByIdDTO,
   GetPatientsByBranchOfficeDTO,
@@ -28,14 +33,15 @@ import { PatientOriginEntity } from './models/patient.origin.entity';
 @Injectable()
 export class PatientService {
   constructor(
-    @InjectRepository(PatientEntity)
-    private patientRepository: Repository<PatientEntity>,
-    @InjectRepository(BranchOfficeEntity)
-    private branchOfficeRepository: Repository<BranchOfficeEntity>,
-    @InjectRepository(PatientOriginEntity)
-    private patientOriginRepository: Repository<PatientOriginEntity>,
-    @InjectRepository(PatientOrganizationEntity)
-    private patientOrganizationRepository: Repository<PatientOrganizationEntity>,
+    @InjectRepository(PatientEntity) private patientRepository: Repository<PatientEntity>,
+    @InjectRepository(BranchOfficeEntity) private branchOfficeRepository: Repository<BranchOfficeEntity>,
+    @InjectRepository(PatientOriginEntity) private patientOriginRepository: Repository<PatientOriginEntity>,
+    @InjectRepository(PatientOrganizationEntity) private patientOrganizationRepository: Repository<PatientOrganizationEntity>,
+    @InjectRepository(PadEntity) private padRepository: Repository<PadEntity>,
+    @InjectRepository(PadMemberEntity) private padMemberRepository: Repository<PadMemberEntity>,
+    @InjectRepository(PadCatalogueEntity) private padCatalogRepository: Repository<PadCatalogueEntity>,
+    @InjectRepository(ServiceEntity) private serviceRepository: Repository<ServiceEntity>,
+    @InjectRepository(PadComponenEntity) private padComponentRepository: Repository<PadComponenEntity>,
     private readonly httpService: HttpService
   ) { }
 
@@ -134,7 +140,7 @@ export class PatientService {
         }
 
         if (query == 500 || query == "500" || query == 300 || query == "300") {
-          const status = (query == 500 || query == "500") ? 'activo' : 'abandono'
+          const status = (query == 500 || query == "500") ? STATUS_ACTIVE : STATUS_ABANDOMENT
           const data = await this.patientRepository.find({ where: { status: status } });
           results = results.concat(data);
         }
@@ -163,7 +169,7 @@ export class PatientService {
   registerPatient = async (body: RegisterPatientDTO) => {
     try {
 
-      const exists = await this.patientRepository.findOneBy({ name: body.name, lastname: body.lastname, secondLastname: body.secondLastname });
+      const exists = await this.patientRepository.findOneBy({ name: capitalizeAllCharacters(body.name), lastname: capitalizeAllCharacters(body.lastname), secondLastname: capitalizeAllCharacters(body.secondLastname) });
       if (exists) {
         throw new ValidationException(ValidationExceptionType.PATIENT_EXISTS);
       }
@@ -192,6 +198,9 @@ export class PatientService {
       patient.city = capitalizeAllCharacters(body.city);
       patient.organizationClient = body.organization;
       patient.startDate = formatISO(new Date());
+      patient.comments = `Paciente Registrado ${formatISO(new Date())}`
+      patient.historicalFolio = body.folio;
+      patient.status = STATUS_ACTIVE;
 
       return await this.patientRepository.save(patient);
     } catch (error) {
@@ -202,35 +211,36 @@ export class PatientService {
 
   updatePatient = async (body: UpdatePatientDTO) => {
     try {
-
-
-
-
       const patient = await this.patientRepository.findOneBy({ id: body.patientId });
-      patient.name = capitalizeAllCharacters(body.name);
-      patient.lastname = capitalizeAllCharacters(body.lastname);
-      patient.secondLastname = capitalizeAllCharacters(body.secondLastname);
-      patient.birthDay = new Date(body.birthDate);
-      patient.gender = body.gender;
-      patient.maritalStatus = body.civilStatus;
-      patient.street = capitalizeAllCharacters(body.street);
-      patient.number = body.streetNumber;
-      patient.colony = capitalizeAllCharacters(body.colony);
-      patient.cp = body.zipCode;
-      patient.primaryContact = body.phone;
-      patient.email = body.email;
-      patient.originBranchOfficeId = body.branchOfficeId;
-      patient.country = 'MX';
-      patient.state = capitalizeAllCharacters(body.state);
-      patient.lat = body.lat;
-      patient.lng = body.lon;
-      patient.job = body.occupation;
-      patient.sourceClient = body.originId;
-      patient.city = capitalizeAllCharacters(body.city);
-      patient.organizationClient = body.organization;
-      patient.startDate = body.startDate;
-
-      return await this.patientRepository.save(patient);
+      if (patient != null && patient != undefined) {
+        patient.name = capitalizeAllCharacters(body.name);
+        patient.lastname = capitalizeAllCharacters(body.lastname);
+        patient.secondLastname = capitalizeAllCharacters(body.secondLastname);
+        patient.birthDay = new Date(body.birthDate);
+        patient.gender = body.gender;
+        patient.maritalStatus = body.civilStatus;
+        patient.street = capitalizeAllCharacters(body.street);
+        patient.number = body.streetNumber;
+        patient.colony = capitalizeAllCharacters(body.colony);
+        patient.cp = body.zipCode;
+        patient.primaryContact = body.phone;
+        patient.email = body.email;
+        patient.originBranchOfficeId = body.branchOfficeId;
+        patient.country = 'MX';
+        patient.state = capitalizeAllCharacters(body.state);
+        patient.lat = body.lat;
+        patient.lng = body.lon;
+        patient.job = body.occupation;
+        patient.sourceClient = body.originId;
+        patient.city = capitalizeAllCharacters(body.city);
+        patient.organizationClient = body.organization;
+        patient.startDate = body.startDate;
+        patient.updatedAt = new Date();
+        patient.comments = `${patient.comments} \n Paciente Actualizado ${formatISO(new Date())}`
+        patient.historicalFolio = body.folio;
+        return await this.patientRepository.save(patient);
+      }
+      return 200;
     } catch (error) {
       console.log(error);
       HandleException.exception(error);
@@ -250,16 +260,49 @@ export class PatientService {
     try {
       const result = await this.patientRepository.findOneBy({ id: Number(body.patientId) });
       result.status = body.status;
+      result.comments = `${result.comments} \n Cambio de Estatus de  ${result.status} a ${body.status}`;
       return await this.patientRepository.save(result);
     } catch (exception) {
       HandleException.exception(exception);
     }
   }
 
-  getPatientById = async (body: GetPatientByIdDTO): Promise<PatientEntity> => {
+  getPatientById = async (body: GetPatientByIdDTO): Promise<any> => {
     try {
+     // console.log('acaa')
       const result = await this.patientRepository.findOneBy({ id: Number(body.patientId) });
-      return result;
+
+
+      if (result.pad != null && result.pad == 1) {
+        const padMember = await this.padMemberRepository.findOneBy({ patientId: result.id });
+        const pad = await this.padRepository.findOneBy({ id: padMember.padId });
+        const padCatalogue = await this.padCatalogRepository.findOneBy({ id: pad.padCatalogueId });
+
+        const padComponents = await this.padComponentRepository.findBy({ padCatalogueId: padCatalogue.id });
+        const services = [];
+        for await (const component of padComponents) {
+          const service = await this.serviceRepository.findOneBy({ id: component.serviceId });
+          services.push({
+            'service': service,
+            'component': component
+          })
+        }
+
+        const padData = {
+          'pad': pad,
+          'padCatalog': padCatalogue,
+          'component': services
+        }
+        return {
+          'patient': result,
+          'pad': padData
+        }
+      }
+
+      return {
+        'patient': result,
+        'pad': null
+      }
     } catch (exception) {
       console.log(exception);
       HandleException.exception(exception);
@@ -296,6 +339,7 @@ export class PatientService {
       if (patient != null) {
         patient.lat = body.lat;
         patient.lng = body.lng;
+        patient.comments = `${patient.comments} \n Actualización de coordenadas del paciente`;
         await this.patientRepository.save(patient);
       }
       return 200;

@@ -1,4 +1,5 @@
 import { formatInTimeZone } from "date-fns-tz";
+import { STATUS_ACTIVE } from "src/utils/general.functions.utils";
 import { RegisterBranchOfficeScheduleDTO } from "../models/branch.office.dto";
 import { BranchOfficeEntity } from "../models/branch.office.entity";
 import { BranchOfficeScheduleEntity } from "../models/branch.office.schedule.entity";
@@ -9,15 +10,15 @@ const registerBranchOfficeScheduleToEntity = (data: RegisterBranchOfficeSchedule
 
   const startTime = new Date();
   const endTime = new Date();
-  startTime.setHours(Number(data.startTime.split(":")[0]),Number(data.startTime.split(":")[1]),Number(data.startTime.split(":")[2]));
-  endTime.setHours(Number(data.endTime.split(":")[0]),Number(data.endTime.split(":")[1]),Number(data.endTime.split(":")[2]));
+  startTime.setHours(Number(data.startTime.split(":")[0]), Number(data.startTime.split(":")[1]), Number(data.startTime.split(":")[2]));
+  endTime.setHours(Number(data.endTime.split(":")[0]), Number(data.endTime.split(":")[1]), Number(data.endTime.split(":")[2]));
 
   const schedule = new BranchOfficeScheduleEntity();
   schedule.dayName = data.dayName;
   schedule.startTime = startTime
   schedule.endTime = endTime;
   schedule.seat = Number(data.seat);
-  schedule.status = 'activo';
+  schedule.status = STATUS_ACTIVE;
   schedule.branchId = data.branchOfficeId;
   return schedule;
 }
@@ -57,4 +58,13 @@ const branchOfficeScheduleToEntity = (data: any): BranchOfficeScheduleEntity[] =
   return schedules;
 }
 
-export { registerBranchOfficeScheduleToEntity, branchOfficesToEntity, branchOfficeScheduleToEntity };
+const branchOfficesToMessage = (data: BranchOfficeEntity[]): string => {
+  let value: string = ''
+  for (const item of data) {
+    const address = `${item?.street ?? ''} ${item?.number ?? ''} ${item?.colony ?? ''}, CP.${item?.cp ?? ''}`;
+    value += `📍 ${item.name} - ${address}\n`
+  }
+  return value;
+}
+
+export { registerBranchOfficeScheduleToEntity, branchOfficesToEntity, branchOfficeScheduleToEntity, branchOfficesToMessage };

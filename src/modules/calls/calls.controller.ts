@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiBody } from '@nestjs/swagger';
 import { CallsService } from './calls.service';
-import { RegisterCallDTO, RegisterCatalogDTO, UpdateCallDTO, UpdateCatalogDTO } from './models/call.dto';
+import { GetCallDetailDTO, RegisterCallDTO, RegisterCatalogDTO, UpdateCallDTO, UpdateCatalogDTO } from './models/call.dto';
 
 @Controller('calls')
 export class CallsController {
@@ -43,5 +43,23 @@ export class CallsController {
     @ApiBody({type: RegisterCallDTO})
     async registerCall(@Body() body: RegisterCallDTO) {
         return this.callsService.registerCall(body);
+    }
+
+    @Post('/detail')
+    @ApiBody({type: GetCallDetailDTO})
+    async getCallDetail(@Body() body: GetCallDetailDTO) {
+        return this.callsService.getCallDetail(body);
+    }
+
+
+    @Post('/notattended')
+    @ApiBody({type: UpdateCallDTO})
+    async updateNotAttendedCall(@Body() body: UpdateCallDTO) {
+        return this.callsService.updateNotAttendedCall(body);
+    }
+
+    @Post('/log')
+    async registerCallLog(@Body() body: any) {
+        return this.callsService.registerCallLog(body);
     }
 }

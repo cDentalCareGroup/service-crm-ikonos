@@ -28,4 +28,10 @@ export class CallCatalogEntity {
         type: 'varchar',
     })
     goal: string;
+
+    @Column({
+        name: 'type',
+        type: 'varchar',
+    })
+    type: string;
 }

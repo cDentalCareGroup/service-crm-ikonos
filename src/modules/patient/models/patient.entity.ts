@@ -97,12 +97,12 @@ export class PatientEntity {
   })
   email: string;
 
-  @Column({
-    name: 'folio',
-    type: 'varchar',
-    length: 45,
-  })
-  folio: string;
+  // @Column({
+  //   name: 'folio',
+  //   type: 'varchar',
+  //   length: 45,
+  // })
+  // folio: string;
 
   @Column({
     name: 'folio_historico',
@@ -172,11 +172,6 @@ export class PatientEntity {
   })
   lng: number;
 
-  @Column({
-    name: 'next_appointment_date',
-    type: 'char',
-  })
-  nextDateAppointment: string; 
 
   @Column({
     name:     'status',
@@ -201,13 +196,6 @@ export class PatientEntity {
   })
   startDate: string;
 
-  @Column({
-    name:     'last_appointment_date',
-    type:     'datetime',
-    comment:  'fechaHora en la que se atendio el paciente por ultima vez vez en alguna sucursal',
-    default : null
-  })
-  lastVisitDate: string;
 
   @Column({
     name:     'patient_origin_id',
@@ -266,14 +254,6 @@ export class PatientEntity {
   })
   padAcquisitionBranch: number;
 
-  @Column({
-    name:       'pad_price',
-    type:       'decimal',
-    precision:   10, 
-    scale:       2, 
-    comment:    'precio al que se aquirio el pad',
-  })
-  padPrice: number;
 
   @Column({
     name: 'created_at',
@@ -286,5 +266,11 @@ export class PatientEntity {
     type: 'datetime'
   })
   updatedAt: Date;
+
+  @Column({
+    name: 'comments',
+    type: 'varchar'
+  })
+  comments: string;
 
 }

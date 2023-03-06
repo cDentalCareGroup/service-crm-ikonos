@@ -13,6 +13,8 @@ export class LoginDTO {
     minimum: 8,
   })
   password: string;
+
+  info:any
 }
 
 
@@ -28,4 +30,11 @@ export class SaveTokenDTO {
     example: 'ASDASDAS',
   })
   token: string;
+}
+
+
+export class UpdatePasswordDTO {
+  username: string;
+  password: string;
+
 }

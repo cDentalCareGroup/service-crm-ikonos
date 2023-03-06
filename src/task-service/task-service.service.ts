@@ -11,12 +11,15 @@ export class TaskServiceService {
 
   @Cron('0 30 11 * * 0-6')
   async handleRemiderAppointment() {
-    console.log(`Executing job handleRemiderAppointmentat ${new Date()}`);
+    const date = new Date();
+    date.setDate(date.getDate() + 1);
+    const nextDate = date.toISOString().split("T")[0];
+    console.log(`Executing job handleRemiderAppointmentat ${nextDate}`);
     const data = await this.appointmentService.appointmentReminders();
     console.log(`Failure emails ${data}`);
   }
 
-  @Cron('0 10 21 * * 0-6')
+  @Cron('0 20 20 * * 0-6')
   async handleRemiderNotAttendedAppointment() {
     const date = new Date();
     date.setDate(date.getDate() - 1);

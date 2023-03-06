@@ -153,4 +153,9 @@ export class EmployeeEntity {
 
   @Column({name:'sex', type:'varchar'})
   gender: string;
+
+
+
+
+
 }

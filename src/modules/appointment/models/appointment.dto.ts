@@ -4,6 +4,7 @@ import { BranchOfficeScheduleEntity } from "src/modules/branch_office/models/bra
 import { EmployeeEntity } from "src/modules/employee/models/employee.entity";
 import { PatientEntity } from "src/modules/patient/models/patient.entity";
 import { AppointmentEntity } from "./appointment.entity";
+import { AppointmentTimesEntity } from "./appointment.times.entity";
 import { ProspectEntity } from "./prospect.entity";
 import { ServiceEntity } from "./service.entity";
 
@@ -39,6 +40,8 @@ export class AppointmentAvailabilityDTO {
     example: 'Lunes, martes',
   })
   date: string;
+
+  filterHours?: boolean;
 }
 
 export class RegisterAppointmentDTO {
@@ -48,17 +51,32 @@ export class RegisterAppointmentDTO {
   time?: AvailableHoursDTO;
   email?: string;
   branchName?: string;
+  referal?: string;
   constructor(
     name?: string,
     phone?: string,
-    date?: Date, time?: AvailableHoursDTO, email?: string, branchName?: string,) {
+    date?: Date, time?: AvailableHoursDTO, email?: string, branchName?: string,referal?: string) {
     this.time = time;
     this.name = name;
     this.phone = phone;
     this.date = date;
     this.email = email;
     this.branchName = branchName;
+    this.referal = referal;
   }
+}
+
+export class RegisterCallCenterAppointmentDTO {
+  name?: string;
+  phone?: string;
+  date?: Date;
+  time?: AvailableHoursDTO;
+  email?: string;
+  branchId?: number;
+  patientId?: number;
+  prospectId?: number;
+  callId?: number;
+  nofity?: boolean;
 }
 
 export class GetAppointmentDetailDTO {
@@ -67,18 +85,20 @@ export class GetAppointmentDetailDTO {
   patient?: PatientEntity;
   prospect?: ProspectEntity;
   dentist?: EmployeeEntity;
-  service?: ServiceEntity;
+  services?: ServiceEntity[];
+  extendedTimes?: AppointmentTimesEntity[];
 
   constructor(appointment: AppointmentEntity,
     branchOffice: BranchOfficeEntity,
     patient?: PatientEntity,
-    prospect?: ProspectEntity, dentist?: EmployeeEntity, service?: ServiceEntity) {
+    prospect?: ProspectEntity, dentist?: EmployeeEntity, services?: ServiceEntity[], extendedTimes?: AppointmentTimesEntity[]) {
     this.appointment = appointment;
     this.branchOffice = branchOffice;
     this.patient = patient;
     this.prospect = prospect;
     this.dentist = dentist;
-    this.service = service;
+    this.services = services;
+    this.extendedTimes = extendedTimes;
   }
 }
 
@@ -118,9 +138,11 @@ export class UpdateAppointmentStatusDTO {
   id: string | number;
   status: string;
   date: string;
+  padId: number;
   amount: string;
-  paymentMethod: number;
-  serviceId: number;
+  paid: string;
+  services: any[];
+  payments: any[];
 }
 
 
@@ -153,7 +175,8 @@ export class RegisterNextAppointmentDTO {
   dentistId: string;
   hasLabs: number;
   hasCabinet: number;
-  service: string;
+  services: number[];
+  nextAppointmentId: number;
 }
 
 export class UpdateHasLabsAppointmentDTO {
@@ -168,4 +191,43 @@ export class UpdateHasCabinetAppointmentDTO {
 
 export class SendNotificationDTO {
   folio: string;
+}
+
+
+export class RegisterExtendAppointmentDTO {
+  id: number;
+  times: string[];
+  appointment: string;
+}
+
+export class SendWhatsappConfirmationDTO {
+  number: string;
+  branchOffice: string;
+  time: string;
+
+  constructor(number: string,
+    branchOffice: string,
+    time: string) {
+    this.number = number;
+    this.branchOffice = branchOffice;
+    this.time = time;
+  }
+}
+
+export class SendWhatsappSimpleTextDTO {
+  number: string;
+  text: string;
+  hideTitle?:boolean;
+  constructor(number: string,
+    text: string, hideTitle?: boolean) {
+    this.number = number;
+    this.text = text;
+    this.hideTitle = hideTitle;
+  }
+}
+
+
+export class RegiserAppointmentPatientDTO {
+  appointmentId: number;
+  patientId: number;
 }

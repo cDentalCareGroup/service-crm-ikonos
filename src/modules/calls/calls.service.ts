@@ -1,14 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { async } from 'rxjs';
 import { HandleException } from 'src/common/exceptions/general.exception';
+import { capitalizeAllCharacters, getTodayDate, STATUS_ACTIVE, STATUS_SOLVED } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
+import { AppointmentService } from '../appointment/appointment.service';
+import {  GetAppointmentDetailDTO } from '../appointment/models/appointment.dto';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';
 import { ProspectEntity } from '../appointment/models/prospect.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { CallCatalogEntity } from './models/call.catalog.entity';
-import { GetCallsDTO, RegisterCallDTO, RegisterCatalogDTO, UpdateCallDTO, UpdateCatalogDTO } from './models/call.dto';
+import { GetCallDetailDTO, GetCallsDTO, RegisterCallDTO, RegisterCatalogDTO, UpdateCallDTO, UpdateCatalogDTO } from './models/call.dto';
 import { CallEntity, CallResult } from './models/call.entity';
+import { CallLogEntity } from './models/call.log.entity';
 
 @Injectable()
 export class CallsService {
@@ -20,12 +23,13 @@ export class CallsService {
         @InjectRepository(AppointmentEntity) private appointmentRepository: Repository<AppointmentEntity>,
         @InjectRepository(CallCatalogEntity) private catalogRepository: Repository<CallCatalogEntity>,
         @InjectRepository(ProspectEntity) private prospectRepository: Repository<ProspectEntity>,
-
+        @InjectRepository(CallLogEntity) private callLogRepository: Repository<CallLogEntity>,
+        private readonly appointmentService: AppointmentService
     ) { }
 
     getCalls = async () => {
         try {
-            const result = await this.callRepository.findBy({ status: 'activa' });
+            const result = await this.callRepository.find({ order: { dueDate: { direction: 'ASC' } }, where: { status: STATUS_ACTIVE } });
             let data: GetCallsDTO[] = [];
             for await (const call of result) {
                 let patient: PatientEntity;
@@ -39,8 +43,9 @@ export class CallsService {
                 const catalog = await this.catalogRepository.findOneBy({ id: call.caltalogId });
                 data.push(new GetCallsDTO(call, catalog, appintment, patient, prospect));
             }
-            return data;
+            return data
         } catch (error) {
+            console.log(error);
             HandleException.exception(error);
         }
     }
@@ -57,10 +62,15 @@ export class CallsService {
     updateCall = async ({ id, description }: UpdateCallDTO) => {
         try {
             const result = await this.callRepository.findOneBy({ id: id });
-            result.status = 'resuelta';
-            result.description = `${result.description ?? ''} \n${description}`;
-            result.effectiveDate = new Date();
-            result.comments = `LLamada resuelta por call center - ${new Date()}`;
+            // result.status = 'resuelta';
+            result.effectiveDate = getTodayDate()
+            result.comments = `${result?.comments ?? '-'} \n ${description}`;
+
+            if (result.callComments == null || result.callComments == '') {
+                result.callComments = `- ${description}`;
+            } else {
+                result.callComments = `${result.callComments} - ${description}`;
+            }
             return await this.callRepository.save(result);
         } catch (error) {
             HandleException.exception(error);
@@ -93,22 +103,139 @@ export class CallsService {
         }
     }
 
-    registerCall = async ({ patientId, appointmentId, description, date, type }: RegisterCallDTO) => {
+    registerCall = async ({ patientId, description, date, type, name, phone, email, prospectId, callId, appointmentId }: RegisterCallDTO) => {
         try {
             const call = new CallEntity();
-            call.patientId = patientId;
-            if (appointmentId != null && appointmentId != 0) {
-                call.appointmentId = appointmentId;
+            if (name != null && name != '' && phone != null && phone != '') {
+                const prospect = new ProspectEntity();
+                prospect.name = capitalizeAllCharacters(name);
+                prospect.email = email;
+                prospect.primaryContact = phone;
+                prospect.createdAt = new Date();
+                const newProspect = await this.prospectRepository.save(prospect);
+                call.prospectId = newProspect.id;
+            } else if (patientId != null && patientId > 0) {
+                call.patientId = patientId;
+            } else {
+                call.prospectId = prospectId;
             }
             call.description = description;
-            call.dueDate = new Date(date);
+            call.dueDate = date;
             call.caltalogId = Number(type);
-            call.status = 'activa';
+            call.status = STATUS_ACTIVE;
             call.result = CallResult.CALL;
+
+            if (appointmentId != null && appointmentId > 0) {
+                call.appointmentId = appointmentId;
+            }
+
+            if (callId != null && callId != undefined && callId > 0) {
+                const resolvedCall = await this.callRepository.findOneBy({ id: callId });
+                if (resolvedCall != null && resolvedCall != undefined) {
+                    resolvedCall.status = STATUS_SOLVED;
+                    resolvedCall.effectiveDate = getTodayDate()
+                    resolvedCall.comments = `${resolvedCall?.comments ?? '-'} \n Llamada resuelta ${new Date()} terminada con llamada`;
+                    await this.callRepository.save(resolvedCall);
+                }
+                await this.updateCallLog(callId, 'call');
+            }
+
             return await this.callRepository.save(call);
         } catch (error) {
             HandleException.exception(error);
         }
     }
+
+    getCallDetail = async ({ patientId, prospectId }: GetCallDetailDTO) => {
+        try {
+            if (patientId != null && patientId != 0) {
+                const patient = await this.patientRepository.findOneBy({ id: patientId });
+                const calls = await this.callRepository.findBy({ patientId: patient.id });
+                const appointments = await this.appointmentRepository.findBy({ patientId: patient.id });
+
+                let data: any[] = [];
+                for await (const item of calls) {
+                    const catalog = await this.catalogRepository.findOneBy({ id: item.caltalogId });
+                    data.push({
+                        'catalogName': catalog.name,
+                        'catalogId': catalog.id,
+                        'callId': item.id,
+                        'callDueDate': item.dueDate,
+                        'appointment': item.appointmentId,
+                        'callStatus': item.status,
+                        'description': item.description
+                    })
+                }
+
+                let appointmentData: GetAppointmentDetailDTO[] = [];
+                for await (const item of appointments) {
+                    const element = await this.appointmentService.getAppointment(item);
+                    appointmentData.push(element);
+                }
+                return {
+                    'calls': data,
+                    'appointments': appointmentData
+                }
+            }
+        } catch (error) {
+            HandleException.exception(error);
+        }
+    }
+
+
+    updateNotAttendedCall = async ({ id, description }: UpdateCallDTO) => {
+        try {
+            const result = await this.callRepository.findOneBy({ id: id });
+            // result.status = 'resuelta';
+            result.comments = `${result?.comments ?? '-'} \n ${description}`;
+
+            if (result.callComments == null || result.callComments == '') {
+                result.callComments = `- ${description}`;
+            } else {
+                result.callComments = `${result.callComments} - ${description}`;
+            }
+
+            await this.updateCallLog(id, 'not-answer');
+
+            return await this.callRepository.save(result);
+        } catch (error) {
+            HandleException.exception(error);
+        }
+    }
+
+    private updateCallLog = async (id: number, type: string) => {
+        try {
+            const logs = await this.callLogRepository.find({
+                order: { id: 'DESC' },
+                where: { callId: id },
+                take: 1
+            });
+
+            if (logs.length > 0) {
+                const lastlog = await this.callLogRepository.findOneBy({ id: logs[0].id });
+                if (lastlog) {
+                    lastlog.finishedAt = getTodayDate();
+                    lastlog.result = type;
+                    await this.callLogRepository.save(lastlog);
+                }
+            }
+            return 200;
+        } catch (error) {
+            console.log(`updateCallLog`, error);
+        }
+    }
+
+    registerCallLog = async (body: any) => {
+        try {
+            const callLog = new CallLogEntity();
+            callLog.callId = body.id;
+            callLog.startedAt = getTodayDate();
+            return await this.callLogRepository.save(callLog);
+        } catch (error) {
+            HandleException.exception(error);
+
+        }
+    }
 }
+
 

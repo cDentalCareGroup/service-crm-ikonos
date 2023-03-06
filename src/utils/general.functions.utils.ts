@@ -55,9 +55,68 @@ const capitalizeFirstLetter = (value: string | undefined): string => {
 
 const capitalizeAllCharacters = (value: string | undefined): string => {
         if (value != undefined) {
-                return value.replace(/\b\w/g, l => l.toUpperCase());
+                //return value.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+                return value.toLocaleLowerCase().replace(/(^|\s)\S/g, function (match) {
+                        return match.toUpperCase();
+                });
         }
         return ''
 }
 
-export { isNumber, addHours, getDiff, getRandomInt, getTodayDate, capitalizeFirstLetter,capitalizeAllCharacters };
+const getDayName = (date: Date): string => {
+        var days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        return days[date.getDay() + 1];
+}
+
+const getMonthName = (date: Date): string => {
+        const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        ];
+        return monthNames[date.getMonth()];
+}
+
+
+const formatDateToWhatsapp = (date: string): string => {
+        const newDate = new Date(date);
+        const dayOfMonth = newDate.getDate() + 1;
+        const dayName = getDayName(newDate);
+        const monthName = getMonthName(newDate);
+        const year = newDate.getFullYear();
+        return `${dayName} ${dayOfMonth}, ${monthName} ${year}`;
+}
+
+const STATUS_ACTIVE = 'active'
+const STATUS_PROCESS = 'process'
+const STATUS_INACTIVE = 'inactive'
+const STATUS_FINISHED = 'finished'
+const STATUS_NOT_ATTENDED = 'not-attended'
+const STATUS_CANCELLED = 'cancelled'
+const STATUS_FINISHED_APPOINTMENT_OR_CALL = 'finished-appointment-or-call'
+const STATUS_SOLVED = 'solved'
+const STATUS_ABANDOMENT= 'abandonment'
+const STATUS_MANUAL = 'manual'
+const STATUS_AUTOMATIC = 'automatic'
+
+
+export {
+        STATUS_MANUAL,
+        STATUS_AUTOMATIC,
+        isNumber,
+        addHours,
+        getDiff,
+        getRandomInt,
+        getTodayDate,
+        capitalizeFirstLetter,
+        capitalizeAllCharacters,
+        getDayName,
+        formatDateToWhatsapp,
+        STATUS_ACTIVE,
+        STATUS_INACTIVE,
+        STATUS_FINISHED,
+        STATUS_NOT_ATTENDED,
+        STATUS_CANCELLED,
+        STATUS_PROCESS,
+        STATUS_FINISHED_APPOINTMENT_OR_CALL,
+        STATUS_SOLVED,
+        STATUS_ABANDOMENT
+};

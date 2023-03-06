@@ -1,26 +1,27 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { addMinutes, subMinutes } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { lastValueFrom, map } from 'rxjs';
+import { Repository } from 'typeorm';
 import { HandleException } from './common/exceptions/general.exception';
-import { getTodayDate } from './utils/general.functions.utils';
+import { UserLogsEntity } from './modules/auth/models/entities/user.logs.entity';
+import { capitalizeAllCharacters, formatDateToWhatsapp, getTodayDate } from './utils/general.functions.utils';
 
 
 @Injectable()
 export class AppService {
   constructor(
-    private readonly httpService: HttpService
+    private readonly httpService: HttpService,
   ) {
 
   }
   async getHello() {
-    const date = new Date();
-    date.setDate(date.getDate() - 1);
-    const nextDate = date.toISOString().split("T")[0];
     return {
-      'version': 'Version 1.0.29 - Firebase v.1.0.0',
-      'date': new Date().toISOString().split("T")[0]
+      'version': 'Version 1.0.45-PROD',
+      'date': new Date().toISOString().split("T")[0],
+      'whatsapptime': `${formatDateToWhatsapp('2023-02-14')} - 10:30 AM`
     }
   }
 
