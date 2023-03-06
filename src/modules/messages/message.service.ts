@@ -363,13 +363,13 @@ export class MessageService {
                 "country_code": 52,
                 "message": `¡Tu cita ha sido confirmada! \n🦷 C Dental Care Group agradece tu preferencia y te da la bienvenida. \n🗓️Te esperamos en nuestra Sucursal ${body.branchOffice} el ${body.time} \nMantenemos sonrisas 😁`
             }
-            // const request = this.httpService.post(process.env.WTS_API_URL, payload, {
-            //     method: 'POST',
-            //     headers: {
-            //         'apikey': process.env.MSJ_TOKEN,
-            //     },
-            // });
-            // return await lastValueFrom(request);
+            const request = this.httpService.post(process.env.WTS_API_URL, payload, {
+                method: 'POST',
+                headers: {
+                    'apikey': process.env.MSJ_TOKEN,
+                },
+            });
+            return await lastValueFrom(request);
         } catch (error) {
             console.log(`sendWhatsAppConfirmation ${error}`)
             this.sendMsjConfirmation(body);

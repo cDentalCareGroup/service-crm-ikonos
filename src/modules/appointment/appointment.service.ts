@@ -1096,19 +1096,21 @@ export class AppointmentService {
       }
 
       let whatsapp: any;
-      if (prospect != null && prospect != undefined) {
-        whatsapp = await this.messageService.sendWhatsAppConfirmation(
-          new SendWhatsappConfirmationDTO(
-            prospect.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${body.time.time}`
-          )
-        );
-      } else {
-        const patient = await this.patientRepository.findOneBy({ id: body.patientId });
-        whatsapp = await this.messageService.sendWhatsAppConfirmation(
-          new SendWhatsappConfirmationDTO(
-            patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${body.time.time}`
-          )
-        );
+      if (body.nofity != null && body.nofity == true) {
+        if (prospect != null && prospect != undefined) {
+          whatsapp = await this.messageService.sendWhatsAppConfirmation(
+            new SendWhatsappConfirmationDTO(
+              prospect.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${body.time.time}`
+            )
+          );
+        } else {
+          const patient = await this.patientRepository.findOneBy({ id: body.patientId });
+          whatsapp = await this.messageService.sendWhatsAppConfirmation(
+            new SendWhatsappConfirmationDTO(
+              patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${body.time.time}`
+            )
+          );
+        }
       }
 
       if (body.callId != null && body.callId > 0) {

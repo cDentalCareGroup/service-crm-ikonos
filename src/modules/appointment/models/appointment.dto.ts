@@ -76,6 +76,7 @@ export class RegisterCallCenterAppointmentDTO {
   patientId?: number;
   prospectId?: number;
   callId?: number;
+  nofity?: boolean;
 }
 
 export class GetAppointmentDetailDTO {
