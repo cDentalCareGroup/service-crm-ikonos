@@ -21,6 +21,7 @@ import { MessageService } from '../messages/message.service';
 import { PadComponentUsedEntity } from '../pad/models/pad.component.used.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { PatientOriginEntity } from '../patient/models/patient.origin.entity';
+import { MovementsTypeEntity } from '../payment/models/movements.type.entity';
 import { PaymentEntity } from '../payment/models/payment.entity';
 import { PaymentDetailEntity } from '../payment/payment.detail.entity';
 import { AppointmentDetailEntity } from './models/appointment.detail.entity';
@@ -57,6 +58,7 @@ export class AppointmentService {
     @InjectRepository(AppointmentDetailEntity) private appointmentDetailRepository: Repository<AppointmentDetailEntity>,
     @InjectRepository(PadComponentUsedEntity) private padComponentUsedRepository: Repository<PadComponentUsedEntity>,
     @InjectRepository(PatientOriginEntity) private patientOriginRepository: Repository<PatientOriginEntity>,
+    @InjectRepository(MovementsTypeEntity) private movementRepository: Repository<MovementsTypeEntity>,
     private emailService: EmailService,
     private readonly messageService: MessageService,
     @InjectRepository(CallLogEntity) private callLogRepository: Repository<CallLogEntity>,
@@ -415,6 +417,7 @@ export class AppointmentService {
             }
           }
         }
+        const movement = await this.movementRepository.findOneBy({ name: 'Cita' });
 
         let status = 'A';
         if (Number(body.paid) >= Number(body.amount)) {
@@ -423,9 +426,9 @@ export class AppointmentService {
         const payment = new PaymentEntity();
         payment.patientId = appointment.patientId;
         payment.referenceId = appointment.id;
-        payment.movementTypeId = 2;
+        payment.movementTypeId = movement?.id ?? 2;
         payment.amount = Number(body.amount);
-        payment.movementType = 'C';
+        payment.movementType = movement?.type ?? 'C';
         payment.movementSign = '1';
         payment.createdAt = new Date();
         payment.status = status;
@@ -444,7 +447,7 @@ export class AppointmentService {
           paymentItem.patientId = appointment.patientId;
           paymentItem.paymentId = newPayment.id;
           paymentItem.referenceId = appointment.id;
-          paymentItem.movementTypeApplicationId = 2;
+          paymentItem.movementTypeApplicationId =  movement?.id ?? 2;
           paymentItem.movementType = 'A'
           paymentItem.amount = payAmount;
           paymentItem.createdAt = new Date();

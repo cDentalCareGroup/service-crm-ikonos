@@ -113,7 +113,11 @@ export class PadService {
             padCatalogue.price = Number(body.price);
             padCatalogue.type = getPadType(body.type);
             padCatalogue.day = Number(body.day);
-            padCatalogue.maxMember = body.maxMembers;
+            if (getPadType(body.type) == 'individual') {
+                padCatalogue.maxMember = 1;
+            } else {
+                padCatalogue.maxMember = body.maxMembers;
+            }
             padCatalogue.maxAdditional = body.maxAdditionals;
             if (body.status) {
                 padCatalogue.status = PadStatus.ACTIVE;
