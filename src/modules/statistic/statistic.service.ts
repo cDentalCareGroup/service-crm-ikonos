@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomInt } from 'crypto';
+import { isPast, isToday } from 'date-fns';
 import { async } from 'rxjs';
 import { HandleException } from 'src/common/exceptions/general.exception';
-import { getTodayDate } from 'src/utils/general.functions.utils';
+import { getTodayDate, STATUS_ACTIVE, STATUS_SOLVED } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';
 import { AppointmentStatistic, BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
@@ -53,6 +54,24 @@ export class StatisticService {
 
         } catch (exception) {
             HandleException.exception(exception);
+        }
+    }
+
+
+    getStatisticsCalls = async () => {
+        try {
+            const calls = await this.callRepository.find();
+
+            const activeCalls = calls.filter((value, _) => value.status == STATUS_ACTIVE);
+            const solvedCalls = calls.filter((value, _) => value.status == STATUS_SOLVED);
+            const expiredCalls = calls.filter((value, _) => isPast(new Date(value.dueDate)) && value.status == STATUS_ACTIVE);
+            return {
+                'active': activeCalls,
+                'solvedCalls': solvedCalls,
+                'expiredCalls': expiredCalls
+            }
+        } catch (error) {
+            HandleException.exception(error);
         }
     }
 

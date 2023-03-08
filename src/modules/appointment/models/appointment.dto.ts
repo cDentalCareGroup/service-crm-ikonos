@@ -3,6 +3,7 @@ import { BranchOfficeEntity } from "src/modules/branch_office/models/branch.offi
 import { BranchOfficeScheduleEntity } from "src/modules/branch_office/models/branch.office.schedule.entity";
 import { EmployeeEntity } from "src/modules/employee/models/employee.entity";
 import { PatientEntity } from "src/modules/patient/models/patient.entity";
+import { PaymentEntity } from "src/modules/payment/models/payment.entity";
 import { AppointmentEntity } from "./appointment.entity";
 import { AppointmentTimesEntity } from "./appointment.times.entity";
 import { ProspectEntity } from "./prospect.entity";
@@ -55,7 +56,7 @@ export class RegisterAppointmentDTO {
   constructor(
     name?: string,
     phone?: string,
-    date?: Date, time?: AvailableHoursDTO, email?: string, branchName?: string,referal?: string) {
+    date?: Date, time?: AvailableHoursDTO, email?: string, branchName?: string, referal?: string) {
     this.time = time;
     this.name = name;
     this.phone = phone;
@@ -143,6 +144,9 @@ export class UpdateAppointmentStatusDTO {
   paid: string;
   services: any[];
   payments: any[];
+  shouldAddAmount: boolean;
+  deposits: PaymentEntity[]
+  debts: PaymentEntity[];
 }
 
 
@@ -217,7 +221,7 @@ export class SendWhatsappConfirmationDTO {
 export class SendWhatsappSimpleTextDTO {
   number: string;
   text: string;
-  hideTitle?:boolean;
+  hideTitle?: boolean;
   constructor(number: string,
     text: string, hideTitle?: boolean) {
     this.number = number;

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { async } from 'rxjs';
 import { HandleException } from 'src/common/exceptions/general.exception';
+import { getTodayDateToDate } from 'src/utils/general.functions.utils';
 import { SecurityUtil } from 'src/utils/security.util';
 import { Repository } from 'typeorm';
 import { AppointmentService } from '../appointment/appointment.service';
@@ -91,29 +92,52 @@ export class PaymentService {
     }
 
 
-    getPendingAppointmentsByPatient = async (body: any) => {
+    gatPatientPayments = async (body: any) => {
         try {
-           // console.log(body)
-            const payment = await this.paymentRepository.findOneBy({ patientId: body.patientId, status: "A" });
-            const appointment = await this.appointmentRepository.findOneBy({ id: payment.referenceId });
-            const appointmentInfo = await this.appointmentService.getAppointment(appointment);
-            const totalAmount = payment.amount;
+            // console.log(body)
+            const movementDeposit = await this.movementsTypeRepository.findOneBy({ name: 'Anticipo' });
+            const deposits = await this.paymentRepository.findBy({ patientId: body.patientId, status: 'A', movementTypeId: movementDeposit.id });
+
+            const movementDebts = await this.movementsTypeRepository.findOneBy({ name: 'Cita' });
+            const debts = await this.paymentRepository.findBy({ patientId: body.patientId, status: 'A', movementTypeId: movementDebts.id });
 
 
-            const paymentsDetail = await this.paymentDetailRepository.findBy({ paymentId: payment.id });
+            let arrayDebts = [];
 
-            let totalPaid = 0;
-            for (const item of paymentsDetail) {
-                totalPaid += Number(item.amount);
+            let totalDebt = 0;
+            for await (const debt of debts) {
+                const debtDetail = await this.paymentDetailRepository.findBy({ paymentId: debt.id });
+                totalDebt += debtDetail.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
+                arrayDebts.push({
+                    'debt': debt,
+                    'amountDebt': debt.amount - totalDebt
+                });
             }
-
             return {
-                'appointment': appointmentInfo,
-                'payment': payment,
-                'pendingPayment': {
-                    'amount': totalAmount - totalPaid
-                }
-            };
+                'deposits': deposits,
+                'debts': arrayDebts
+            }
+        } catch (error) {
+            HandleException.exception(error);
+        }
+    }
+
+    registerPatientMovement = async (body: any) => {
+        try {
+            console.log(body);
+            const movement = await this.movementsTypeRepository.findOneBy({ id: body.movementType });
+            if (movement != null) {
+                const paymentDeposit = new PaymentEntity();
+                paymentDeposit.patientId = body.patientId;
+                paymentDeposit.movementTypeId = movement.id;
+                paymentDeposit.amount = Number(body.amount);
+                paymentDeposit.movementType = movement.type;
+                paymentDeposit.movementSign = '1';
+                paymentDeposit.createdAt = new Date();
+                paymentDeposit.status = 'A';
+               // return await this.paymentRepository.save(paymentDeposit);
+            }
+            return 200;
         } catch (error) {
             HandleException.exception(error);
         }

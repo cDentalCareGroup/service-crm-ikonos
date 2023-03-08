@@ -18,8 +18,13 @@ export class PaymentController {
     }
 
 
-    @Post('pending/patient')
-    async getPendingAppointmentsByPatient(@Body() body: any) {
-        return this.paymentService.getPendingAppointmentsByPatient(body);
+    @Post('patient')
+    async gatPatientPayments(@Body() body: any) {
+        return this.paymentService.gatPatientPayments(body);
+    }
+
+    @Post('patient/register/movement')
+    async registerPatientMovement(@Body() body: any) {
+        return this.paymentService.registerPatientMovement(body);
     }
 }

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { format, formatISO } from 'date-fns';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
+import { async } from 'rxjs';
 import { HandleException, NotFoundCustomException, NotFoundType, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
 import { capitalizeAllCharacters, formatDateToWhatsapp, getDayName, getDiff, getRandomInt, getTodayDate, STATUS_ACTIVE, STATUS_CANCELLED, STATUS_FINISHED, STATUS_FINISHED_APPOINTMENT_OR_CALL, STATUS_NOT_ATTENDED, STATUS_PROCESS, STATUS_SOLVED } from 'src/utils/general.functions.utils';
 import { IsNull, Not, Repository } from 'typeorm';
@@ -274,7 +275,7 @@ export class AppointmentService {
 
   getAllAppointmentByBranchOffice = async (body: GetAppointmentsByBranchOfficeDTO): Promise<GetAppointmentDetailDTO[]> => {
     try {
-      console.log(body)
+      // console.log(body)
       const data: GetAppointmentDetailDTO[] = [];
       if (body.status != null && body.status != '') {
         if (body.status == STATUS_FINISHED_APPOINTMENT_OR_CALL) {
@@ -372,7 +373,6 @@ export class AppointmentService {
         appointment.comments = `${appointment.comments} \n Estatus: ${STATUS_PROCESS} ${formatISO(new Date())}`;
       }
       if (body.status == STATUS_FINISHED) {
-        //const patient = await this.patientRepository.findOneBy({ id: appointment.patientId });
         appointment.finishedAt = formatISO(new Date());
         appointment.status = STATUS_FINISHED;
         appointment.comments = `${appointment.comments} \n Estatus: ${STATUS_FINISHED} ${formatISO(new Date())}`;
@@ -390,80 +390,169 @@ export class AppointmentService {
           await this.appointmentTimesRepository.save(item);
         }
 
-        for await (const service of body.services) {
-          const appointmentDetail = new AppointmentDetailEntity();
-          appointmentDetail.appointmentId = appointment.id;
-          appointmentDetail.patientId = appointment.patientId;
-          appointmentDetail.dentistId = appointment.dentistId;
-          appointmentDetail.serviceId = Number(service.serviceId);
-          appointmentDetail.quantity = Number(service.quantity);
-          appointmentDetail.unitPrice = Number(service.unitPrice);
-          appointmentDetail.discount = Number(service.disscount);
-          appointmentDetail.price = Number(service.price);
-          appointmentDetail.subTotal = Number(service.subtotal);
-          appointmentDetail.comments = `Servicio registrado ${getTodayDate()}`;
-          appointmentDetail.labCost = service.labCost;
-          //console.log(service);
-          await this.appointmentDetailRepository.save(appointmentDetail);
+        await this.addAppointmentServices(body, appointment);
+        await this.addAppointmentPayment(body, appointment);
 
-          if (body.padId != null && body.padId != 0 && Number(service.disscount) > 0) {
-            for (let i = 0; i < Number(service.quantity); i++) {
-              const padComponent = new PadComponentUsedEntity();
-              padComponent.patientId = appointment.patientId;
-              padComponent.serviceId = Number(service.serviceId);
-              padComponent.padId = body.padId;
-              //console.log(padComponent);
-              await this.padComponentUsedRepository.save(padComponent);
-            }
-          }
-        }
-        const movement = await this.movementRepository.findOneBy({ name: 'Cita' });
+        console.log(body.shouldAddAmount && Number(body.paid) >= Number(body.amount) && (Number(body.paid) - Number(body.amount)) > 0)
 
-        let status = 'A';
-        if (Number(body.paid) >= Number(body.amount)) {
-          status = 'C'
-        }
-        const payment = new PaymentEntity();
-        payment.patientId = appointment.patientId;
-        payment.referenceId = appointment.id;
-        payment.movementTypeId = movement?.id ?? 2;
-        payment.amount = Number(body.amount);
-        payment.movementType = movement?.type ?? 'C';
-        payment.movementSign = '1';
-        payment.createdAt = new Date();
-        payment.status = status;
-
-        const newPayment = await this.paymentRepository.save(payment);
-
-        let index = 1;
-        for await (const paymentDetail of body.payments) {
-          let payAmount = 0;
-          if (Number(paymentDetail.amount) >= Number(body.amount)) {
-            payAmount = Number(body.amount);
-          } else {
-            payAmount = Number(paymentDetail.amount);
-          }
-          const paymentItem = new PaymentDetailEntity();
-          paymentItem.patientId = appointment.patientId;
-          paymentItem.paymentId = newPayment.id;
-          paymentItem.referenceId = appointment.id;
-          paymentItem.movementTypeApplicationId = movement?.id ?? 2;
-          paymentItem.movementType = 'A'
-          paymentItem.amount = payAmount;
-          paymentItem.createdAt = new Date();
-          paymentItem.paymentMethodId = paymentDetail.key;
-          paymentItem.sign = '-1'
-          paymentItem.order = index;
-          index += 1;
-          await this.paymentDetailRepository.save(paymentItem);
+        if (body.shouldAddAmount && Number(body.paid) >= Number(body.amount) && (Number(body.paid) - Number(body.amount)) > 0) {
+          await this.processAppointmentDeposits(body, appointment);
         }
       }
+
+      await this.processAppointmentUpdateDeposits(body, appointment);
+      await this.processAppointmentDebts(body);
 
       const updatedAppointment = await this.appointmentRepository.save(appointment);
       return this.getAppointment(updatedAppointment);
     } catch (exception) {
       console.log(exception);
       HandleException.exception(exception);
+    }
+  }
+
+  private addAppointmentServices = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
+    for await (const service of body.services) {
+      const appointmentDetail = new AppointmentDetailEntity();
+      appointmentDetail.appointmentId = appointment.id;
+      appointmentDetail.patientId = appointment.patientId;
+      appointmentDetail.dentistId = appointment.dentistId;
+      appointmentDetail.serviceId = Number(service.serviceId);
+      appointmentDetail.quantity = Number(service.quantity);
+      appointmentDetail.unitPrice = Number(service.unitPrice);
+      appointmentDetail.discount = Number(service.disscount);
+      appointmentDetail.price = Number(service.price);
+      appointmentDetail.subTotal = Number(service.subtotal);
+      appointmentDetail.comments = `Servicio registrado ${getTodayDate()}`;
+      appointmentDetail.labCost = service.labCost;
+      await this.appointmentDetailRepository.save(appointmentDetail);
+
+      if (body.padId != null && body.padId != 0 && Number(service.disscount) > 0) {
+        for (let i = 0; i < Number(service.quantity); i++) {
+          const padComponent = new PadComponentUsedEntity();
+          padComponent.patientId = appointment.patientId;
+          padComponent.serviceId = Number(service.serviceId);
+          padComponent.padId = body.padId;
+          await this.padComponentUsedRepository.save(padComponent);
+        }
+      }
+    }
+  }
+
+  private addAppointmentPayment = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
+    const movement = await this.movementRepository.findOneBy({ name: 'Cita' });
+
+    let status = 'A';
+    if (Number(body.paid) >= Number(body.amount)) {
+      status = 'C'
+    }
+    const payment = new PaymentEntity();
+    payment.patientId = appointment.patientId;
+    payment.referenceId = appointment.id;
+    payment.movementTypeId = movement?.id ?? 2;
+    payment.amount = Number(body.amount);
+    payment.movementType = movement?.type ?? 'C';
+    payment.movementSign = '1';
+    payment.createdAt = new Date();
+    payment.status = status;
+
+    console.log(`Amount ${body.amount} - Paid ${body.paid} ${body.debts}`);
+
+    const newPayment = await this.paymentRepository.save(payment);
+
+    let index = 1;
+    for await (const paymentDetail of body.payments) {
+      let payAmount = 0;
+      if (Number(paymentDetail.amount) >= Number(body.amount)) {
+        payAmount = Number(body.amount);
+      } else {
+        payAmount = Number(paymentDetail.amount);
+      }
+      const paymentItem = new PaymentDetailEntity();
+      paymentItem.patientId = appointment.patientId;
+      paymentItem.paymentId = newPayment.id;
+      paymentItem.referenceId = appointment.id;
+      paymentItem.movementTypeApplicationId = movement?.id ?? 2;
+      paymentItem.movementType = 'A'
+      paymentItem.amount = payAmount;
+      paymentItem.createdAt = new Date();
+      paymentItem.paymentMethodId = paymentDetail.key;
+      paymentItem.sign = '-1'
+      paymentItem.order = index;
+      index += 1;
+      await this.paymentDetailRepository.save(paymentItem);
+    }
+  }
+
+  private processAppointmentDeposits = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
+    const movementPay = await this.movementRepository.findOneBy({ name: 'Anticipo' });
+    console.log('Registramos abono', movementPay)
+    const paymentDeposit = new PaymentEntity();
+    paymentDeposit.patientId = appointment.patientId;
+    paymentDeposit.referenceId = appointment.id;
+    paymentDeposit.movementTypeId = movementPay?.id ?? 3;
+    paymentDeposit.amount = Number(body.paid) - Number(body.amount);
+    paymentDeposit.movementType = movementPay?.type ?? 'A';
+    paymentDeposit.movementSign = '1';
+    paymentDeposit.createdAt = new Date();
+    paymentDeposit.status = 'A';
+    await this.paymentRepository.save(paymentDeposit);
+  }
+
+  private processAppointmentUpdateDeposits = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
+    for await (const deposit of body.deposits) {
+      const activeDeposit = await this.paymentRepository.findOneBy({ id: deposit.id });
+      if (activeDeposit != null) {
+        activeDeposit.status = 'C';
+        activeDeposit.dueDate = new Date();
+        activeDeposit.referenceId = appointment.id;
+        await this.paymentRepository.save(activeDeposit);
+
+        const paymentItemDeposit = new PaymentDetailEntity();
+        paymentItemDeposit.patientId = deposit.patientId;
+        paymentItemDeposit.paymentId = deposit.id;
+        paymentItemDeposit.referenceId = deposit.id;
+        paymentItemDeposit.movementTypeApplicationId = 4;
+        paymentItemDeposit.movementType = 'A'
+        paymentItemDeposit.amount = deposit.amount;
+        paymentItemDeposit.createdAt = new Date();
+        paymentItemDeposit.paymentMethodId = deposit.paymentMethodId;
+        paymentItemDeposit.sign = '-1'
+        paymentItemDeposit.order = 1;
+        await this.paymentDetailRepository.save(paymentItemDeposit);
+      }
+    }
+  }
+
+  private processAppointmentDebts = async (body: UpdateAppointmentStatusDTO) => {
+    const patientPaid = Number(body.paid) - Number(body.amount);
+    for await (const debt of body.debts) {
+      let totalDebt = 0;
+      const debtDetail = await this.paymentDetailRepository.findBy({ paymentId: debt.id });
+      for await (const item of debtDetail) {
+        totalDebt += Number(item.amount);
+      }
+      const toPaid = Number(debt.amount) - totalDebt;
+      if (patientPaid >= toPaid) {
+
+        debt.status = 'C';
+        debt.dueDate = new Date();
+        //console.log(debt);
+        await this.paymentRepository.save(debt);
+        const paymentItemPaid = new PaymentDetailEntity();
+        paymentItemPaid.patientId = debt.patientId;
+        paymentItemPaid.paymentId = debt.id;
+        paymentItemPaid.referenceId = debt.id;
+        paymentItemPaid.movementTypeApplicationId = 1;
+        paymentItemPaid.movementType = 'C'
+        paymentItemPaid.amount = toPaid;
+        paymentItemPaid.createdAt = new Date();
+        paymentItemPaid.paymentMethodId = body.payments[0].id;
+        paymentItemPaid.sign = '1'
+        paymentItemPaid.order = debtDetail.length + 1;
+        //console.log(paymentItemPaid);
+        await this.paymentDetailRepository.save(paymentItemPaid);
+      }
     }
   }
 
