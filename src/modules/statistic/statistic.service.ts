@@ -11,6 +11,7 @@ import { AppointmentStatistic, BranchOfficeEntity } from '../branch_office/model
 import { CallEntity } from '../calls/models/call.entity';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
+import { GetStatisticsCallsDTO } from './models/statistics.dto';
 
 @Injectable()
 export class StatisticService {
@@ -60,21 +61,16 @@ export class StatisticService {
 
     getStatisticsCalls = async () => {
         try {
+            //We get all the calls from CallEntity
             const calls = await this.callRepository.find();
 
+            //We filter according to the status
             const activeCalls = calls.filter((value, _) => value.status == STATUS_ACTIVE);
             const solvedCalls = calls.filter((value, _) => value.status == STATUS_SOLVED);
             const expiredCalls = calls.filter((value, _) => isPast(new Date(value.dueDate)) && value.status == STATUS_ACTIVE);
-            return {
-                'active': activeCalls,
-                'solvedCalls': solvedCalls,
-                'expiredCalls': expiredCalls
-            }
+            return new GetStatisticsCallsDTO(activeCalls, solvedCalls, expiredCalls);
         } catch (error) {
             HandleException.exception(error);
         }
     }
-
-
-
 }
