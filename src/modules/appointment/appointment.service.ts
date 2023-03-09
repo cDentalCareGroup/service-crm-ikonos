@@ -59,7 +59,7 @@ export class AppointmentService {
     @InjectRepository(PadComponentUsedEntity) private padComponentUsedRepository: Repository<PadComponentUsedEntity>,
     @InjectRepository(PatientOriginEntity) private patientOriginRepository: Repository<PatientOriginEntity>,
     @InjectRepository(MovementsTypeEntity) private movementRepository: Repository<MovementsTypeEntity>,
-    private emailService: EmailService,
+    //private emailService: EmailService,
     private readonly messageService: MessageService,
     @InjectRepository(CallLogEntity) private callLogRepository: Repository<CallLogEntity>,
   ) { }
@@ -202,19 +202,19 @@ export class AppointmentService {
 
       const response = await this.appointmentRepository.save(entity);
 
-      if (email != null && email != undefined) {
-        await this.emailService.sendAppointmentEmail(
-          new AppointmentTemplateMail(
-            capitalizeAllCharacters(name),
-            `${date.toString().split("T")[0]} ${time.simpleTime}`,
-            `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
-            `${branchOffice.name}`,
-            `${branchOffice.primaryContact}`,
-            `${folio}`,
-            `${phone ?? '-'}`
-          ),
-          email);
-      }
+      // if (email != null && email != undefined) {
+      //   await this.emailService.sendAppointmentEmail(
+      //     new AppointmentTemplateMail(
+      //       capitalizeAllCharacters(name),
+      //       `${date.toString().split("T")[0]} ${time.simpleTime}`,
+      //       `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
+      //       `${branchOffice.name}`,
+      //       `${branchOffice.primaryContact}`,
+      //       `${folio}`,
+      //       `${phone ?? '-'}`
+      //     ),
+      //     email);
+      // }
 
 
       const whatsapp = await this.messageService.sendWhatsAppConfirmation(
@@ -447,7 +447,7 @@ export class AppointmentService {
           paymentItem.patientId = appointment.patientId;
           paymentItem.paymentId = newPayment.id;
           paymentItem.referenceId = appointment.id;
-          paymentItem.movementTypeApplicationId =  movement?.id ?? 2;
+          paymentItem.movementTypeApplicationId = movement?.id ?? 2;
           paymentItem.movementType = 'A'
           paymentItem.amount = payAmount;
           paymentItem.createdAt = new Date();
@@ -483,22 +483,22 @@ export class AppointmentService {
       const updatedAppointment = await this.appointmentRepository.save(appointment);
 
       const response = await this.getAppointment(updatedAppointment);
-      if (response.patient?.email != null || response.prospect?.email != null) {
-        const name = response.prospect?.name ?? `${response.patient?.name} ${response.patient?.lastname} ${response.patient?.secondLastname}`;
-        const email = response.prospect?.email ?? response.patient?.email;
-        await this.emailService.sendAppointmentRescheduleEmail(
-          new AppointmentTemplateMail(
-            capitalizeAllCharacters(name),
-            `${appointment.appointment} ${appointment.time}`,
-            `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
-            `${branchOffice.name}`,
-            `${branchOffice.primaryContact}`,
-            `${appointment.folio}`,
-            `${response.prospect?.primaryContact ?? response.patient?.primaryContact}`,
-          ),
-          email
-        );
-      }
+      // if (response.patient?.email != null || response.prospect?.email != null) {
+      //   const name = response.prospect?.name ?? `${response.patient?.name} ${response.patient?.lastname} ${response.patient?.secondLastname}`;
+      //   const email = response.prospect?.email ?? response.patient?.email;
+      //   await this.emailService.sendAppointmentRescheduleEmail(
+      //     new AppointmentTemplateMail(
+      //       capitalizeAllCharacters(name),
+      //       `${appointment.appointment} ${appointment.time}`,
+      //       `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
+      //       `${branchOffice.name}`,
+      //       `${branchOffice.primaryContact}`,
+      //       `${appointment.folio}`,
+      //       `${response.prospect?.primaryContact ?? response.patient?.primaryContact}`,
+      //     ),
+      //     email
+      //   );
+      // }
 
       if (response.patient != null && response.patient != undefined) {
         const whatsapp = await this.messageService.sendWhatsAppRescheduleAppointment(
@@ -534,22 +534,22 @@ export class AppointmentService {
         const response = await this.getAppointment(updatedAppointment);
         const branchOffice = await this.branchOfficeRepository.findOneBy({ id: appointment.branchId });
 
-        if (response.patient?.email != null || response.prospect?.email != null) {
-          const name = response.prospect?.name ?? `${response.patient?.name} ${response.patient?.lastname} ${response.patient?.secondLastname}`;
-          const email = response.prospect?.email ?? response.patient?.email;
-          await this.emailService.sendAppointmentCancelEmail(
-            new AppointmentTemplateMail(
-              name,
-              `${appointment.appointment} ${appointment.time}`,
-              `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
-              `${branchOffice.name}`,
-              `${branchOffice.primaryContact}`,
-              `${appointment.folio}`,
-              `${response.prospect?.primaryContact ?? response.patient?.primaryContact}`,
-            ),
-            email
-          );
-        }
+        // if (response.patient?.email != null || response.prospect?.email != null) {
+        //   const name = response.prospect?.name ?? `${response.patient?.name} ${response.patient?.lastname} ${response.patient?.secondLastname}`;
+        //   const email = response.prospect?.email ?? response.patient?.email;
+        //   await this.emailService.sendAppointmentCancelEmail(
+        //     new AppointmentTemplateMail(
+        //       name,
+        //       `${appointment.appointment} ${appointment.time}`,
+        //       `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
+        //       `${branchOffice.name}`,
+        //       `${branchOffice.primaryContact}`,
+        //       `${appointment.folio}`,
+        //       `${response.prospect?.primaryContact ?? response.patient?.primaryContact}`,
+        //     ),
+        //     email
+        //   );
+        // }
         if (response.patient != null && response.patient != undefined) {
           const whatsapp = await this.messageService.sendWhatsAppCancelAppointment(
             new SendWhatsappConfirmationDTO(
@@ -712,19 +712,19 @@ export class AppointmentService {
         await this.appointmentServiceRepository.save(service);
       }
 
-      if (patient.email != null && patient.email != undefined && patient.email != '') {
-        await this.emailService.sendAppointmentEmail(
-          new AppointmentTemplateMail(
-            `${patient.name} ${patient.lastname} ${patient.secondLastname}`,
-            `${date.toString().split("T")[0]} ${time.simpleTime}`,
-            `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
-            `${branchOffice.name}`,
-            `${branchOffice.primaryContact}`,
-            `${folio}`,
-            `${patient.primaryContact ?? '-'}`
-          ),
-          patient.email);
-      }
+      // if (patient.email != null && patient.email != undefined && patient.email != '') {
+      //   await this.emailService.sendAppointmentEmail(
+      //     new AppointmentTemplateMail(
+      //       `${patient.name} ${patient.lastname} ${patient.secondLastname}`,
+      //       `${date.toString().split("T")[0]} ${time.simpleTime}`,
+      //       `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
+      //       `${branchOffice.name}`,
+      //       `${branchOffice.primaryContact}`,
+      //       `${folio}`,
+      //       `${patient.primaryContact ?? '-'}`
+      //     ),
+      //     patient.email);
+      // }
 
       const whatsapp = await this.messageService.sendWhatsAppNextAppointment(
         new SendWhatsappConfirmationDTO(
@@ -847,25 +847,41 @@ export class AppointmentService {
         }
         const branchOffice = await this.branchOfficeRepository.findOneBy({ id: appointment.branchId });
 
-        if (prospect?.email || patient?.email) {
-          const name = prospect?.name ?? `${patient?.name} ${patient?.lastname} ${patient?.secondLastname}`;
-          const email = prospect?.email ?? patient?.email;
-          const isSuccess = await this.emailService.sendAppointmentConfirmationEmail(
-            new AppointmentTemplateMail(
-              name,
-              `${appointment.appointment} ${appointment.time}`,
-              `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
-              `${branchOffice.name}`,
-              `${branchOffice.primaryContact}`,
-              `${appointment.folio}`,
-              `${prospect?.primaryContact ?? patient?.primaryContact}`,
-            ),
-            email
+        if (patient != null && patient != undefined) {
+          const whatsapp = await this.messageService.sendWhatsAppConfirmation(
+            new SendWhatsappConfirmationDTO(
+              patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(appointment.appointment)} - ${appointment.time}`
+            )
           );
-          if (isSuccess != 1) {
-            failureEmails.push(appointment);
-          }
+          console.log(`Whatsapp patient ${whatsapp}`);
+        } else {
+          const whatsapp = await this.messageService.sendWhatsAppConfirmation(
+            new SendWhatsappConfirmationDTO(
+              prospect.primaryContact, branchOffice.name, `${formatDateToWhatsapp(appointment.appointment)} - ${appointment.time}`
+            )
+          );
+          console.log(`Whatsapp prospect ${whatsapp}`);
         }
+
+        // if (prospect?.email || patient?.email) {
+        //   const name = prospect?.name ?? `${patient?.name} ${patient?.lastname} ${patient?.secondLastname}`;
+        //   const email = prospect?.email ?? patient?.email;
+        //   const isSuccess = await this.emailService.sendAppointmentConfirmationEmail(
+        //     new AppointmentTemplateMail(
+        //       name,
+        //       `${appointment.appointment} ${appointment.time}`,
+        //       `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
+        //       `${branchOffice.name}`,
+        //       `${branchOffice.primaryContact}`,
+        //       `${appointment.folio}`,
+        //       `${prospect?.primaryContact ?? patient?.primaryContact}`,
+        //     ),
+        //     email
+        //   );
+        //   if (isSuccess != 1) {
+        //     failureEmails.push(appointment);
+        //   }
+        // }
       }
       return failureEmails;
     } catch (exception) {
@@ -887,40 +903,40 @@ export class AppointmentService {
         item.comments = `${item.comments} \n Cita no atendida ${formatISO(new Date())}`
         await this.appointmentRepository.save(item);
 
-        let prospect: ProspectEntity;
-        let patient: PatientEntity;
+        // let prospect: ProspectEntity;
+        // let patient: PatientEntity;
 
-        if (appointment.patientId == null) {
-          prospect = await this.prospectRepository.findOneBy({ id: appointment.prospectId });
-        } else {
-          patient = await this.patientRepository.findOneBy({ id: appointment.patientId });
-        }
-        const branchOffice = await this.branchOfficeRepository.findOneBy({ id: appointment.branchId });
+        // if (appointment.patientId == null) {
+        //   prospect = await this.prospectRepository.findOneBy({ id: appointment.prospectId });
+        // } else {
+        //   patient = await this.patientRepository.findOneBy({ id: appointment.patientId });
+        // }
+        // const branchOffice = await this.branchOfficeRepository.findOneBy({ id: appointment.branchId });
 
-        if ((prospect?.email != null && prospect.email != '') || (patient?.email != null && patient.email != '')) {
-          try {
-            const name = prospect?.name ?? `${patient?.name} ${patient?.lastname} ${patient?.secondLastname}`;
-            const email = prospect?.email ?? patient?.email;
-            const isSuccess = await this.emailService.sendAppointmentCancelEmail(
-              new AppointmentTemplateMail(
-                name,
-                `${appointment.appointment} ${appointment.time}`,
-                `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
-                `${branchOffice.name}`,
-                `${branchOffice.primaryContact}`,
-                `${appointment.folio}`,
-                `${prospect?.primaryContact ?? patient?.primaryContact}`,
-              ),
-              email
-            );
+        // if ((prospect?.email != null && prospect.email != '') || (patient?.email != null && patient.email != '')) {
+        //   try {
+        //     const name = prospect?.name ?? `${patient?.name} ${patient?.lastname} ${patient?.secondLastname}`;
+        //     const email = prospect?.email ?? patient?.email;
+        //     const isSuccess = await this.emailService.sendAppointmentCancelEmail(
+        //       new AppointmentTemplateMail(
+        //         name,
+        //         `${appointment.appointment} ${appointment.time}`,
+        //         `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
+        //         `${branchOffice.name}`,
+        //         `${branchOffice.primaryContact}`,
+        //         `${appointment.folio}`,
+        //         `${prospect?.primaryContact ?? patient?.primaryContact}`,
+        //       ),
+        //       email
+        //     );
 
-            if (isSuccess != 1) {
-              failureEmails.push(appointment);
-            }
-          } catch (error) {
-            console.log(`Error sending email to ${patient} ${prospect}`);
-          }
-        }
+        //     if (isSuccess != 1) {
+        //       failureEmails.push(appointment);
+        //     }
+        //   } catch (error) {
+        //     console.log(`Error sending email to ${patient} ${prospect}`);
+        //   }
+        // }
         await this.callFromAppointmentNotAttended(appointment);
       }
       return failureEmails;
@@ -1084,19 +1100,19 @@ export class AppointmentService {
 
       const response = await this.appointmentRepository.save(entity);
 
-      if (body.email != null && body.email != '') {
-        await this.emailService.sendAppointmentEmail(
-          new AppointmentTemplateMail(
-            capitalizeAllCharacters(body.name),
-            `${body.date.toString().split("T")[0]} ${body.time.simpleTime}`,
-            `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
-            `${branchOffice.name}`,
-            `${branchOffice.primaryContact}`,
-            `${folio}`,
-            `${body.phone ?? '-'}`
-          ),
-          body.email);
-      }
+      // if (body.email != null && body.email != '') {
+      //   await this.emailService.sendAppointmentEmail(
+      //     new AppointmentTemplateMail(
+      //       capitalizeAllCharacters(body.name),
+      //       `${body.date.toString().split("T")[0]} ${body.time.simpleTime}`,
+      //       `${branchOffice.street} ${branchOffice.number} ${branchOffice.colony}, ${branchOffice.cp}`,
+      //       `${branchOffice.name}`,
+      //       `${branchOffice.primaryContact}`,
+      //       `${folio}`,
+      //       `${body.phone ?? '-'}`
+      //     ),
+      //     body.email);
+      // }
 
       let whatsapp: any;
       if (body.nofity != null && body.nofity == true) {
