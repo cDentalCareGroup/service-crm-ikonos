@@ -4,6 +4,7 @@ import { BranchOfficeScheduleEntity } from "src/modules/branch_office/models/bra
 import { EmployeeEntity } from "src/modules/employee/models/employee.entity";
 import { PatientEntity } from "src/modules/patient/models/patient.entity";
 import { PaymentEntity } from "src/modules/payment/models/payment.entity";
+import { AppointmentDetailEntity } from "./appointment.detail.entity";
 import { AppointmentEntity } from "./appointment.entity";
 import { AppointmentTimesEntity } from "./appointment.times.entity";
 import { ProspectEntity } from "./prospect.entity";
@@ -105,11 +106,11 @@ export class GetAppointmentDetailDTO {
 
 export class GetNextAppointmentDetailDTO {
   appointment: GetAppointmentDetailDTO;
-  nextAppointments?: GetAppointmentDetailDTO[];
+  services: ServiceDetail[];
 
-  constructor(appointment: GetAppointmentDetailDTO, nextAppointments?: GetAppointmentDetailDTO[]) {
+  constructor(appointment: GetAppointmentDetailDTO, services: ServiceDetail[]) {
     this.appointment = appointment;
-    this.nextAppointments = nextAppointments;
+    this.services = services;
   }
 }
 
@@ -234,4 +235,17 @@ export class SendWhatsappSimpleTextDTO {
 export class RegiserAppointmentPatientDTO {
   appointmentId: number;
   patientId: number;
+}
+
+
+
+export class ServiceDetail {
+  service: ServiceEntity;
+  info: AppointmentDetailEntity;
+
+  constructor(service: ServiceEntity,
+    info: AppointmentDetailEntity) {
+    this.service = service;
+    this.info = info;
+  }
 }

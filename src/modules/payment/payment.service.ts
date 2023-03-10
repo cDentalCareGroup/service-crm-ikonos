@@ -85,7 +85,10 @@ export class PaymentService {
 
     getTypes = async () => {
         try {
-            return await this.movementsTypeRepository.find();
+            const data = await this.movementsTypeRepository.find();
+            return data.filter((value, _) =>
+                value.name.toLowerCase() == 'pago' || value.name.toLowerCase() == 'anticipo'
+            );
         } catch (error) {
             HandleException.exception(error);
         }
@@ -104,8 +107,8 @@ export class PaymentService {
 
             let arrayDebts = [];
 
-            let totalDebt = 0;
             for await (const debt of debts) {
+                let totalDebt = 0;
                 const debtDetail = await this.paymentDetailRepository.findBy({ paymentId: debt.id });
                 totalDebt += debtDetail.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
                 arrayDebts.push({
@@ -126,7 +129,7 @@ export class PaymentService {
         try {
             console.log(body);
             const movement = await this.movementsTypeRepository.findOneBy({ id: body.movementType });
-            if (movement != null && movement.name.toLocaleLowerCase().includes('anticipo')) {
+            if (movement != null && movement.name.toLowerCase() == 'anticipo') {
                 const paymentDeposit = new PaymentEntity();
                 paymentDeposit.patientId = body.patientId;
                 paymentDeposit.movementTypeId = movement.id;
@@ -136,30 +139,28 @@ export class PaymentService {
                 paymentDeposit.createdAt = new Date();
                 paymentDeposit.status = 'A';
                 return await this.paymentRepository.save(paymentDeposit);
-            } else if (body.hasDebts) {
-                const debts = await this.paymentRepository.findBy({ status: 'A', patientId: body.patientId });
-                for await (const debt of debts) {
-                    const debtDetail = await this.paymentDetailRepository.findBy({ paymentId: debt.id });
-                    const total = debtDetail.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
-                    const totalDebt = Number(debt.amount) - Number(total);
-                    if (Number(body.amount) >= totalDebt) {
+            } else if (movement != null && movement.name.toLowerCase() == 'pago') {
+                for await (const item of body.debts) {
+                    const debt = await this.paymentRepository.findOneBy({ id: item.debt.id });
+                    const debts = await this.paymentDetailRepository.findBy({ paymentId: debt.id });
+                    if (debt != null) {
                         debt.status = 'C';
                         debt.dueDate = new Date();
                         await this.paymentRepository.save(debt);
-                    }
 
-                    const paymentItemPaid = new PaymentDetailEntity();
-                    paymentItemPaid.patientId = debt.patientId;
-                    paymentItemPaid.paymentId = debt.id;
-                    paymentItemPaid.referenceId = debt.id;
-                    paymentItemPaid.movementTypeApplicationId = 1;
-                    paymentItemPaid.movementType = 'A'
-                    paymentItemPaid.amount = Number(body.amount);
-                    paymentItemPaid.createdAt = new Date();
-                    paymentItemPaid.paymentMethodId = body.paymentMethodId;
-                    paymentItemPaid.sign = '-1'
-                    paymentItemPaid.order = debtDetail.length + 1;
-                    await this.paymentDetailRepository.save(paymentItemPaid);
+                        const paymentItemPaid = new PaymentDetailEntity();
+                        paymentItemPaid.patientId = debt.patientId;
+                        paymentItemPaid.paymentId = debt.id;
+                        paymentItemPaid.referenceId = debt.id;
+                        paymentItemPaid.movementTypeApplicationId = movement.id;
+                        paymentItemPaid.movementType = 'A'
+                        paymentItemPaid.amount = Number(item.amountDebt);
+                        paymentItemPaid.createdAt = new Date();
+                        paymentItemPaid.paymentMethodId = body.paymentMethodId;
+                        paymentItemPaid.sign = '1'
+                        paymentItemPaid.order = debts.length + 1;
+                        await this.paymentDetailRepository.save(paymentItemPaid);
+                    }
                 }
             } else {
                 console.log('otro')

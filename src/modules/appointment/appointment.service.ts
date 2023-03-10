@@ -26,7 +26,7 @@ import { MovementsTypeEntity } from '../payment/models/movements.type.entity';
 import { PaymentEntity } from '../payment/models/payment.entity';
 import { PaymentDetailEntity } from '../payment/payment.detail.entity';
 import { AppointmentDetailEntity } from './models/appointment.detail.entity';
-import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegiserAppointmentPatientDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, SendWhatsappSimpleTextDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
+import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegiserAppointmentPatientDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, SendWhatsappSimpleTextDTO, ServiceDetail, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 import { AppointmentEntity } from './models/appointment.entity';
 import { AppointmentServiceEntity } from './models/appointment.service.entity';
 import { AppointmentTimesEntity } from './models/appointment.times.entity';
@@ -233,18 +233,27 @@ export class AppointmentService {
   }
 
 
-  getAppointmentDetail = async (body: AppointmentDetailDTO): Promise<GetNextAppointmentDetailDTO> => {
+  getAppointmentDetail = async (body: AppointmentDetailDTO): Promise<any> => {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ folio: body.folio });
       if (appointment == null) throw new NotFoundCustomException(NotFoundType.APPOINTMENT_NOT_FOUND);
       const updatedAppointment = await this.getAppointment(appointment);
-      let nextAppointments = await this.getNextAppointments(appointment.patientId);
-      return new GetNextAppointmentDetailDTO(updatedAppointment, nextAppointments?.filter((value, _) => value.appointment.id != updatedAppointment.appointment.id));
+
+      const appointmentDetail = await this.appointmentDetailRepository.findBy({ appointmentId: appointment.id });
+     
+      const serviceDetail = [];
+      for await (const detial of appointmentDetail) {
+        const service = await this.serviceRepository.findOneBy({ id: detial.serviceId });
+        serviceDetail.push(new ServiceDetail(service, detial));
+      }
+      return new GetNextAppointmentDetailDTO(updatedAppointment, serviceDetail);
     } catch (exception) {
       console.log(exception);
       HandleException.exception(exception);
     }
   }
+
+
 
   getNextAppointments = async (patientId: number): Promise<GetAppointmentDetailDTO[]> => {
     try {
@@ -387,24 +396,24 @@ export class AppointmentService {
         for await (const time of extendedTimes) {
           const item = time;
           item.status = STATUS_FINISHED;
-          await this.appointmentTimesRepository.save(item);
+          //   await this.appointmentTimesRepository.save(item);
         }
 
         await this.addAppointmentServices(body, appointment);
         await this.addAppointmentPayment(body, appointment);
 
-        console.log(body.shouldAddAmount && Number(body.paid) >= Number(body.amount) && (Number(body.paid) - Number(body.amount)) > 0)
+        //console.log(body.shouldAddAmount && Number(body.paid) >= Number(body.amount) && (Number(body.paid) - Number(body.amount)) > 0)
 
+        console.log(`Should add ${body.shouldAddAmount}, Amount ${body.amount}, Paid ${body.paid}`);
         if (body.shouldAddAmount && Number(body.paid) >= Number(body.amount) && (Number(body.paid) - Number(body.amount)) > 0) {
           await this.processAppointmentDeposits(body, appointment);
         }
       }
-
-      await this.processAppointmentUpdateDeposits(body, appointment);
       await this.processAppointmentDebts(body);
+      await this.processAppointmentUpdateDeposits(body, appointment);
 
       const updatedAppointment = await this.appointmentRepository.save(appointment);
-      return this.getAppointment(updatedAppointment);
+      return this.getAppointment(appointment);
     } catch (exception) {
       console.log(exception);
       HandleException.exception(exception);
@@ -441,7 +450,8 @@ export class AppointmentService {
 
   private addAppointmentPayment = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
     const movement = await this.movementRepository.findOneBy({ name: 'Cita' });
-
+    const deposits = this.getPatientDeposits(body);
+    console.log(`Amount ${body.amount} - Paid ${body.paid}`);
     let status = 'A';
     if (Number(body.paid) >= Number(body.amount)) {
       status = 'C'
@@ -455,8 +465,7 @@ export class AppointmentService {
     payment.movementSign = '1';
     payment.createdAt = new Date();
     payment.status = status;
-
-    console.log(`Amount ${body.amount} - Paid ${body.paid} ${body.debts}`);
+    console.log(`Cita payment`, payment);
 
     const newPayment = await this.paymentRepository.save(payment);
 
@@ -466,7 +475,7 @@ export class AppointmentService {
       if (Number(paymentDetail.amount) >= Number(body.amount)) {
         payAmount = Number(body.amount);
       } else {
-        payAmount = Number(paymentDetail.amount);
+        payAmount = Number(paymentDetail.amount) + deposits;
       }
       const paymentItem = new PaymentDetailEntity();
       paymentItem.patientId = appointment.patientId;
@@ -480,26 +489,30 @@ export class AppointmentService {
       paymentItem.sign = '-1'
       paymentItem.order = index;
       index += 1;
+      console.log(`Detail`, paymentItem)
       await this.paymentDetailRepository.save(paymentItem);
     }
   }
 
   private processAppointmentDeposits = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
+    const totalDebts = await this.getPatientDebts(body);
     const movementPay = await this.movementRepository.findOneBy({ name: 'Anticipo' });
-    console.log('Registramos abono', movementPay)
     const paymentDeposit = new PaymentEntity();
     paymentDeposit.patientId = appointment.patientId;
     paymentDeposit.referenceId = appointment.id;
     paymentDeposit.movementTypeId = movementPay?.id ?? 3;
-    paymentDeposit.amount = Number(body.paid) - Number(body.amount);
+    paymentDeposit.amount = Number(body.paid) - Number(body.amount) - totalDebts;
     paymentDeposit.movementType = movementPay?.type ?? 'A';
     paymentDeposit.movementSign = '1';
     paymentDeposit.createdAt = new Date();
     paymentDeposit.status = 'A';
+    console.log('Registramos abono', paymentDeposit)
     await this.paymentRepository.save(paymentDeposit);
   }
 
+
   private processAppointmentUpdateDeposits = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
+    console.log('process deposits');
     for await (const deposit of body.deposits) {
       const activeDeposit = await this.paymentRepository.findOneBy({ id: deposit.id });
       if (activeDeposit != null) {
@@ -519,12 +532,31 @@ export class AppointmentService {
         paymentItemDeposit.paymentMethodId = deposit.paymentMethodId;
         paymentItemDeposit.sign = '-1'
         paymentItemDeposit.order = 1;
+        console.log(paymentItemDeposit);
         await this.paymentDetailRepository.save(paymentItemDeposit);
       }
     }
   }
 
+  private getPatientDebts = async (body: UpdateAppointmentStatusDTO): Promise<number> => {
+    let total = 0;
+    for await (const debt of body.debts) {
+      let totalDebt = 0;
+      const debtDetail = await this.paymentDetailRepository.findBy({ paymentId: debt.id });
+      for await (const item of debtDetail) {
+        totalDebt += Number(item.amount);
+      }
+      total += Number(debt.amount) - totalDebt;
+    }
+    return Promise.resolve(total);
+  }
+
+  private getPatientDeposits = (body: UpdateAppointmentStatusDTO): number => {
+    return body.deposits.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
+  }
+
   private processAppointmentDebts = async (body: UpdateAppointmentStatusDTO) => {
+    console.log('debts', body.debts);
     const patientPaid = Number(body.paid) - Number(body.amount);
     for await (const debt of body.debts) {
       let totalDebt = 0;
@@ -532,9 +564,9 @@ export class AppointmentService {
       for await (const item of debtDetail) {
         totalDebt += Number(item.amount);
       }
+
       const toPaid = Number(debt.amount) - totalDebt;
       if (patientPaid >= toPaid) {
-
         debt.status = 'C';
         debt.dueDate = new Date();
         //console.log(debt);
@@ -547,11 +579,13 @@ export class AppointmentService {
         paymentItemPaid.movementType = 'C'
         paymentItemPaid.amount = toPaid;
         paymentItemPaid.createdAt = new Date();
-        paymentItemPaid.paymentMethodId = body.payments[0].id;
+        paymentItemPaid.paymentMethodId = body.payments[body.payments.length - 1].key;
         paymentItemPaid.sign = '1'
         paymentItemPaid.order = debtDetail.length + 1;
-        //console.log(paymentItemPaid);
+        console.log(paymentItemPaid);
         await this.paymentDetailRepository.save(paymentItemPaid);
+      } else {
+        console.log('Nothing in debts updated')
       }
     }
   }
