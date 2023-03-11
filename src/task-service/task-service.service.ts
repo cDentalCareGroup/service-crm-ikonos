@@ -16,7 +16,7 @@ export class TaskServiceService {
     const nextDate = date.toISOString().split("T")[0];
     console.log(`Executing job handleRemiderAppointmentat ${nextDate}`);
     const data = await this.appointmentService.appointmentReminders();
-    console.log(`Failure emails ${data}`);
+    console.log(`Whatsapps ${data}`);
   }
 
   @Cron('0 20 20 * * 0-6')
@@ -26,7 +26,7 @@ export class TaskServiceService {
     const nextDate = date.toISOString().split("T")[0];
     console.log(`Executing job handleRemiderNotAttendedAppointment at ${nextDate}`);
     const data = await this.appointmentService.appointmentNotAttended();
-    console.log(`Failure emails ${data}`);
+    console.log(`Whatsapps ${data}`);
   }
 
 
