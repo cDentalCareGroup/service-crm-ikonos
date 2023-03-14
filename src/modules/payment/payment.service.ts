@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { AppointmentService } from '../appointment/appointment.service';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';
 import { MovementsTypeEntity } from './models/movements.type.entity';
+import { RegisterPaymentDTO } from './models/payment.dto';
 import { PaymentEntity } from './models/payment.entity';
 import { PaymentDetailEntity } from './payment.detail.entity';
 
@@ -125,9 +126,9 @@ export class PaymentService {
         }
     }
 
-    registerPatientMovement = async (body: any) => {
+    registerPatientMovement = async (body: RegisterPaymentDTO) => {
         try {
-            console.log(body);
+            //   console.log(body);
             const movement = await this.movementsTypeRepository.findOneBy({ id: body.movementType });
             if (movement != null && movement.name.toLowerCase() == 'anticipo') {
                 const paymentDeposit = new PaymentEntity();
@@ -143,23 +144,29 @@ export class PaymentService {
                 for await (const item of body.debts) {
                     const debt = await this.paymentRepository.findOneBy({ id: item.debt.id });
                     const debts = await this.paymentDetailRepository.findBy({ paymentId: debt.id });
+                    // console.log(debt)
                     if (debt != null) {
-                        debt.status = 'C';
-                        debt.dueDate = new Date();
-                        await this.paymentRepository.save(debt);
-
                         const paymentItemPaid = new PaymentDetailEntity();
                         paymentItemPaid.patientId = debt.patientId;
                         paymentItemPaid.paymentId = debt.id;
                         paymentItemPaid.referenceId = debt.id;
                         paymentItemPaid.movementTypeApplicationId = movement.id;
                         paymentItemPaid.movementType = 'A'
-                        paymentItemPaid.amount = Number(item.amountDebt);
+                        paymentItemPaid.amount = Number(item.debt.aplicableAmount);
                         paymentItemPaid.createdAt = new Date();
                         paymentItemPaid.paymentMethodId = body.paymentMethodId;
-                        paymentItemPaid.sign = '1'
+                        paymentItemPaid.sign = '-1'
                         paymentItemPaid.order = debts.length + 1;
                         await this.paymentDetailRepository.save(paymentItemPaid);
+
+                        let totalAmountDebts = debts.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
+                        totalAmountDebts += Number(item.debt.aplicableAmount);
+                        console.log(`Total ${totalAmountDebts} - Deuda ${Number(debt.amount)} = Result  ${Number(debt.amount) - totalAmountDebts}`);
+                        if (totalAmountDebts >= Number(debt.amount)) {
+                            debt.status = 'C';
+                            debt.dueDate = new Date();
+                            await this.paymentRepository.save(debt);
+                        }
                     }
                 }
             } else {
@@ -167,6 +174,7 @@ export class PaymentService {
             }
             return 200;
         } catch (error) {
+            console.log(error);
             HandleException.exception(error);
         }
     }

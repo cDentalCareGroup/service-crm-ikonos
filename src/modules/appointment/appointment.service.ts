@@ -240,7 +240,7 @@ export class AppointmentService {
       const updatedAppointment = await this.getAppointment(appointment);
 
       const appointmentDetail = await this.appointmentDetailRepository.findBy({ appointmentId: appointment.id });
-     
+
       const serviceDetail = [];
       for await (const detial of appointmentDetail) {
         const service = await this.serviceRepository.findOneBy({ id: detial.serviceId });
@@ -316,6 +316,14 @@ export class AppointmentService {
               const result = await this.getAppointment(appointment);
               data.push(result);
             }
+          }
+        } else if (body.status == STATUS_NOT_ATTENDED) {
+          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: STATUS_NOT_ATTENDED });
+          for await (const appointment of appointments) {
+            const call = await this.callRepository.findOneBy({ patientId: appointment.patientId, status: STATUS_ACTIVE, appointmentId: appointment.id });
+            appointment.call = call;
+            const result = await this.getAppointment(appointment);
+            data.push(result);
           }
         } else {
           const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: body.status });
@@ -1072,7 +1080,7 @@ export class AppointmentService {
 
   callFromAppointmentNotAttended = async (appointment: AppointmentEntity) => {
     try {
-      const catalog = await this.callCatalogRepository.findOneBy({ name: 'no-show' });
+      const catalog = await this.callCatalogRepository.findOneBy({ name: 'No-show' });
       const call = new CallEntity();
       call.appointmentId = appointment.id;
       if (appointment.patientId != null && appointment.patientId != undefined && appointment.patientId != 0) {
@@ -1088,6 +1096,8 @@ export class AppointmentService {
       } else {
         call.comments = `Registro de llamada automatico ${getTodayDate()}`;
       }
+      call.branchId = appointment.branchId;
+      call.branchName = appointment.branchName;
 
       const today = new Date();
       today.setDate(today.getDate() + 1);
@@ -1106,7 +1116,7 @@ export class AppointmentService {
       date.setDate(date.getDate() - 1);
       const nextDate = date.toISOString().split("T")[0];
       const patients = await this.patientRepository.findBy({ padExpirationDate: nextDate });
-      const callPad = await this.callCatalogRepository.findOneBy({ name: 'pad vencido' });
+      const callPad = await this.callCatalogRepository.findOneBy({ name: 'PAD vencido' });
       for await (const patient of patients) {
         const exits = await this.callRepository.findOneBy({ patientId: patient.id, caltalogId: callPad.id });
         if (!exits) {

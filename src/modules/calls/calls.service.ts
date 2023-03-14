@@ -4,9 +4,10 @@ import { HandleException } from 'src/common/exceptions/general.exception';
 import { capitalizeAllCharacters, getTodayDate, STATUS_ACTIVE, STATUS_SOLVED } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { AppointmentService } from '../appointment/appointment.service';
-import {  GetAppointmentDetailDTO } from '../appointment/models/appointment.dto';
+import { GetAppointmentDetailDTO } from '../appointment/models/appointment.dto';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';
 import { ProspectEntity } from '../appointment/models/prospect.entity';
+import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { CallCatalogEntity } from './models/call.catalog.entity';
 import { GetCallDetailDTO, GetCallsDTO, RegisterCallDTO, RegisterCatalogDTO, UpdateCallDTO, UpdateCatalogDTO } from './models/call.dto';
@@ -24,6 +25,7 @@ export class CallsService {
         @InjectRepository(CallCatalogEntity) private catalogRepository: Repository<CallCatalogEntity>,
         @InjectRepository(ProspectEntity) private prospectRepository: Repository<ProspectEntity>,
         @InjectRepository(CallLogEntity) private callLogRepository: Repository<CallLogEntity>,
+        @InjectRepository(BranchOfficeEntity) private branchOfficeRepository: Repository<BranchOfficeEntity>,
         private readonly appointmentService: AppointmentService
     ) { }
 
@@ -34,12 +36,15 @@ export class CallsService {
             for await (const call of result) {
                 let patient: PatientEntity;
                 let prospect: ProspectEntity;
+                let appintment: AppointmentEntity;
                 if (call.patientId != null && call.patientId != undefined && call.patientId != 0) {
                     patient = await this.patientRepository.findOneBy({ id: call.patientId });
                 } else {
                     prospect = await this.prospectRepository.findOneBy({ id: call.prospectId });
                 }
-                const appintment = await this.appointmentRepository.findOneBy({ id: call.appointmentId });
+                if (call.appointmentId != null && call.appointmentId > 0) {
+                    appintment = await this.appointmentRepository.findOneBy({ id: call.appointmentId });
+                }
                 const catalog = await this.catalogRepository.findOneBy({ id: call.caltalogId });
                 data.push(new GetCallsDTO(call, catalog, appintment, patient, prospect));
             }
@@ -103,8 +108,9 @@ export class CallsService {
         }
     }
 
-    registerCall = async ({ patientId, description, date, type, name, phone, email, prospectId, callId, appointmentId }: RegisterCallDTO) => {
+    registerCall = async ({ patientId, description, date, type, name, phone, email, prospectId, callId, appointmentId, branchOfficeId }: RegisterCallDTO) => {
         try {
+            console.log(`Register call`, branchOfficeId)
             const call = new CallEntity();
             if (name != null && name != '' && phone != null && phone != '') {
                 const prospect = new ProspectEntity();
@@ -127,6 +133,12 @@ export class CallsService {
 
             if (appointmentId != null && appointmentId > 0) {
                 call.appointmentId = appointmentId;
+            }
+
+            if (branchOfficeId != null && branchOfficeId > 0) {
+                const branchOffice = await this.branchOfficeRepository.findOneBy({ id: branchOfficeId });
+                call.branchId = branchOffice.id;
+                call.branchName = branchOffice.name;
             }
 
             if (callId != null && callId != undefined && callId > 0) {

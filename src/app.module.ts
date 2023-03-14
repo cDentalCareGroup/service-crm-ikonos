@@ -21,6 +21,7 @@ import { PadModule } from './modules/pad/pad.module';
 import { ServicesModule } from './modules/services/services.module';
 import { ProspectModule } from './modules/prospect/prospect.module';
 import { PaymentModule } from './modules/payment/payment.module';
+import { OriginsModule } from './modules/origins/origins.module';
 
 
 
@@ -56,6 +57,7 @@ import { PaymentModule } from './modules/payment/payment.module';
     ServicesModule,
     ProspectModule,
     PaymentModule,
+    OriginsModule,
   ],
   controllers: [AppController],
   providers: [AppService, TaskServiceService],

@@ -10,4 +10,10 @@ export class ServiceCategoryEntity {
         type: 'varchar',
     })
     name: string;
+
+    @Column({
+        name: 'discount',
+        type: 'decimal',
+    })
+    discount: number;
 }

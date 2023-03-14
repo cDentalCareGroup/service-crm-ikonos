@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
+import { RegisterPaymentDTO } from './models/payment.dto';
 import { PaymentService } from './payment.service';
 
 @Controller('payment')
@@ -24,7 +25,7 @@ export class PaymentController {
     }
 
     @Post('patient/register/movement')
-    async registerPatientMovement(@Body() body: any) {
+    async registerPatientMovement(@Body() body: RegisterPaymentDTO) {
         return this.paymentService.registerPatientMovement(body);
     }
 }
