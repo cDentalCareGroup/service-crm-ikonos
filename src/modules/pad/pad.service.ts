@@ -125,7 +125,6 @@ export class PadService {
                 padCatalogue.status = PadStatus.INACTIVE;
             }
             const result = await this.padCatalogueRepository.save(padCatalogue);
-            //console.log(result);
             return await this.getPadCatalogueDetail(result.id);
         } catch (error) {
             console.log(`PadService - Register ${error}`);

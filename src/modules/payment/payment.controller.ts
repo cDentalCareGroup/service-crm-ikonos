@@ -24,6 +24,11 @@ export class PaymentController {
         return this.paymentService.gatPatientPayments(body);
     }
 
+    @Post('patient/account')
+    async getPatientPaymentAccount(@Body() body: any) {
+        return this.paymentService.getPatientPaymentAccount(body);
+    }
+
     @Post('patient/register/movement')
     async registerPatientMovement(@Body() body: RegisterPaymentDTO) {
         return this.paymentService.registerPatientMovement(body);

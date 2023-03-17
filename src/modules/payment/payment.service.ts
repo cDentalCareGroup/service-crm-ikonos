@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { formatISO } from 'date-fns';
 import { async } from 'rxjs';
 import { HandleException } from 'src/common/exceptions/general.exception';
 import { getTodayDateToDate } from 'src/utils/general.functions.utils';
@@ -98,6 +99,7 @@ export class PaymentService {
 
     gatPatientPayments = async (body: any) => {
         try {
+
             // console.log(body)
             const movementDeposit = await this.movementsTypeRepository.findOneBy({ name: 'Anticipo' });
             const deposits = await this.paymentRepository.findBy({ patientId: body.patientId, status: 'A', movementTypeId: movementDeposit.id });
@@ -137,7 +139,7 @@ export class PaymentService {
                 paymentDeposit.amount = Number(body.amount);
                 paymentDeposit.movementType = movement.type;
                 paymentDeposit.movementSign = '1';
-                paymentDeposit.createdAt = new Date();
+                paymentDeposit.createdAt = getTodayDateToDate();
                 paymentDeposit.status = 'A';
                 return await this.paymentRepository.save(paymentDeposit);
             } else if (movement != null && movement.name.toLowerCase() == 'pago') {
@@ -153,7 +155,7 @@ export class PaymentService {
                         paymentItemPaid.movementTypeApplicationId = movement.id;
                         paymentItemPaid.movementType = 'A'
                         paymentItemPaid.amount = Number(item.debt.aplicableAmount);
-                        paymentItemPaid.createdAt = new Date();
+                        paymentItemPaid.createdAt = getTodayDateToDate();
                         paymentItemPaid.paymentMethodId = body.paymentMethodId;
                         paymentItemPaid.sign = '-1'
                         paymentItemPaid.order = debts.length + 1;
@@ -164,7 +166,7 @@ export class PaymentService {
                         console.log(`Total ${totalAmountDebts} - Deuda ${Number(debt.amount)} = Result  ${Number(debt.amount) - totalAmountDebts}`);
                         if (totalAmountDebts >= Number(debt.amount)) {
                             debt.status = 'C';
-                            debt.dueDate = new Date();
+                            debt.dueDate = getTodayDateToDate();
                             await this.paymentRepository.save(debt);
                         }
                     }
@@ -179,5 +181,40 @@ export class PaymentService {
         }
     }
 
+
+    getPatientPaymentAccount = async (body: any) => {
+        try {
+            let data: any[] = [];
+            const appointments = await this.appointmentRepository.findBy({ patientId: Number(body.patientId) })
+            //console.log(appointments)
+            for await (const appointment of appointments) {
+                const payment = await this.paymentRepository.findOneBy({ referenceId: appointment.id });
+                if (payment != null) {
+                    const paymentDetail = await this.paymentDetailRepository.findBy({ paymentId: payment.id });
+                    data.push({
+                        'paymentInfo': {
+                            'payment': payment,
+                            'details': paymentDetail
+                        },
+                        'appointmentInfo': {
+                            'appointment': await this.appointmentService.getAppointment(appointment),
+                            'services': await this.appointmentService.getAppointmentServices(appointment.id)
+                        }
+                    })
+                } else {
+                    data.push({
+                        'appointmentInfo': {
+                            'appointment': await this.appointmentService.getAppointment(appointment),
+                            'services': await this.appointmentService.getAppointmentServices(appointment.id)
+                        }
+                    })
+                }
+            }
+            return data;
+        } catch (error) {
+            console.log(error);
+            HandleException.exception(error);
+        }
+    }
 
 }

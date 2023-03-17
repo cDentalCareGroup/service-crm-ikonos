@@ -15,4 +15,9 @@ export class StatisticController {
     async getStatisticsCalls() {
         return this.statisticsService.getStatisticsCalls();
     }
+
+    @Get('balance')
+    async getStatisticsBalance() {
+        return this.statisticsService.getStatisticsBalance();
+    }
 }
