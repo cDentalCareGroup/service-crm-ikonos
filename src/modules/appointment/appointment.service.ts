@@ -267,7 +267,7 @@ export class AppointmentService {
 
   getAllAppointmentByBranchOffice = async (body: GetAppointmentsByBranchOfficeDTO): Promise<GetAppointmentDetailDTO[]> => {
     try {
-      // console.log(body)
+      console.log(body)
       const data: GetAppointmentDetailDTO[] = [];
       if (body.status != null && body.status != '') {
         if (body.status == STATUS_FINISHED_APPOINTMENT_OR_CALL) {
@@ -390,12 +390,13 @@ export class AppointmentService {
           await this.appointmentTimesRepository.save(item);
         }
 
+        console.log(body);
         await this.addAppointmentServices(body, appointment);
         await this.addAppointmentPayment(body, appointment);
 
         //console.log(body.shouldAddAmount && Number(body.paid) >= Number(body.amount) && (Number(body.paid) - Number(body.amount)) > 0)
 
-        console.log(`Should add ${body.shouldAddAmount}, Amount ${body.amount}, Paid ${body.paid}`);
+        //   console.log(`Should add ${body.shouldAddAmount}, Amount ${body.amount}, Paid ${body.paid}`);
         if (body.shouldAddAmount && Number(body.paid) >= Number(body.amount) && (Number(body.paid) - Number(body.amount)) > 0) {
           await this.processAppointmentDeposits(body, appointment);
         }
@@ -442,6 +443,7 @@ export class AppointmentService {
   private addAppointmentPayment = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
     const movement = await this.movementRepository.findOneBy({ name: 'Cita' });
     const deposits = this.getPatientDeposits(body);
+    console.log(deposits)
     console.log(`Amount ${body.amount} - Paid ${body.paid}`);
     let status = 'A';
     if (Number(body.paid) >= Number(body.amount)) {
@@ -506,24 +508,40 @@ export class AppointmentService {
     console.log('process deposits');
     for await (const deposit of body.deposits) {
       const activeDeposit = await this.paymentRepository.findOneBy({ id: deposit.id });
+      const activeDepositDetails = await this.paymentDetailRepository.findBy({ paymentId: deposit.id });
+      const totalActiveDeposits = activeDepositDetails.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
       if (activeDeposit != null) {
-        activeDeposit.status = 'C';
+
+        if (Number(deposit.amount) == Number(body.paid) && Number(body.paid) >= Number(body.amount)) {
+          activeDeposit.status = 'A';
+        } else {
+          activeDeposit.status = 'C';
+        }
         activeDeposit.dueDate = getTodayDateToDate();
-        activeDeposit.referenceId = appointment.id;
+        //activeDeposit.referenceId = appointment.id;
         await this.paymentRepository.save(activeDeposit);
 
+
+
         const paymentItemDeposit = new PaymentDetailEntity();
-        paymentItemDeposit.patientId = deposit.patientId;
-        paymentItemDeposit.paymentId = deposit.id;
-        paymentItemDeposit.referenceId = deposit.id;
+        paymentItemDeposit.patientId = activeDeposit.patientId;
+        paymentItemDeposit.paymentId = activeDeposit.id;
+        paymentItemDeposit.referenceId = appointment.id;
         paymentItemDeposit.movementTypeApplicationId = 4;
         paymentItemDeposit.movementType = 'A'
-        paymentItemDeposit.amount = deposit.amount;
+
+        if (Number(deposit.amount) == Number(body.paid) && Number(body.paid) >= Number(body.amount)) {
+          paymentItemDeposit.amount = Number(body.amount);
+        } else {
+          paymentItemDeposit.amount = deposit.amount - totalActiveDeposits;
+        }
+
         paymentItemDeposit.createdAt = getTodayDateToDate();
         paymentItemDeposit.paymentMethodId = deposit.paymentMethodId;
         paymentItemDeposit.sign = '-1'
         paymentItemDeposit.order = 1;
         console.log(paymentItemDeposit);
+        console.log(activeDeposit)
         await this.paymentDetailRepository.save(paymentItemDeposit);
       }
     }

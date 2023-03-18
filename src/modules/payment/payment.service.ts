@@ -107,6 +107,18 @@ export class PaymentService {
             const movementDebts = await this.movementsTypeRepository.findOneBy({ name: 'Cita' });
             const debts = await this.paymentRepository.findBy({ patientId: body.patientId, status: 'A', movementTypeId: movementDebts.id });
 
+            let arrayDepostis = [];
+
+            for await (const deposit of deposits) {
+                let totalDeposit = 0;
+                const depositDetail = await this.paymentDetailRepository.findBy({ paymentId: deposit.id });
+                console.log(depositDetail)
+                totalDeposit += depositDetail.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
+                arrayDepostis.push({
+                    'deposit': deposit,
+                    'amountDeposit': deposit.amount - totalDeposit
+                });
+            }
 
             let arrayDebts = [];
 
@@ -120,7 +132,7 @@ export class PaymentService {
                 });
             }
             return {
-                'deposits': deposits,
+                'deposits': arrayDepostis,
                 'debts': arrayDebts
             }
         } catch (error) {

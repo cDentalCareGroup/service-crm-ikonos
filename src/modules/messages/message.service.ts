@@ -339,14 +339,14 @@ export class MessageService {
                 "message": data.message,
                 "country_code": 52,
             }
-            // const request = this.httpService.post(process.env.WTS_API_URL, payload, {
-            //     method: 'POST',
-            //     headers: {
-            //         'apikey': process.env.MSJ_TOKEN,
-            //     },
-            // });
-            // const res = await lastValueFrom(request);
-            // console.log(res);
+            const request = this.httpService.post(process.env.WTS_API_URL, payload, {
+                method: 'POST',
+                headers: {
+                    'apikey': process.env.MSJ_TOKEN,
+                },
+            });
+            const res = await lastValueFrom(request);
+            console.log(res);
         } catch (error) {
             console.log(`Error sending generic message`, error);
         }
@@ -363,13 +363,13 @@ export class MessageService {
                 "country_code": 52,
                 "message": `¡Tu cita ha sido confirmada! \n🦷 C Dental Care Group agradece tu preferencia y te da la bienvenida. \n🗓️Te esperamos en nuestra Sucursal ${body.branchOffice} el ${body.time} \nMantenemos sonrisas 😁`
             }
-            // const request = this.httpService.post(process.env.WTS_API_URL, payload, {
-            //     method: 'POST',
-            //     headers: {
-            //         'apikey': process.env.MSJ_TOKEN,
-            //     },
-            // });
-            // return await lastValueFrom(request);
+            const request = this.httpService.post(process.env.WTS_API_URL, payload, {
+                method: 'POST',
+                headers: {
+                    'apikey': process.env.MSJ_TOKEN,
+                },
+            });
+            return await lastValueFrom(request);
         } catch (error) {
             console.log(`sendWhatsAppConfirmation ${error}`)
             this.sendMsjConfirmation(body);
@@ -386,13 +386,13 @@ export class MessageService {
                 "country_code": 52,
                 "message": `¡Tu siguiente cita ha sido confirmada! \n🦷 C Dental Care Group agradece tu preferencia. \n🗓️Te esperamos en nuestra Sucursal ${body.branchOffice} el ${body.time} \nMantenemos sonrisas 😁`
             }
-            // const request = this.httpService.post(process.env.WTS_API_URL, payload, {
-            //     method: 'POST',
-            //     headers: {
-            //         'apikey': process.env.MSJ_TOKEN,
-            //     },
-            // });
-            // return await lastValueFrom(request);
+            const request = this.httpService.post(process.env.WTS_API_URL, payload, {
+                method: 'POST',
+                headers: {
+                    'apikey': process.env.MSJ_TOKEN,
+                },
+            });
+            return await lastValueFrom(request);
         } catch (error) {
             console.log(`sendWhatsAppConfirmation ${error}`)
             this.sendMsjConfirmation(body);
@@ -409,13 +409,13 @@ export class MessageService {
                 "country_code": 52,
                 "message": `Tu cita ha sido reagendada ✅ Gracias por confiar en C Dental Care Group. \n🦷 Te esperamos en nuestra sucursal ${body.branchOffice} el día ${body.time}. 🕣`
             }
-            // const request = this.httpService.post(process.env.WTS_API_URL, payload, {
-            //     method: 'POST',
-            //     headers: {
-            //         'apikey': process.env.MSJ_TOKEN,
-            //     },
-            // });
-            // return await lastValueFrom(request);
+            const request = this.httpService.post(process.env.WTS_API_URL, payload, {
+                method: 'POST',
+                headers: {
+                    'apikey': process.env.MSJ_TOKEN,
+                },
+            });
+            return await lastValueFrom(request);
         } catch (error) {
             console.log(`sendWhatsAppConfirmation ${error}`)
             this.sendMsjConfirmation(body);
@@ -433,13 +433,13 @@ export class MessageService {
                 "country_code": 52,
                 "message": `Tú visita a C Dental Care Group ha sido cancelada. ❌ \n📞 En breve nuestro Call Center se pondrá en contacto contigo para reagendar tu cita y brindarte nuestro apoyo. \n🦷¡Te esperamos próximamente!`
             }
-            // const request = this.httpService.post(process.env.WTS_API_URL, payload, {
-            //     method: 'POST',
-            //     headers: {
-            //         'apikey': process.env.MSJ_TOKEN,
-            //     },
-            // });
-            // return await lastValueFrom(request);
+            const request = this.httpService.post(process.env.WTS_API_URL, payload, {
+                method: 'POST',
+                headers: {
+                    'apikey': process.env.MSJ_TOKEN,
+                },
+            });
+            return await lastValueFrom(request);
         } catch (error) {
             console.log(`sendWhatsAppConfirmation ${error}`)
             this.sendMsjConfirmation(body);
