@@ -275,7 +275,7 @@ export class AppointmentService {
           const activeCalls = await this.callRepository.findBy({ status: STATUS_ACTIVE, appointmentId: Not(IsNull()) });
 
           for await (const item of activeCalls) {
-            const appointment = await this.appointmentRepository.findOneBy({ id: item.appointmentId });
+            const appointment = await this.appointmentRepository.findOneBy({ id: item.appointmentId, branchId: Number(body.id) });
             if (appointment != null) {
               const newAppointment = appointment;
               newAppointment.call = item;
