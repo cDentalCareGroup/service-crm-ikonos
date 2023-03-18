@@ -269,12 +269,11 @@ export class PatientService {
 
   getPatientById = async (body: GetPatientByIdDTO): Promise<any> => {
     try {
-     // console.log('acaa')
       const result = await this.patientRepository.findOneBy({ id: Number(body.patientId) });
+      const padMember = await this.padMemberRepository.findOneBy({ patientId: result.id });
 
+      if (result.pad != null && result.pad == 1 && padMember != null) {
 
-      if (result.pad != null && result.pad == 1) {
-        const padMember = await this.padMemberRepository.findOneBy({ patientId: result.id });
         const pad = await this.padRepository.findOneBy({ id: padMember.padId });
         const padCatalogue = await this.padCatalogRepository.findOneBy({ id: pad.padCatalogueId });
 

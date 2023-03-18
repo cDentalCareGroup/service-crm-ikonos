@@ -10,4 +10,14 @@ export class StatisticController {
     async getGeneralStatistics() {
         return this.statisticsService.getGeneralStatistics();
     }
+
+    @Get('calls')
+    async getStatisticsCalls() {
+        return this.statisticsService.getStatisticsCalls();
+    }
+
+    @Get('balance')
+    async getStatisticsBalance() {
+        return this.statisticsService.getStatisticsBalance();
+    }
 }

@@ -9,7 +9,10 @@ const typeOrmConfig = TypeOrmModule.forRoot({
       host: process.env.DB_HOST,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: false,
-      autoLoadEntities: true
+      autoLoadEntities: true,
+      extra: {
+            connectionLimit: 1000
+      }
 })
 
 export default typeOrmConfig

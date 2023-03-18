@@ -71,5 +71,7 @@ export class PaymentEntity {
         type: 'char',
     })
     status: string;
+
+    isAplicable?: boolean;  
     
 }

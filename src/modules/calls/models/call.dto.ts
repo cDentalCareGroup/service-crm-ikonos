@@ -51,6 +51,7 @@ export class RegisterCallDTO {
     prospectId?: number;
     callId?: number;
     appointmentId?: number;
+    branchOfficeId?: number;
 }
 
 

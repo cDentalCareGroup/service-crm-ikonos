@@ -125,7 +125,6 @@ export class PadService {
                 padCatalogue.status = PadStatus.INACTIVE;
             }
             const result = await this.padCatalogueRepository.save(padCatalogue);
-            //console.log(result);
             return await this.getPadCatalogueDetail(result.id);
         } catch (error) {
             console.log(`PadService - Register ${error}`);
@@ -246,8 +245,13 @@ export class PadService {
 
     getPadServicesByPatient = async (body: any) => {
         try {
-            // console.log('aqui', process.env.IS_DEV)
+            //  console.log('aqui',)
             const padMember = await this.padMemeberRepository.findOneBy({ patientId: body.patientId });
+
+            if (padMember == null || padMember == undefined) {
+                return 'EMPTY_PAD';
+            }
+
             const pad = await this.padRepository.findOneBy({ id: padMember.padId });
             if (pad.status == STATUS_ACTIVE) {
                 let services = [];
@@ -295,9 +299,8 @@ export class PadService {
                 }
             } else {
                 console.log(STATUS_INACTIVE);
-                return {}
+                return 'EMPTY_PAD';
             }
-            return 200;
         } catch (error) {
             console.log(error);
             HandleException.exception(error);
@@ -332,5 +335,6 @@ export class PadService {
             HandleException.exception(error);
         }
     }
+    
 
 }

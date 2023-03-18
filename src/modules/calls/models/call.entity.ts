@@ -82,6 +82,19 @@ export class CallEntity {
         type: 'varchar',
     })
     callComments: string;
+
+    @Column({
+        name: 'branch_id',
+        type: 'int',
+    })
+    branchId: number;
+
+    @Column({
+        name: 'branch_name',
+        type: 'varchar',
+    })
+    branchName: string;
+
 }
 
 

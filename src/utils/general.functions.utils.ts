@@ -46,6 +46,17 @@ const getTodayDate = (): string => {
 
 }
 
+const getSimpleTodayDate = (): string => {
+        return formatInTimeZone(new Date(), 'America/Mexico_city', 'yyyy-MM-dd') // 2014-10-25 06:46:20-04:00
+
+}
+
+const getTodayDateToDate = (): Date => {
+        // const date = new Date();
+        // const formatedDate = new Date(date.getTime() - date.getTimezoneOffset()*60000).toISOString();
+        return new Date(formatInTimeZone(new Date(), 'America/Mexico_city', 'yyyy-MM-dd HH:mm:ss'));
+}
+
 const capitalizeFirstLetter = (value: string | undefined): string => {
         if (value != undefined) {
                 return value?.charAt(0).toUpperCase() + value?.slice(1).toLowerCase();
@@ -93,7 +104,7 @@ const STATUS_NOT_ATTENDED = 'not-attended'
 const STATUS_CANCELLED = 'cancelled'
 const STATUS_FINISHED_APPOINTMENT_OR_CALL = 'finished-appointment-or-call'
 const STATUS_SOLVED = 'solved'
-const STATUS_ABANDOMENT= 'abandonment'
+const STATUS_ABANDOMENT = 'abandonment'
 const STATUS_MANUAL = 'manual'
 const STATUS_AUTOMATIC = 'automatic'
 
@@ -118,5 +129,7 @@ export {
         STATUS_PROCESS,
         STATUS_FINISHED_APPOINTMENT_OR_CALL,
         STATUS_SOLVED,
-        STATUS_ABANDOMENT
+        STATUS_ABANDOMENT,
+        getTodayDateToDate,
+        getSimpleTodayDate
 };
