@@ -60,7 +60,7 @@ export class PadService {
 
     registerPad = async (body: any) => {
         try {
-
+            console.log(body);
             const padCatalogue = await this.padCatalogueRepository.findOneBy({ id: body.padCatalogueId });
             const padDueDate = body.dueDate;
 
