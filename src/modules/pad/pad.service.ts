@@ -62,7 +62,7 @@ export class PadService {
         try {
 
             const padCatalogue = await this.padCatalogueRepository.findOneBy({ id: body.padCatalogueId });
-            const padDueDate = addDays(new Date(body.adquisitionDate), padCatalogue.day);
+            const padDueDate = body.dueDate;
 
             const pad = new PadEntity();
             pad.padAdquisitionDate = body.adquisitionDate;
@@ -89,7 +89,7 @@ export class PadService {
                 patient.pad = 1;
                 patient.padAcquisitionDate = body.adquisitionDate;
                 patient.padAcquisitionBranch = body.branchId;
-                patient.padExpirationDate = format(padDueDate, 'yyyy-MM-dd')
+                patient.padExpirationDate = padDueDate;
                 patient.padType = padCatalogue.name;
                 patient.currentPadId = newPad.id;
                 patient.comments = `${patient.comments} \n Pad Registrado ${body.adquisitionDate}`;
