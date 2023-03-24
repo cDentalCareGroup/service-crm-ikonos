@@ -148,12 +148,12 @@ export class AppointmentService {
           const extendedAppointments = await this.appointmentTimesRepository.findBy({
             appointment: dateSended,
             time: hour.simpleTime,
-            status: STATUS_ACTIVE
+            status: STATUS_ACTIVE,
+            branchOfficeId: branchOffice.id
           });
-
-          // console.log(appointments.length);
-
+        //  console.log(`D ${dateSended} H ${hour.simpleTime}, sta ${STATUS_ACTIVE} BU ${branchOffice.id} ${extendedAppointments.length}`)
           const allAppointments = appointments.length + extendedAppointments.length + appointmentsProccess.length;
+        // console.log(`${allAppointments} + ${ hour.seat} `)
           if (allAppointments < hour.seat) {
             data.push(hour);
           }
@@ -1061,11 +1061,14 @@ export class AppointmentService {
           appointment: body.appointment
         });
         if (exist == null || exist.length == 0) {
+          const appointmentFound = await this.appointmentRepository.findOneBy({id: Number(body.id)});
+
           const appointmentTime = new AppointmentTimesEntity();
           appointmentTime.appointmentId = body.id;
           appointmentTime.appointment = body.appointment;
           appointmentTime.status = STATUS_ACTIVE;
           appointmentTime.time = time;
+          appointmentTime.branchOfficeId = appointmentFound.branchId;
           await this.appointmentTimesRepository.save(appointmentTime);
         }
       }
