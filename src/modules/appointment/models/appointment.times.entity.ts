@@ -28,4 +28,10 @@ export class AppointmentTimesEntity {
         type: 'varchar',
     })
     appointment: string;
+
+    @Column({
+        name: 'branch_office_id',
+        type: 'int',
+    })
+    branchOfficeId: number;
 }
