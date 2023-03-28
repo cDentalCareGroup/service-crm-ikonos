@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { formatISO } from 'date-fns';
-import { async } from 'rxjs';
 import { HandleException } from 'src/common/exceptions/general.exception';
-import { getTodayDateToDate } from 'src/utils/general.functions.utils';
-import { SecurityUtil } from 'src/utils/security.util';
+import { getTodayDateAndConvertToDate } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { AppointmentService } from '../appointment/appointment.service';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';
@@ -151,7 +148,6 @@ export class PaymentService {
                 paymentDeposit.amount = Number(body.amount);
                 paymentDeposit.movementType = movement.type;
                 paymentDeposit.movementSign = '1';
-                paymentDeposit.createdAt = getTodayDateToDate();
                 paymentDeposit.status = 'A';
                 return await this.paymentRepository.save(paymentDeposit);
             } else if (movement != null && movement.name.toLowerCase() == 'pago') {
@@ -167,7 +163,6 @@ export class PaymentService {
                         paymentItemPaid.movementTypeApplicationId = movement.id;
                         paymentItemPaid.movementType = 'A'
                         paymentItemPaid.amount = Number(item.debt.aplicableAmount);
-                        paymentItemPaid.createdAt = getTodayDateToDate();
                         paymentItemPaid.paymentMethodId = body.paymentMethodId;
                         paymentItemPaid.sign = '-1'
                         paymentItemPaid.order = debts.length + 1;
@@ -178,7 +173,7 @@ export class PaymentService {
                         console.log(`Total ${totalAmountDebts} - Deuda ${Number(debt.amount)} = Result  ${Number(debt.amount) - totalAmountDebts}`);
                         if (totalAmountDebts >= Number(debt.amount)) {
                             debt.status = 'C';
-                            debt.dueDate = getTodayDateToDate();
+                            debt.dueDate = getTodayDateAndConvertToDate();
                             await this.paymentRepository.save(debt);
                         }
                     }

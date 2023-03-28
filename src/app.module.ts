@@ -22,6 +22,7 @@ import { ServicesModule } from './modules/services/services.module';
 import { ProspectModule } from './modules/prospect/prospect.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { OriginsModule } from './modules/origins/origins.module';
+import { OrganizationModule } from './modules/organization/organization.module';
 
 
 
@@ -58,6 +59,7 @@ import { OriginsModule } from './modules/origins/origins.module';
     ProspectModule,
     PaymentModule,
     OriginsModule,
+    OrganizationModule,
   ],
   controllers: [AppController],
   providers: [AppService, TaskServiceService],

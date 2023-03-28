@@ -7,7 +7,7 @@ import { lastValueFrom, map } from 'rxjs';
 import { Repository } from 'typeorm';
 import { HandleException } from './common/exceptions/general.exception';
 import { UserLogsEntity } from './modules/auth/models/entities/user.logs.entity';
-import { capitalizeAllCharacters, formatDateToWhatsapp, getTodayDate, getTodayDateToDate } from './utils/general.functions.utils';
+import { capitalizeAllCharacters, formatDateToWhatsapp, getTodayDate } from './utils/general.functions.utils';
 
 
 @Injectable()
@@ -19,11 +19,10 @@ export class AppService {
   }
   async getHello() {
     return {
-      'version': 'Version 1.0.47.4-PROD',
+      'version': 'Version 1.0.47.5-DEV',
       'date': new Date().toISOString().split("T")[0],
       'whatsapptime': `${formatDateToWhatsapp('2023-02-14')} - 10:30 AM`,
       'todayDate': getTodayDate(),
-      'todayDateToDate': getTodayDateToDate()
     }
   }
 

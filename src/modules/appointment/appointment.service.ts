@@ -5,7 +5,7 @@ import { format, formatISO } from 'date-fns';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { async } from 'rxjs';
 import { HandleException, NotFoundCustomException, NotFoundType, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
-import { capitalizeAllCharacters, formatDateToWhatsapp, getDayName, getDiff, getRandomInt, getTodayDate, getTodayDateToDate, STATUS_ACTIVE, STATUS_CANCELLED, STATUS_FINISHED, STATUS_FINISHED_APPOINTMENT_OR_CALL, STATUS_NOT_ATTENDED, STATUS_PROCESS, STATUS_SOLVED } from 'src/utils/general.functions.utils';
+import { capitalizeAllCharacters, formatDateToWhatsapp, getDayName, getDiff, getRandomInt, getTodayDate, getTodayDateAndConvertToDate, getTodaySimpleDate, STATUS_ACTIVE, STATUS_CANCELLED, STATUS_FINISHED, STATUS_FINISHED_APPOINTMENT_OR_CALL, STATUS_NOT_ATTENDED, STATUS_PROCESS, STATUS_SOLVED } from 'src/utils/general.functions.utils';
 import { IsNull, Not, Repository } from 'typeorm';
 import { UserEntity } from '../auth/models/entities/user.entity';
 import { branchOfficeScheduleToEntity } from '../branch_office/extensions/branch.office.extensions';
@@ -151,9 +151,9 @@ export class AppointmentService {
             status: STATUS_ACTIVE,
             branchOfficeId: branchOffice.id
           });
-        //  console.log(`D ${dateSended} H ${hour.simpleTime}, sta ${STATUS_ACTIVE} BU ${branchOffice.id} ${extendedAppointments.length}`)
+          //  console.log(`D ${dateSended} H ${hour.simpleTime}, sta ${STATUS_ACTIVE} BU ${branchOffice.id} ${extendedAppointments.length}`)
           const allAppointments = appointments.length + extendedAppointments.length + appointmentsProccess.length;
-        // console.log(`${allAppointments} + ${ hour.seat} `)
+          // console.log(`${allAppointments} + ${ hour.seat} `)
           if (allAppointments < hour.seat) {
             data.push(hour);
           }
@@ -178,7 +178,6 @@ export class AppointmentService {
       newProspect.name = capitalizeAllCharacters(name);
       newProspect.email = email;
       newProspect.primaryContact = phone;
-      newProspect.createdAt = getTodayDateToDate();
       const prospect = await this.prospectRepository.save(newProspect);
 
       const entity = new AppointmentEntity();
@@ -401,7 +400,7 @@ export class AppointmentService {
           await this.processAppointmentDeposits(body, appointment);
         }
       }
-      await this.processAppointmentDebts(body);
+      await this.processAppointmentDebts(body, appointment);
       await this.processAppointmentUpdateDeposits(body, appointment);
 
       const updatedAppointment = await this.appointmentRepository.save(appointment);
@@ -426,6 +425,11 @@ export class AppointmentService {
       appointmentDetail.subTotal = Number(service.subtotal);
       appointmentDetail.comments = `Servicio registrado ${getTodayDate()}`;
       appointmentDetail.labCost = service.labCost;
+      appointmentDetail.branchOfficeId = appointment.branchId;
+      const category = await this.serviceRepository.findOneBy({ id: Number(service.serviceId) });
+      if (category != null) {
+        appointmentDetail.serviceCategoryId = category.categoryId;
+      }
       await this.appointmentDetailRepository.save(appointmentDetail);
 
       if (body.padId != null && body.padId != 0 && Number(service.disscount) > 0) {
@@ -456,8 +460,9 @@ export class AppointmentService {
     payment.amount = Number(body.amount);
     payment.movementType = movement?.type ?? 'C';
     payment.movementSign = '1';
-    payment.createdAt = getTodayDateToDate();
     payment.status = status;
+    payment.branchOfficeId = appointment.branchId;
+    payment.dentistId = appointment.dentistId;
     console.log(`Cita payment`, payment);
 
     const newPayment = await this.paymentRepository.save(payment);
@@ -477,10 +482,11 @@ export class AppointmentService {
       paymentItem.movementTypeApplicationId = movement?.id ?? 2;
       paymentItem.movementType = 'A'
       paymentItem.amount = payAmount;
-      paymentItem.createdAt = getTodayDateToDate();
       paymentItem.paymentMethodId = paymentDetail.key;
       paymentItem.sign = '-1'
       paymentItem.order = index;
+      paymentItem.branchOfficeId = appointment.branchId;
+      paymentItem.dentistId = appointment.dentistId;
       index += 1;
       console.log(`Detail`, paymentItem)
       await this.paymentDetailRepository.save(paymentItem);
@@ -497,8 +503,9 @@ export class AppointmentService {
     paymentDeposit.amount = Number(body.paid) - Number(body.amount) - totalDebts;
     paymentDeposit.movementType = movementPay?.type ?? 'A';
     paymentDeposit.movementSign = '1';
-    paymentDeposit.createdAt = getTodayDateToDate();
     paymentDeposit.status = 'A';
+    paymentDeposit.branchOfficeId = appointment.branchId;
+    paymentDeposit.dentistId = appointment.dentistId;
     console.log('Registramos abono', paymentDeposit)
     await this.paymentRepository.save(paymentDeposit);
   }
@@ -517,7 +524,7 @@ export class AppointmentService {
         } else {
           activeDeposit.status = 'C';
         }
-        activeDeposit.dueDate = getTodayDateToDate();
+        activeDeposit.dueDate = getTodayDateAndConvertToDate();
         //activeDeposit.referenceId = appointment.id;
         await this.paymentRepository.save(activeDeposit);
 
@@ -536,10 +543,11 @@ export class AppointmentService {
           paymentItemDeposit.amount = deposit.amount - totalActiveDeposits;
         }
 
-        paymentItemDeposit.createdAt = getTodayDateToDate();
         paymentItemDeposit.paymentMethodId = deposit.paymentMethodId;
         paymentItemDeposit.sign = '-1'
         paymentItemDeposit.order = 1;
+        paymentItemDeposit.branchOfficeId = appointment.branchId;
+        paymentItemDeposit.dentistId = appointment.dentistId;
         console.log(paymentItemDeposit);
         console.log(activeDeposit)
         await this.paymentDetailRepository.save(paymentItemDeposit);
@@ -564,7 +572,7 @@ export class AppointmentService {
     return body.deposits.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
   }
 
-  private processAppointmentDebts = async (body: UpdateAppointmentStatusDTO) => {
+  private processAppointmentDebts = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
     console.log('debts', body.debts);
     const patientPaid = Number(body.paid) - Number(body.amount);
     for await (const debt of body.debts) {
@@ -577,7 +585,7 @@ export class AppointmentService {
       const toPaid = Number(debt.amount) - totalDebt;
       if (patientPaid >= toPaid) {
         debt.status = 'C';
-        debt.dueDate = getTodayDateToDate();
+        debt.dueDate = getTodayDateAndConvertToDate();
         //console.log(debt);
         await this.paymentRepository.save(debt);
         const paymentItemPaid = new PaymentDetailEntity();
@@ -587,10 +595,11 @@ export class AppointmentService {
         paymentItemPaid.movementTypeApplicationId = 1;
         paymentItemPaid.movementType = 'C'
         paymentItemPaid.amount = toPaid;
-        paymentItemPaid.createdAt = getTodayDateToDate();
         paymentItemPaid.paymentMethodId = body.payments[body.payments.length - 1].key;
         paymentItemPaid.sign = '1'
         paymentItemPaid.order = debtDetail.length + 1;
+        paymentItemPaid.branchOfficeId = appointment.branchId;
+        paymentItemPaid.dentistId = appointment.dentistId;
         console.log(paymentItemPaid);
         await this.paymentDetailRepository.save(paymentItemPaid);
       } else {
@@ -995,7 +1004,7 @@ export class AppointmentService {
 
       const today = new Date();
       today.setDate(today.getDate() + 1);
-      call.dueDate = format(today, 'yyyy-MM-dd HH:mm:ss')
+      call.dueDate = getTodaySimpleDate();
       return await this.callRepository.save(call);
     } catch (exception) {
       console.log(exception);
@@ -1020,7 +1029,7 @@ export class AppointmentService {
           call.patientId = patient.id;
           call.comments = `Registro de llamada automatico pad vencido ${getTodayDate()}`;
           call.caltalogId = callPad.id;
-          call.dueDate = today.toString();
+          call.dueDate = getTodaySimpleDate();
           call.result = CallResult.CALL;
           await this.callRepository.save(call);
           console.log(`Llamada registrada`);
@@ -1061,7 +1070,7 @@ export class AppointmentService {
           appointment: body.appointment
         });
         if (exist == null || exist.length == 0) {
-          const appointmentFound = await this.appointmentRepository.findOneBy({id: Number(body.id)});
+          const appointmentFound = await this.appointmentRepository.findOneBy({ id: Number(body.id) });
 
           const appointmentTime = new AppointmentTimesEntity();
           appointmentTime.appointmentId = body.id;
@@ -1093,7 +1102,7 @@ export class AppointmentService {
 
   registerAppointmentCallCenter = async (body: RegisterCallCenterAppointmentDTO): Promise<string> => {
     try {
-
+      //console.log(body);
       const branchOffice = await this.branchOfficeRepository.findOneBy({ id: body.branchId });
       let prospect: ProspectEntity;
       if (body.name != '' && body.phone != '') {
@@ -1101,7 +1110,6 @@ export class AppointmentService {
         newProspect.name = capitalizeAllCharacters(body.name);
         newProspect.email = body.email;
         newProspect.primaryContact = body.phone;
-        newProspect.createdAt = getTodayDateToDate();
         prospect = await this.prospectRepository.save(newProspect);
         console.log(`Register prospect`)
       } else if (body.prospectId != null && body.prospectId > 0) {
@@ -1123,11 +1131,18 @@ export class AppointmentService {
       } else {
         entity.patientId = body.patientId;
       }
-      entity.comments = `Cita registrada por call center ${body.date.toString().split("T")[0]} ${body.time.simpleTime}`;
+      entity.comments = `Cita registrada ${getTodayDate()} por call center para el ${body.date.toString().split("T")[0]} ${body.time.simpleTime}`;
       entity.hasCabinet = 0;
       entity.hasLabs = 0;
       entity.status = STATUS_ACTIVE;
 
+      if (body.isCallCenter == true) {
+        const origin = await this.patientOriginRepository.findOneBy({ name: 'callCenter' })
+        if (origin != null) {
+          entity.referralCode = origin.referralCode;
+        }
+      }
+      entity.notesCallCenter = body.comments;
       const response = await this.appointmentRepository.save(entity);
 
       let whatsapp: any;
@@ -1153,13 +1168,12 @@ export class AppointmentService {
         if (call != null && call != undefined) {
           call.status = STATUS_SOLVED;
           call.effectiveDate = getTodayDate()
-          call.comments = `${call?.comments ?? '-'} \n Llamada resuelta  ${new Date()} terminada con cita ${response.folio}`;
+          call.comments = `${call?.comments ?? '-'} \n Llamada resuelta  ${getTodayDate()} terminada con cita ${response.folio}`;
           await this.callRepository.save(call);
           await this.updateCallLog(call.id, 'appointment');
         }
       }
       console.log(`Whatsapp sender ${whatsapp}`);
-      console.log(response.folio);
       return response.folio;
     } catch (exception) {
       console.log(exception);

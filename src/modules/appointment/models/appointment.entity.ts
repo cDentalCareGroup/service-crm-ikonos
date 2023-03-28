@@ -192,6 +192,14 @@ export class AppointmentEntity {
   })
   referralCode: string;
 
+
+  @Column({
+    name: 'notes_call_center',
+    type: 'text',
+  })
+  notesCallCenter: string;
+  
+
   call?: CallEntity;
   referralName?: string;
   referralId?: number;

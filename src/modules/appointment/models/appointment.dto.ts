@@ -79,6 +79,8 @@ export class RegisterCallCenterAppointmentDTO {
   prospectId?: number;
   callId?: number;
   nofity?: boolean;
+  isCallCenter?: boolean;
+  comments?: string;
 }
 
 export class GetAppointmentDetailDTO {

@@ -24,6 +24,7 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "ty
   @Column({
     name: 'created_at',
     type: 'timestamp',
+    default: () => 'NOW()',
   })
   createdAt: Date;
 }
