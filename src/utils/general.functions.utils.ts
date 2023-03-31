@@ -46,16 +46,18 @@ const getTodayDate = (): string => {
 
 }
 
+const getTodaySimpleDate = (): string => {
+        return formatInTimeZone(new Date(), 'America/Mexico_city', 'yyyy-MM-dd') // 2014-10-25 06:46:20-04:00
+}
+
 const getSimpleTodayDate = (): string => {
         return formatInTimeZone(new Date(), 'America/Mexico_city', 'yyyy-MM-dd') // 2014-10-25 06:46:20-04:00
-
 }
 
-const getTodayDateToDate = (): Date => {
-        // const date = new Date();
-        // const formatedDate = new Date(date.getTime() - date.getTimezoneOffset()*60000).toISOString();
+const getTodayDateAndConvertToDate = () => {
         return new Date(formatInTimeZone(new Date(), 'America/Mexico_city', 'yyyy-MM-dd HH:mm:ss'));
 }
+
 
 const capitalizeFirstLetter = (value: string | undefined): string => {
         if (value != undefined) {
@@ -130,6 +132,6 @@ export {
         STATUS_FINISHED_APPOINTMENT_OR_CALL,
         STATUS_SOLVED,
         STATUS_ABANDOMENT,
-        getTodayDateToDate,
-        getSimpleTodayDate
+        getTodaySimpleDate,
+        getSimpleTodayDate,getTodayDateAndConvertToDate
 };

@@ -160,7 +160,9 @@ export class CallsService {
 
     getCallDetail = async ({ patientId, prospectId }: GetCallDetailDTO) => {
         try {
+          //  console.log(prospectId);
             if (patientId != null && patientId != 0) {
+                console.log(`Is patient`, patientId)
                 const patient = await this.patientRepository.findOneBy({ id: patientId });
                 const calls = await this.callRepository.findBy({ patientId: patient.id });
                 const appointments = await this.appointmentRepository.findBy({ patientId: patient.id });
@@ -188,8 +190,30 @@ export class CallsService {
                     'calls': data,
                     'appointments': appointmentData
                 }
+            } else {
+                console.log(`Is prospect`, prospectId)
+                const prospect = await this.prospectRepository.findOneBy({ id: prospectId });
+                const calls = await this.callRepository.findBy({ prospectId: prospect.id });
+                let data: any[] = [];
+                for await (const item of calls) {
+                    const catalog = await this.catalogRepository.findOneBy({ id: item.caltalogId });
+                    data.push({
+                        'catalogName': catalog.name,
+                        'catalogId': catalog.id,
+                        'callId': item.id,
+                        'callDueDate': item.dueDate,
+                        'appointment': item.appointmentId,
+                        'callStatus': item.status,
+                        'description': item.description
+                    })
+                }
+                return {
+                    'calls': data,
+                    'appointments': []
+                }
             }
         } catch (error) {
+            console.log(error);
             HandleException.exception(error);
         }
     }

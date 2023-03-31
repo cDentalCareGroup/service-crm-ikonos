@@ -74,5 +74,16 @@ export class AppointmentDetailEntity {
     })
     labCost: number;
 
+    @Column({
+        name: 'branch_id',
+        type: 'int',
+    })
+    branchOfficeId: number;
+
+    @Column({
+        name: 'service_category_id',
+        type: 'int',
+    })
+    serviceCategoryId: number;
     
 }

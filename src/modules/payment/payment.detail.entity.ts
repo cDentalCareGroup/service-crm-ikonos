@@ -48,6 +48,7 @@ export class PaymentDetailEntity {
     @Column({
         name: 'created_at',
         type: 'datetime',
+        default: () => 'NOW()',
     })
     createdAt: Date;
 
@@ -82,5 +83,17 @@ export class PaymentDetailEntity {
         type: 'int',
     })
     paymentMethodId: number;
+
+    @Column({
+        name: 'branch_id',
+        type: 'int',
+    })
+    branchOfficeId: number;
+
+    @Column({
+        name: 'dentist_id',
+        type: 'int',
+    })
+    dentistId: number;
     
 }
