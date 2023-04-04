@@ -10,6 +10,11 @@ import { CallEntity } from '../calls/models/call.entity';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';
 import { PaymentEntity } from '../payment/models/payment.entity';
 import { PaymentDetailEntity } from '../payment/payment.detail.entity';
+import { ProspectEntity } from '../appointment/models/prospect.entity';
+import { CallCatalogEntity } from '../calls/models/call.catalog.entity';
+import { CallLogEntity } from '../calls/models/call.log.entity';
+import { ServiceEntity } from '../appointment/models/service.entity';
+import { AppointmentDetailEntity } from '../appointment/models/appointment.detail.entity';
 
 @Module({
   imports:[ ConfigModule.forRoot(),
@@ -20,7 +25,11 @@ import { PaymentDetailEntity } from '../payment/payment.detail.entity';
       CallEntity, 
       AppointmentEntity,
       PaymentEntity,
-      PaymentDetailEntity
+      PaymentDetailEntity,
+      ProspectEntity,
+      CallCatalogEntity,
+      CallLogEntity,
+      ServiceEntity,AppointmentDetailEntity
     ]),],
   providers: [StatisticService],
   controllers: [StatisticController]
