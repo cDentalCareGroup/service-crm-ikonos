@@ -7,9 +7,14 @@ import { HandleException } from 'src/common/exceptions/general.exception';
 import { getSimpleTodayDate, getTodayDate, STATUS_ACTIVE, STATUS_FINISHED, STATUS_SOLVED } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { AppointmentService } from '../appointment/appointment.service';
+import { AppointmentDetailEntity } from '../appointment/models/appointment.detail.entity';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';
+import { ProspectEntity } from '../appointment/models/prospect.entity';
+import { ServiceEntity } from '../appointment/models/service.entity';
 import { AppointmentStatistic, BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
+import { CallCatalogEntity } from '../calls/models/call.catalog.entity';
 import { CallEntity } from '../calls/models/call.entity';
+import { CallLogEntity } from '../calls/models/call.log.entity';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { PaymentEntity } from '../payment/models/payment.entity';
@@ -21,11 +26,16 @@ export class StatisticService {
     constructor(
         @InjectRepository(BranchOfficeEntity) private branchOfficeRepository: Repository<BranchOfficeEntity>,
         @InjectRepository(PatientEntity) private patientsRepository: Repository<PatientEntity>,
+        @InjectRepository(ProspectEntity) private prospectRepository: Repository<ProspectEntity>,
         @InjectRepository(EmployeeEntity) private employeeRepository: Repository<EmployeeEntity>,
         @InjectRepository(CallEntity) private callRepository: Repository<CallEntity>,
         @InjectRepository(AppointmentEntity) private appointmentRepository: Repository<AppointmentEntity>,
         @InjectRepository(PaymentEntity) private paymentRepository: Repository<PaymentEntity>,
         @InjectRepository(PaymentDetailEntity) private paymentDetailRepository: Repository<PaymentDetailEntity>,
+        @InjectRepository(CallCatalogEntity) private callCatalogRepository: Repository<CallCatalogEntity>,
+        @InjectRepository(CallLogEntity) private callLogRepository: Repository<CallLogEntity>,
+        @InjectRepository(ServiceEntity) private serviceRepository: Repository<ServiceEntity>,
+        @InjectRepository(AppointmentDetailEntity) private appointmentDetailRepository: Repository<AppointmentDetailEntity>,
     ) { }
 
 
@@ -117,5 +127,79 @@ export class StatisticService {
         } catch (error) {
             HandleException.exception(error);
         }
+    }
+
+
+
+    getCallsReport = async () => {
+        try {
+            const calls = await this.callRepository.find();
+            const data = []
+            for await (const call of calls) {
+                let patient: PatientEntity;
+                let prospect: ProspectEntity;
+                if (call.patientId != null && call.patientId != 0) {
+                    patient = await this.patientsRepository.findOneBy({ id: call.patientId });
+                } else {
+                    prospect = await this.prospectRepository.findOneBy({ id: call.prospectId });
+                }
+
+                const catalog = await this.callCatalogRepository.findOneBy({ id: call.caltalogId });
+                const logs = await this.callLogRepository.findBy({ callId: call.id });
+
+                data.push(new GetCallsReort(call, catalog, logs, patient, prospect))
+            }
+            return data;
+        } catch (error) {
+            console.log(error);
+            HandleException.exception(error);
+        }
+    }
+
+
+    getSalesServicesReport = async (body: any) => {
+        try {
+            let data = [];
+            const branchOffices = await this.branchOfficeRepository.find()
+            for await (const item of branchOffices) {
+                const appointmentServices = await this.appointmentDetailRepository.findBy({ serviceCategoryId: body.categoryId, branchOfficeId: item.id });
+                let dataServices = [];
+                for await (const apService of appointmentServices) {
+                    const service = await this.serviceRepository.findOneBy({ id: apService.serviceId });
+                    dataServices.push({
+                        'service': service,
+                        'total': appointmentServices.filter((value,_) => value.serviceId == service.id).length
+                    })
+                }
+                data.push({
+                    'branchOffice': item,
+                    'services':dataServices
+                })
+            }
+            return data;
+        } catch (error) {
+            console.log(error);
+            HandleException.exception(error);
+        }
+    }
+}
+
+export class GetCallsReort {
+    call: CallEntity;
+    catalog: CallCatalogEntity;
+    logs: CallLogEntity[];
+    patient?: PatientEntity;
+    prospect?: ProspectEntity;
+
+    constructor(call: CallEntity,
+        catalog: CallCatalogEntity,
+        logs: CallLogEntity[],
+        patient?: PatientEntity,
+        prospect?: ProspectEntity) {
+        this.call = call;
+        this.catalog = catalog;
+        this.logs = logs;
+        this.patient = patient;
+        this.prospect = prospect;
     }
 }
