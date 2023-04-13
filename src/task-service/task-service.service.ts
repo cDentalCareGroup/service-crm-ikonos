@@ -19,7 +19,7 @@ export class TaskServiceService {
     console.log(`Whatsapps ${data}`);
   }
 
-  @Cron('0 20 20 * * 0-6')
+  @Cron('0 30 23 * * 0-6')
   async handleRemiderNotAttendedAppointment() {
     const date = new Date();
     date.setDate(date.getDate() - 1);
