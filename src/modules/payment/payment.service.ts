@@ -67,6 +67,8 @@ export class PaymentService {
                     paymentDetail.sign = '1';
                     paymentDetail.order = payments.length + 1;
                     paymentDetail.paymentMethodId = body.paymentMethod;
+                    paymentDetail.branchOfficeId = appointment.branchId;
+                 //  payment
                     //await this.paymentDetailRepository.save(paymentDetail);
                 }
             } else if (body.type == 'advancePayment') {
@@ -166,6 +168,8 @@ export class PaymentService {
                         paymentItemPaid.paymentMethodId = body.paymentMethodId;
                         paymentItemPaid.sign = '-1'
                         paymentItemPaid.order = debts.length + 1;
+                        paymentItemPaid.branchOfficeId = debt.branchOfficeId;
+                        paymentItemPaid.dentistId = debt.dentistId;
                         await this.paymentDetailRepository.save(paymentItemPaid);
 
                         let totalAmountDebts = debts.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
