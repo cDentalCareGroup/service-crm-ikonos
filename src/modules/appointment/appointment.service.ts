@@ -266,11 +266,11 @@ export class AppointmentService {
 
   getAllAppointmentByBranchOffice = async (body: GetAppointmentsByBranchOfficeDTO): Promise<GetAppointmentDetailDTO[]> => {
     try {
-      console.log(body)
+      //console.log(body)
       const data: GetAppointmentDetailDTO[] = [];
       if (body.status != null && body.status != '') {
         if (body.status == STATUS_FINISHED_APPOINTMENT_OR_CALL) {
-          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: STATUS_FINISHED, nextAppointmentId: Not(IsNull()) });
+          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: STATUS_FINISHED });
           const activeCalls = await this.callRepository.findBy({ status: STATUS_ACTIVE, appointmentId: Not(IsNull()) });
 
           for await (const item of activeCalls) {
