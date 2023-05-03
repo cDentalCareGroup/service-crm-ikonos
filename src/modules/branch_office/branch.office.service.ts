@@ -27,7 +27,6 @@ export class BranchOfficeService {
     try {
       //1 for active, 2 for inactive, 3 unavailable 
       const data = await this.branchOfficeRepository.find({ where: { status: 1 } });
-
       let branchOffices: BranchOfficeEntity[] = [];
       for await (const branchOffice of data) {
         const appointments = await this.appointmentRepository.findBy({ branchId: branchOffice.id });
@@ -39,7 +38,7 @@ export class BranchOfficeService {
         item.appointment = new AppointmentStatistic(active.length, proccess.length, finished.length, noAttended.length);
         branchOffices.push(item);
       }
-      return branchOffices.reverse();
+      return branchOffices;
     } catch (exception) {
       HandleException.exception(exception);
     }

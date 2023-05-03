@@ -144,9 +144,21 @@ export class AppointmentController {
         return this.appointmentService.registerAppointmentPatient(body);
     }
 
+    @Post('update/notattended')
+    async updateNotShowAppointmentStatus(@Body() body: any) {
+        console.log('aqi');
+        return this.appointmentService.updateNotShowAppointmentStatus(body);
+    }
+
 
     @Get('test/message')
     async testWhatsapp() {
         return this.appointmentService.testWhatsapp();
+    }
+
+
+    @Post('history')
+    async getAppointmentsHistoryByPatient(@Body() body: any) {
+        return this.appointmentService.getAppointmentsHistoryByPatient(body);
     }
 }

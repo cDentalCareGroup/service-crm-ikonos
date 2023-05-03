@@ -144,18 +144,17 @@ export class EmployeeEntity {
 
   typeName?: string;
 
-  @Column({name:'token', type:'text'})
+  @Column({ name: 'token', type: 'text' })
   token?: string;
 
 
-  @Column({name:'email', type:'varchar'})
+  @Column({ name: 'email', type: 'varchar' })
   email: string;
 
-  @Column({name:'sex', type:'varchar'})
+  @Column({ name: 'sex', type: 'varchar' })
   gender: string;
 
-
-
-
+  @Column({ name: 'dentist_color', type: 'varchar' })
+  dentistColor: string;
 
 }

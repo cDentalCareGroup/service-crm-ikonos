@@ -60,6 +60,13 @@ export class RegisterPatientDTO {
     description: 'branch office name or id',
     example: '1 | Las palmas',
   })
+  secondPhone: string;
+
+
+  @ApiProperty({
+    description: 'branch office name or id',
+    example: '1 | Las palmas',
+  })
   email: string;
 
   @ApiProperty({
@@ -178,6 +185,7 @@ export class UpdatePatientDTO {
   birthDate: string;
   gender: string;
   phone: string;
+  secondPhone: string;
   email: string;
   street: string;
   streetNumber: string;
