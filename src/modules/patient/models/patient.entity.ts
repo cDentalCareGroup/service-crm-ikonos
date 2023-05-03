@@ -83,12 +83,12 @@ export class PatientEntity {
   })
   primaryContact: string;
 
-  // @Column({
-  //   name: 'telefono_movil',
-  //   type: 'varchar',
-  //   length: 45,
-  // })
-  // secondaryContact: string;
+  @Column({
+    name: 'second_phone',
+    type: 'varchar',
+    length: 45,
+  })
+  secondaryContact: string;
 
   @Column({
     name: 'email',

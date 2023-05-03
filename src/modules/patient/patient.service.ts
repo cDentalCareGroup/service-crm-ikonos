@@ -186,6 +186,7 @@ export class PatientService {
       patient.colony = capitalizeAllCharacters(body.colony);
       patient.cp = body.zipCode;
       patient.primaryContact = body.phone;
+      patient.secondaryContact = body.secondPhone;
       patient.email = body.email;
       patient.originBranchOfficeId = body.branchOfficeId;
       patient.currentBranchOfficeId = body.branchOfficeId;
@@ -224,6 +225,7 @@ export class PatientService {
         patient.colony = capitalizeAllCharacters(body.colony);
         patient.cp = body.zipCode;
         patient.primaryContact = body.phone;
+        patient.secondaryContact = body.secondPhone;
         patient.email = body.email;
         patient.originBranchOfficeId = body.branchOfficeId;
         patient.country = 'MX';

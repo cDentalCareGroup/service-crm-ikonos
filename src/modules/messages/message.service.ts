@@ -108,7 +108,6 @@ export class MessageService {
 
     sendMsjConfirmation = async (body: SendWhatsappConfirmationDTO) => {
         try {
-
             let message = `CDental Care Group. Tu cita ha sido confirmada. Fecha y Hora: ${body.time}`
             var payload = {
                 "message": message,
@@ -345,8 +344,9 @@ export class MessageService {
                     'apikey': process.env.MSJ_TOKEN,
                 },
             });
-            const res = await lastValueFrom(request);
-            console.log(res);
+            const response = await lastValueFrom(request);
+            console.log(response.data);
+            return response;
         } catch (error) {
             console.log(`Error sending generic message`, error);
         }
@@ -369,7 +369,9 @@ export class MessageService {
                     'apikey': process.env.MSJ_TOKEN,
                 },
             });
-            return await lastValueFrom(request);
+            const response = await lastValueFrom(request);
+            console.log(response.data);
+            return response;
         } catch (error) {
             console.log(`sendWhatsAppConfirmation ${error}`)
             this.sendMsjConfirmation(body);
@@ -392,7 +394,9 @@ export class MessageService {
                     'apikey': process.env.MSJ_TOKEN,
                 },
             });
-            return await lastValueFrom(request);
+            const response = await lastValueFrom(request);
+            console.log(response.data);
+            return response;
         } catch (error) {
             console.log(`sendWhatsAppConfirmation ${error}`)
             this.sendMsjConfirmation(body);
@@ -415,7 +419,9 @@ export class MessageService {
                     'apikey': process.env.MSJ_TOKEN,
                 },
             });
-            return await lastValueFrom(request);
+            const response = await lastValueFrom(request);
+            console.log(response.data);
+            return response;
         } catch (error) {
             console.log(`sendWhatsAppConfirmation ${error}`)
             this.sendMsjConfirmation(body);
@@ -439,7 +445,9 @@ export class MessageService {
                     'apikey': process.env.MSJ_TOKEN,
                 },
             });
-            return await lastValueFrom(request);
+            const response = await lastValueFrom(request);
+            console.log(response.data);
+            return response;
         } catch (error) {
             console.log(`sendWhatsAppConfirmation ${error}`)
             this.sendMsjConfirmation(body);
@@ -462,7 +470,6 @@ export class MessageService {
                 token: employee.token
             };
             await this.firebase.messaging.send(message);
-            console.log(`Notification sent`);
             return 200;
         } catch (exception) {
             console.log(`Error sending notification ${exception}`);
