@@ -609,6 +609,9 @@ export class AppointmentService {
   rescheduleAppointmentDentist = async ({ id, date, time, branchName }: RescheduleAppointmentDTO): Promise<GetAppointmentDetailDTO> => {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ id: Number(id) });
+
+      if (appointment == null || appointment == undefined) throw new NotFoundCustomException(NotFoundType.APPOINTMENT_NOT_FOUND);
+
       const branchOffice = await this.branchOfficeRepository.findOneBy({ name: branchName });
 
       appointment.appointment = date.toString().split("T")[0];
@@ -1119,16 +1122,14 @@ export class AppointmentService {
       //console.log(body);
       const branchOffice = await this.branchOfficeRepository.findOneBy({ id: body.branchId });
       let prospect: ProspectEntity;
-      if (body.name != '' && body.phone != '') {
+      if (body.name != '' && body.name != null && body.name != undefined && body.name != " " && body.phone != '') {
         const newProspect = new ProspectEntity();
         newProspect.name = capitalizeAllCharacters(body.name);
         newProspect.email = body.email;
         newProspect.primaryContact = body.phone;
         prospect = await this.prospectRepository.save(newProspect);
-        // console.log(`Register prospect`)
-      } else if (body.prospectId != null && body.prospectId > 0) {
+      } else if (body.prospectId != null && body.prospectId != 0) {
         prospect = await this.prospectRepository.findOneBy({ id: body.prospectId });
-        // console.log(`Register getting prospect`);
       }
 
       const entity = new AppointmentEntity();
