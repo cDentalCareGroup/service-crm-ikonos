@@ -123,6 +123,7 @@ export class AppointmentDetailDTO {
 export class GetAppointmentsByBranchOfficeDTO {
   id: string | number;
   status?: string;
+  date: string
 }
 
 

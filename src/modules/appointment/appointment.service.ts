@@ -265,9 +265,9 @@ export class AppointmentService {
 
   getAllAppointmentByBranchOffice = async (body: GetAppointmentsByBranchOfficeDTO): Promise<GetAppointmentDetailDTO[]> => {
     try {
-      //console.log(body)
+    
       const data: GetAppointmentDetailDTO[] = [];
-      if (body.status != null && body.status != '') {
+      if (body.status != null && body.status != '' && body.date != null && body.date != '') {
         if (body.status == STATUS_FINISHED_APPOINTMENT_OR_CALL) {
           const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: STATUS_FINISHED });
           const activeCalls = await this.callRepository.findBy({ status: STATUS_ACTIVE, appointmentId: Not(IsNull()) });
@@ -301,17 +301,21 @@ export class AppointmentService {
         } else if (body.status == STATUS_NOT_ATTENDED) {
           const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: STATUS_NOT_ATTENDED });
           for await (const appointment of appointments) {
-            const call = await this.callRepository.findOneBy({ patientId: appointment.patientId, status: STATUS_ACTIVE, appointmentId: appointment.id });
-            appointment.call = call;
             const result = await this.getAppointment(appointment);
             data.push(result);
           }
         } else {
-          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: body.status });
+          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: body.status, appointment: body.date });
           for await (const appointment of appointments) {
             const result = await this.getAppointment(appointment);
             data.push(result);
           }
+        }
+      } else if (body.status != null && body.status != '') {
+        const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: body.status });
+        for await (const appointment of appointments) {
+          const result = await this.getAppointment(appointment);
+          data.push(result);
         }
       } else {
         const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id) });
@@ -1312,7 +1316,6 @@ export class AppointmentService {
 
   getAppointmentsHistoryByPatient = async (body: any) => {
     try {
-
       if (body.patientId != null && body.patientId != undefined && body.patientId != '' && body.patientId != 0) {
         const appointments = await this.appointmentRepository.findBy({ patientId: body.patientId });
         return appointments;
@@ -1321,6 +1324,20 @@ export class AppointmentService {
         return appointments;
       }
       return [];
+    } catch (error) {
+      HandleException.exception(error);
+    }
+  }
+
+  getAllAppointmentByBranchOfficeTest = async (body: GetAppointmentsByBranchOfficeDTO) => {
+    try {
+      const data = [];
+      const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: body.status, appointment: '2023-05-11' });
+      // for await (const appointment of appointments) {
+      //   const result = await this.getAppointment(appointment);
+      //  // data.push(result);
+      // }      
+      return appointments;
     } catch (error) {
       HandleException.exception(error);
     }

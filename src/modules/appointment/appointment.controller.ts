@@ -156,9 +156,14 @@ export class AppointmentController {
         return this.appointmentService.testWhatsapp();
     }
 
-
     @Post('history')
     async getAppointmentsHistoryByPatient(@Body() body: any) {
         return this.appointmentService.getAppointmentsHistoryByPatient(body);
+    }
+
+    @Post('branchoffice/test')
+    @ApiBody({ type: GetAppointmentsByBranchOfficeDTO })
+    async getAllAppointmentByBranchOfficeTest(@Body() body: GetAppointmentsByBranchOfficeDTO): Promise<any[]> {
+        return this.appointmentService.getAllAppointmentByBranchOfficeTest(body);
     }
 }
