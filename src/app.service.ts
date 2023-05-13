@@ -7,7 +7,7 @@ import { lastValueFrom, map } from 'rxjs';
 import { Repository } from 'typeorm';
 import { HandleException } from './common/exceptions/general.exception';
 import { UserLogsEntity } from './modules/auth/models/entities/user.logs.entity';
-import { capitalizeAllCharacters, formatDateToWhatsapp, getTodayDate } from './utils/general.functions.utils';
+import { capitalizeAllCharacters, formatDateToWhatsapp, getSimpleTodayDate, getTodayDate, getTodaySimpleDate } from './utils/general.functions.utils';
 
 
 @Injectable()
@@ -19,12 +19,16 @@ export class AppService {
   }
   async getHello() {
     return {
-      'version': 'Version 1.0.47.12.2-PROD',
-      'date': new Date().toISOString().split("T")[0],
-      'whatsapptime': `${formatDateToWhatsapp('2023-02-14')} - 10:30 AM`,
-      'todayDate': getTodayDate(),
+      'Version': 'Version 1.0.47.13-PROD',
+      'Today Date': getTodayDate(),
+      'Simple Today Date': getSimpleTodayDate(),
+      'Today Simple Date': getTodaySimpleDate(),
+      'Variables': {
+        'DNAME': process.env.DB_NAME,
+        'WS': process.env.WTS_API_URL,
+        'INSTANCE': process.env.WTS_INSTANCE_ID
+      } 
     }
   }
-
 }
 
