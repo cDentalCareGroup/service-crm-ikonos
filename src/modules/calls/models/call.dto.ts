@@ -20,6 +20,10 @@ export class GetCallsDTO {
     }
 }
 
+export class GetCallsDateDTO {
+    date: string;
+}
+
 export class UpdateCallDTO {
     id: number;
     description: string;
