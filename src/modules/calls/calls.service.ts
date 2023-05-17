@@ -10,7 +10,7 @@ import { ProspectEntity } from '../appointment/models/prospect.entity';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { CallCatalogEntity } from './models/call.catalog.entity';
-import { GetCallDetailDTO, GetCallsDTO, RegisterCallDTO, RegisterCatalogDTO, UpdateCallDTO, UpdateCatalogDTO } from './models/call.dto';
+import { GetCallDetailDTO, GetCallsDateDTO, GetCallsDTO, RegisterCallDTO, RegisterCatalogDTO, UpdateCallDTO, UpdateCatalogDTO } from './models/call.dto';
 import { CallEntity, CallResult } from './models/call.entity';
 import { CallLogEntity } from './models/call.log.entity';
 
@@ -29,9 +29,9 @@ export class CallsService {
         private readonly appointmentService: AppointmentService
     ) { }
 
-    getCalls = async () => {
+    getCalls = async (body: GetCallsDateDTO) => {
         try {
-            const result = await this.callRepository.find({ order: { dueDate: { direction: 'ASC' } }, where: { status: STATUS_ACTIVE } });
+            const result = await this.callRepository.find({ order: { dueDate: { direction: 'ASC',  } }, where: { status: STATUS_ACTIVE, dueDate: body.date } });
             let data: GetCallsDTO[] = [];
             for await (const call of result) {
                 let patient: PatientEntity;

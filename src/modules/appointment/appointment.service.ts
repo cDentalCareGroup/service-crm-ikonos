@@ -265,15 +265,14 @@ export class AppointmentService {
 
   getAllAppointmentByBranchOffice = async (body: GetAppointmentsByBranchOfficeDTO): Promise<GetAppointmentDetailDTO[]> => {
     try {
-    
       const data: GetAppointmentDetailDTO[] = [];
       if (body.status != null && body.status != '' && body.date != null && body.date != '') {
         if (body.status == STATUS_FINISHED_APPOINTMENT_OR_CALL) {
-          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: STATUS_FINISHED });
+          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: STATUS_FINISHED, appointment: body.date });
           const activeCalls = await this.callRepository.findBy({ status: STATUS_ACTIVE, appointmentId: Not(IsNull()) });
 
           for await (const item of activeCalls) {
-            const appointment = await this.appointmentRepository.findOneBy({ id: item.appointmentId, branchId: Number(body.id) });
+            const appointment = await this.appointmentRepository.findOneBy({ id: item.appointmentId, branchId: Number(body.id), appointment: body.date });
             if (appointment != null) {
               const newAppointment = appointment;
               newAppointment.call = item;
@@ -290,7 +289,7 @@ export class AppointmentService {
             }
           }
         } else if (body.status == STATUS_FINISHED) {
-          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: STATUS_FINISHED, nextAppointmentId: IsNull() });
+          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: STATUS_FINISHED, nextAppointmentId: IsNull(), appointment: body.date });
           for await (const appointment of appointments) {
             const calls = await this.callRepository.findBy({ patientId: appointment.patientId, status: STATUS_ACTIVE });
             if (calls.length == 0) {
@@ -299,7 +298,7 @@ export class AppointmentService {
             }
           }
         } else if (body.status == STATUS_NOT_ATTENDED) {
-          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: STATUS_NOT_ATTENDED });
+          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: STATUS_NOT_ATTENDED, appointment: body.date });
           for await (const appointment of appointments) {
             const result = await this.getAppointment(appointment);
             data.push(result);
@@ -1123,7 +1122,6 @@ export class AppointmentService {
 
   registerAppointmentCallCenter = async (body: RegisterCallCenterAppointmentDTO): Promise<string> => {
     try {
-      //console.log(body);
       const branchOffice = await this.branchOfficeRepository.findOneBy({ id: body.branchId });
       let prospect: ProspectEntity;
       if (body.name != '' && body.name != null && body.name != undefined && body.name != " " && body.phone != '') {
@@ -1134,6 +1132,10 @@ export class AppointmentService {
         prospect = await this.prospectRepository.save(newProspect);
       } else if (body.prospectId != null && body.prospectId != 0) {
         prospect = await this.prospectRepository.findOneBy({ id: body.prospectId });
+      }
+
+      if ((prospect == null || prospect == undefined) && (body.patientId == null || body.patientId == 0)) {
+        throw new ValidationException(ValidationExceptionType.MISSING_VALUES);
       }
 
       const entity = new AppointmentEntity();

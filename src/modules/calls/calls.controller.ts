@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiBody } from '@nestjs/swagger';
 import { CallsService } from './calls.service';
-import { GetCallDetailDTO, RegisterCallDTO, RegisterCatalogDTO, UpdateCallDTO, UpdateCatalogDTO } from './models/call.dto';
+import { GetCallDetailDTO, GetCallsDateDTO, RegisterCallDTO, RegisterCatalogDTO, UpdateCallDTO, UpdateCatalogDTO } from './models/call.dto';
 
 @Controller('calls')
 export class CallsController {
@@ -11,9 +11,10 @@ export class CallsController {
         private callsService: CallsService
     ) { }
 
-    @Get('/')
-    async getCalls() {
-        return this.callsService.getCalls();
+    @Post('/')
+    @ApiBody({ type: GetCallsDateDTO })
+    async getCalls(@Body() body: GetCallsDateDTO) {
+        return this.callsService.getCalls(body);
     }
 
     @Get('/catalogs')
@@ -22,38 +23,38 @@ export class CallsController {
     }
 
     @Post('/update')
-    @ApiBody({type: UpdateCallDTO})
+    @ApiBody({ type: UpdateCallDTO })
     async updateCall(@Body() body: UpdateCallDTO) {
         return this.callsService.updateCall(body);
     }
 
     @Post('/update/catalog')
-    @ApiBody({type: UpdateCallDTO})
+    @ApiBody({ type: UpdateCallDTO })
     async updateCatalog(@Body() body: UpdateCatalogDTO) {
         return this.callsService.updateCatalog(body);
     }
 
     @Post('/register/catalog')
-    @ApiBody({type: RegisterCatalogDTO})
+    @ApiBody({ type: RegisterCatalogDTO })
     async registerCatalog(@Body() body: RegisterCatalogDTO) {
         return this.callsService.registerCatalog(body);
     }
 
     @Post('/register')
-    @ApiBody({type: RegisterCallDTO})
+    @ApiBody({ type: RegisterCallDTO })
     async registerCall(@Body() body: RegisterCallDTO) {
         return this.callsService.registerCall(body);
     }
 
     @Post('/detail')
-    @ApiBody({type: GetCallDetailDTO})
+    @ApiBody({ type: GetCallDetailDTO })
     async getCallDetail(@Body() body: GetCallDetailDTO) {
         return this.callsService.getCallDetail(body);
     }
 
 
     @Post('/notattended')
-    @ApiBody({type: UpdateCallDTO})
+    @ApiBody({ type: UpdateCallDTO })
     async updateNotAttendedCall(@Body() body: UpdateCallDTO) {
         return this.callsService.updateNotAttendedCall(body);
     }
