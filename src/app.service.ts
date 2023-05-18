@@ -19,11 +19,11 @@ export class AppService {
   }
   async getHello() {
     return {
-      'Version': `Version 1.0.47.14-${process.env.ENV_NAME}`,
-      'Today Date': getTodayDate(),
-      'Simple Today Date': getSimpleTodayDate(),
-      'Today Simple Date': getTodaySimpleDate(),
-      'Variables': {
+      'version': `Version 1.0.47.17-${process.env.ENV_NAME}`,
+      'today Date': getTodayDate(),
+      'simple Today Date': getSimpleTodayDate(),
+      'today Simple Date': getTodaySimpleDate(),
+      'variables': {
         'DNAME': process.env.DB_NAME,
         'WS': process.env.WTS_API_URL,
         'INSTANCE': process.env.WTS_INSTANCE_ID

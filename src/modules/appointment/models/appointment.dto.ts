@@ -81,6 +81,7 @@ export class RegisterCallCenterAppointmentDTO {
   nofity?: boolean;
   isCallCenter?: boolean;
   comments?: string;
+  blockCalendar?: boolean;
 }
 
 export class GetAppointmentDetailDTO {
@@ -159,6 +160,9 @@ export class RescheduleAppointmentDTO {
   date?: Date;
   time?: AvailableHoursDTO;
   branchName?: string;
+  nofity?: boolean;
+  comments?: string;
+  blockCalendar?: boolean;
 }
 
 
@@ -185,6 +189,9 @@ export class RegisterNextAppointmentDTO {
   hasCabinet: number;
   services: number[];
   nextAppointmentId: number;
+  nofity?: boolean;
+  comments?: string;
+  blockCalendar?: boolean;
 }
 
 export class UpdateHasLabsAppointmentDTO {

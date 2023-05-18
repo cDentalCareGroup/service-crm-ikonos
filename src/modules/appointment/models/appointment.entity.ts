@@ -198,8 +198,14 @@ export class AppointmentEntity {
     type: 'text',
   })
   notesCallCenter: string;
-  
 
+  @Column({
+    name: 'block_calendar',
+    type: 'int',
+  })
+  blockCalendar: number;
+  
+  
   call?: CallEntity;
   referralName?: string;
   referralId?: number;

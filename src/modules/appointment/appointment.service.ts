@@ -3,9 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { format, formatISO } from 'date-fns';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
-import { async } from 'rxjs';
 import { HandleException, NotFoundCustomException, NotFoundType, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
-import { capitalizeAllCharacters, formatDateToWhatsapp, getDayName, getDiff, getRandomInt, getTodayDate, getTodayDateAndConvertToDate, getTodaySimpleDate, STATUS_ACTIVE, STATUS_CANCELLED, STATUS_FINISHED, STATUS_FINISHED_APPOINTMENT_OR_CALL, STATUS_NOT_ATTENDED, STATUS_PROCESS, STATUS_SOLVED } from 'src/utils/general.functions.utils';
+import { BLOCK_CALENDAR, capitalizeAllCharacters, formatDateToWhatsapp, getDayName, getDiff, getRandomInt, getTodayDate, getTodayDateAndConvertToDate, getTodaySimpleDate, STATUS_ACTIVE, STATUS_CANCELLED, STATUS_FINISHED, STATUS_FINISHED_APPOINTMENT_OR_CALL, STATUS_NOT_ATTENDED, STATUS_PROCESS, STATUS_SOLVED, UNBLOCK_CALENDAR } from 'src/utils/general.functions.utils';
 import { IsNull, Not, Repository } from 'typeorm';
 import { UserEntity } from '../auth/models/entities/user.entity';
 import { branchOfficeScheduleToEntity } from '../branch_office/extensions/branch.office.extensions';
@@ -15,7 +14,6 @@ import { BranchOfficeScheduleEntity } from '../branch_office/models/branch.offic
 import { CallCatalogEntity } from '../calls/models/call.catalog.entity';
 import { CallEntity, CallResult } from '../calls/models/call.entity';
 import { CallLogEntity } from '../calls/models/call.log.entity';
-import { AppointmentTemplateMail, EmailService } from '../email/email.service';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
 import { MessageService } from '../messages/message.service';
@@ -137,13 +135,15 @@ export class AppointmentService {
             branchId: branchOffice.id,
             appointment: dateSended,
             time: hour.simpleTime,
-            status: STATUS_ACTIVE
+            status: STATUS_ACTIVE,
+            blockCalendar: BLOCK_CALENDAR
           });
           const appointmentsProccess = await this.appointmentRepository.findBy({
             branchId: branchOffice.id,
             appointment: dateSended,
             time: hour.simpleTime,
-            status: STATUS_PROCESS
+            status: STATUS_PROCESS,
+            blockCalendar: BLOCK_CALENDAR
           });
           const extendedAppointments = await this.appointmentTimesRepository.findBy({
             appointment: dateSended,
@@ -151,9 +151,7 @@ export class AppointmentService {
             status: STATUS_ACTIVE,
             branchOfficeId: branchOffice.id
           });
-          //  console.log(`D ${dateSended} H ${hour.simpleTime}, sta ${STATUS_ACTIVE} BU ${branchOffice.id} ${extendedAppointments.length}`)
           const allAppointments = appointments.length + extendedAppointments.length + appointmentsProccess.length;
-          // console.log(`${allAppointments} + ${ hour.seat} `)
           if (allAppointments < hour.seat) {
             data.push(hour);
           }
@@ -299,6 +297,12 @@ export class AppointmentService {
           }
         } else if (body.status == STATUS_NOT_ATTENDED) {
           const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: STATUS_NOT_ATTENDED, appointment: body.date });
+          for await (const appointment of appointments) {
+            const result = await this.getAppointment(appointment);
+            data.push(result);
+          }
+        } else if (body.status == STATUS_PROCESS) {
+          const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: STATUS_PROCESS });
           for await (const appointment of appointments) {
             const result = await this.getAppointment(appointment);
             data.push(result);
@@ -609,7 +613,7 @@ export class AppointmentService {
     }
   }
 
-  rescheduleAppointmentDentist = async ({ id, date, time, branchName }: RescheduleAppointmentDTO): Promise<GetAppointmentDetailDTO> => {
+  rescheduleAppointmentDentist = async ({ id, date, time, branchName, nofity, blockCalendar, comments }: RescheduleAppointmentDTO): Promise<GetAppointmentDetailDTO> => {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ id: Number(id) });
 
@@ -624,6 +628,12 @@ export class AppointmentService {
       appointment.status = STATUS_ACTIVE;
       appointment.dentistId = null;
       appointment.receptionistId = null;
+      appointment.blockCalendar = blockCalendar ? BLOCK_CALENDAR : UNBLOCK_CALENDAR;
+      if (appointment.notesCallCenter != null && appointment.notesCallCenter != undefined && appointment.notesCallCenter != "") {
+        appointment.notesCallCenter = `${appointment.notesCallCenter}, ${comments}`;
+      } else {
+        appointment.notesCallCenter = comments;
+      }
       appointment.comments = `${appointment.comments} \n Cita reagendada a las ${getTodayDate()} - De ${appointment.appointment} ${appointment.time} para ${date.toString().split("T")[0]} ${time.time}`
       const updatedAppointment = await this.appointmentRepository.save(appointment);
 
@@ -636,18 +646,20 @@ export class AppointmentService {
         await this.appointmentTimesRepository.save(item);
       }
 
-      if (response.patient != null && response.patient != undefined) {
-        await this.messageService.sendWhatsAppRescheduleAppointment(
-          new SendWhatsappConfirmationDTO(
-            response.patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(updatedAppointment.appointment)} - ${time.time}`
-          )
-        );
-      } else {
-        await this.messageService.sendWhatsAppRescheduleAppointment(
-          new SendWhatsappConfirmationDTO(
-            response.prospect.primaryContact, branchOffice.name, `${formatDateToWhatsapp(updatedAppointment.appointment)} - ${time.time}`
-          )
-        );
+      if (nofity == true) {
+        if (response.patient != null && response.patient != undefined) {
+          await this.messageService.sendWhatsAppRescheduleAppointment(
+            new SendWhatsappConfirmationDTO(
+              response.patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(updatedAppointment.appointment)} - ${time.time}`
+            )
+          );
+        } else {
+          await this.messageService.sendWhatsAppRescheduleAppointment(
+            new SendWhatsappConfirmationDTO(
+              response.prospect.primaryContact, branchOffice.name, `${formatDateToWhatsapp(updatedAppointment.appointment)} - ${time.time}`
+            )
+          );
+        }
       }
 
       return response;
@@ -770,7 +782,7 @@ export class AppointmentService {
 
   }
 
-  registerNextAppointment = async ({ branchOfficeId, date, time, patientId, dentistId, hasLabs, hasCabinet, services, nextAppointmentId }: RegisterNextAppointmentDTO) => {
+  registerNextAppointment = async ({ branchOfficeId, date, time, patientId, dentistId, hasLabs, hasCabinet, services, nextAppointmentId, nofity, comments, blockCalendar }: RegisterNextAppointmentDTO) => {
     try {
 
       const branchOffice = await this.branchOfficeRepository.findOneBy({ id: Number(branchOfficeId) });
@@ -803,6 +815,12 @@ export class AppointmentService {
       entity.hasLabs = hasLabs;
       entity.hasCabinet = hasCabinet;
       entity.status = STATUS_ACTIVE;
+      entity.blockCalendar = blockCalendar ? BLOCK_CALENDAR : UNBLOCK_CALENDAR;
+      if (entity.notesCallCenter != null && entity.notesCallCenter != undefined && entity.notesCallCenter != "") {
+        entity.notesCallCenter = `${entity.notesCallCenter}, ${comments}`;
+      } else {
+        entity.notesCallCenter = comments;
+      }
 
       const response = await this.appointmentRepository.save(entity);
 
@@ -818,11 +836,13 @@ export class AppointmentService {
         await this.appointmentServiceRepository.save(service);
       }
 
-      await this.messageService.sendWhatsAppNextAppointment(
-        new SendWhatsappConfirmationDTO(
-          patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${time.time}`
-        )
-      );
+      if (nofity == true) {
+        await this.messageService.sendWhatsAppNextAppointment(
+          new SendWhatsappConfirmationDTO(
+            patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${time.time}`
+          )
+        );
+      }
 
       let updatedAppointment = await this.getAppointment(response);
       return updatedAppointment;
@@ -1164,6 +1184,7 @@ export class AppointmentService {
         }
       }
       entity.notesCallCenter = body.comments;
+      entity.blockCalendar = body.blockCalendar ? BLOCK_CALENDAR : UNBLOCK_CALENDAR;
       const response = await this.appointmentRepository.save(entity);
 
       if (body.nofity != null && body.nofity == true) {
