@@ -110,6 +110,8 @@ const STATUS_ABANDOMENT = 'abandonment'
 const STATUS_MANUAL = 'manual'
 const STATUS_AUTOMATIC = 'automatic'
 
+const BLOCK_CALENDAR = 1
+const UNBLOCK_CALENDAR = 0
 
 export {
         STATUS_MANUAL,
@@ -133,5 +135,7 @@ export {
         STATUS_SOLVED,
         STATUS_ABANDOMENT,
         getTodaySimpleDate,
-        getSimpleTodayDate,getTodayDateAndConvertToDate
+        getSimpleTodayDate,getTodayDateAndConvertToDate,
+        BLOCK_CALENDAR,
+        UNBLOCK_CALENDAR
 };
