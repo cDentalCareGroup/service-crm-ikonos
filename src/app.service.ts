@@ -27,7 +27,8 @@ export class AppService {
         'DNAME': process.env.DB_NAME,
         'WS': process.env.WTS_API_URL,
         'INSTANCE': process.env.WTS_INSTANCE_ID
-      } 
+      },
+      'notes':'update cron and no show appointments'
     }
   }
 }
