@@ -19,7 +19,7 @@ export class AppService {
   }
   async getHello() {
     return {
-      'version': `Version 1.0.47.17-${process.env.ENV_NAME}`,
+      'version': `Version 1.0.47.18-${process.env.ENV_NAME}`,
       'today Date': getTodayDate(),
       'simple Today Date': getSimpleTodayDate(),
       'today Simple Date': getTodaySimpleDate(),

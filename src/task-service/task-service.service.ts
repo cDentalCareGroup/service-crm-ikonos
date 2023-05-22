@@ -26,7 +26,8 @@ export class TaskServiceService {
     const nextDate = date.toISOString().split("T")[0];
     console.log(`Executing job handleRemiderNotAttendedAppointment at ${nextDate}`);
     const data = await this.appointmentService.appointmentNotAttended();
-    console.log(`Whatsapps ${data}`);
+    console.log(`Generated calls -  ${JSON.stringify(data)}`);
+    console.log(`Generated calls -  ${data}`);
   }
 
 

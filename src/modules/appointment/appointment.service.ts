@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 import { format, formatISO } from 'date-fns';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { HandleException, NotFoundCustomException, NotFoundType, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
-import { BLOCK_CALENDAR, capitalizeAllCharacters, formatDateToWhatsapp, getDayName, getDiff, getRandomInt, getTodayDate, getTodayDateAndConvertToDate, getTodaySimpleDate, STATUS_ACTIVE, STATUS_CANCELLED, STATUS_FINISHED, STATUS_FINISHED_APPOINTMENT_OR_CALL, STATUS_NOT_ATTENDED, STATUS_PROCESS, STATUS_SOLVED, UNBLOCK_CALENDAR } from 'src/utils/general.functions.utils';
+import { BLOCK_CALENDAR, capitalizeAllCharacters, formatDate, formatDateToWhatsapp, getDayName, getDiff, getRandomInt, getTodayDate, getTodayDateAndConvertToDate, getTodaySimpleDate, STATUS_ACTIVE, STATUS_CANCELLED, STATUS_FINISHED, STATUS_FINISHED_APPOINTMENT_OR_CALL, STATUS_NOT_ATTENDED, STATUS_PROCESS, STATUS_SOLVED, UNBLOCK_CALENDAR } from 'src/utils/general.functions.utils';
 import { IsNull, Not, Repository } from 'typeorm';
 import { UserEntity } from '../auth/models/entities/user.entity';
 import { branchOfficeScheduleToEntity } from '../branch_office/extensions/branch.office.extensions';
@@ -995,7 +995,7 @@ export class AppointmentService {
       date.setDate(date.getDate() - 1);
       const nextDate = date.toISOString().split("T")[0];
       const result = await this.appointmentRepository.find({ where: { appointment: nextDate, status: STATUS_ACTIVE } });
-      let failureEmails = [];
+      let calls = [];
 
       for await (const appointment of result) {
         const item = appointment;
@@ -1011,9 +1011,10 @@ export class AppointmentService {
           await this.appointmentTimesRepository.save(item);
         }
 
-        await this.callFromAppointmentNotAttended(appointment);
+        const call = await this.callFromAppointmentNotAttended(appointment);
+        calls.push(call);
       }
-      return failureEmails;
+      return calls;
     } catch (exception) {
       console.log(`Exception main method cancel appoitnments ${exception}`);
     }
@@ -1035,17 +1036,18 @@ export class AppointmentService {
       call.result = CallResult.APPOINTMENT;
       call.caltalogId = catalog.id;
       if (call.comments != null && call.comments != '') {
-        call.comments = `${call.comments} \n Registro de llamada automatico ${getTodayDate()}`;
+        call.comments = `${call.comments} \n Registro de llamada automatico ${getTodayDate()}, cita ${appointment.id}`;
       } else {
-        call.comments = `Registro de llamada automatico ${getTodayDate()}`;
+        call.comments = `Registro de llamada automatico ${getTodayDate()}, cita ${appointment.id}`;
       }
       call.branchId = appointment.branchId;
       call.branchName = appointment.branchName;
 
       const today = new Date();
       today.setDate(today.getDate() + 1);
-      call.dueDate = getTodaySimpleDate();
-      return await this.callRepository.save(call);
+      call.dueDate = formatDate(today);
+      const newCall = await this.callRepository.save(call);
+      return newCall;
     } catch (exception) {
       console.log(exception);
       return;

@@ -50,6 +50,10 @@ const getTodaySimpleDate = (): string => {
         return formatInTimeZone(new Date(), 'America/Mexico_city', 'yyyy-MM-dd') // 2014-10-25 06:46:20-04:00
 }
 
+const formatDate = (date: Date): string => {
+        return formatInTimeZone(date, 'America/Mexico_city', 'yyyy-MM-dd') // 2014-10-25 06:46:20-04:00
+}
+
 const getSimpleTodayDate = (): string => {
         return formatInTimeZone(new Date(), 'America/Mexico_city', 'yyyy-MM-dd') // 2014-10-25 06:46:20-04:00
 }
@@ -137,5 +141,6 @@ export {
         getTodaySimpleDate,
         getSimpleTodayDate,getTodayDateAndConvertToDate,
         BLOCK_CALENDAR,
-        UNBLOCK_CALENDAR
+        UNBLOCK_CALENDAR,
+        formatDate
 };

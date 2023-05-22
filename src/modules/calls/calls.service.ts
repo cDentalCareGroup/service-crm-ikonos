@@ -110,7 +110,7 @@ export class CallsService {
 
     registerCall = async ({ patientId, description, date, type, name, phone, email, prospectId, callId, appointmentId, branchOfficeId }: RegisterCallDTO) => {
         try {
-            console.log(`Register call`, branchOfficeId)
+           
             const call = new CallEntity();
             if (name != null && name != '' && phone != null && phone != '') {
                 const prospect = new ProspectEntity();
