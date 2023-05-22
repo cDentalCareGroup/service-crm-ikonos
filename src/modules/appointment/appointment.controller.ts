@@ -137,7 +137,6 @@ export class AppointmentController {
         return this.appointmentService.getAppointmentByPatient(body);
     }
 
-
     @Post('register/patient')
     @ApiBody({ type: RegiserAppointmentPatientDTO })
     async registerAppointmentPatient(@Body() body: RegiserAppointmentPatientDTO) {
@@ -146,10 +145,8 @@ export class AppointmentController {
 
     @Post('update/notattended')
     async updateNotShowAppointmentStatus(@Body() body: any) {
-        console.log('aqi');
         return this.appointmentService.updateNotShowAppointmentStatus(body);
     }
-
 
     @Get('test/message')
     async testWhatsapp() {
