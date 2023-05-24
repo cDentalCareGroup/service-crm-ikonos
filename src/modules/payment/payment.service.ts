@@ -68,7 +68,7 @@ export class PaymentService {
                     paymentDetail.order = payments.length + 1;
                     paymentDetail.paymentMethodId = body.paymentMethod;
                     paymentDetail.branchOfficeId = appointment.branchId;
-                 //  payment
+                    //  payment
                     //await this.paymentDetailRepository.save(paymentDetail);
                 }
             } else if (body.type == 'advancePayment') {
@@ -141,7 +141,7 @@ export class PaymentService {
 
     registerPatientMovement = async (body: RegisterPaymentDTO) => {
         try {
-            //   console.log(body);
+            //console.log(body);
             const movement = await this.movementsTypeRepository.findOneBy({ id: body.movementType });
             if (movement != null && movement.name.toLowerCase() == 'anticipo') {
                 const paymentDeposit = new PaymentEntity();
@@ -156,7 +156,7 @@ export class PaymentService {
                 for await (const item of body.debts) {
                     const debt = await this.paymentRepository.findOneBy({ id: item.debt.id });
                     const debts = await this.paymentDetailRepository.findBy({ paymentId: debt.id });
-                    // console.log(debt)
+                    
                     if (debt != null) {
                         const paymentItemPaid = new PaymentDetailEntity();
                         paymentItemPaid.patientId = debt.patientId;
@@ -170,15 +170,15 @@ export class PaymentService {
                         paymentItemPaid.order = debts.length + 1;
                         paymentItemPaid.branchOfficeId = debt.branchOfficeId;
                         paymentItemPaid.dentistId = debt.dentistId;
-                        await this.paymentDetailRepository.save(paymentItemPaid);
+                      //  await this.paymentDetailRepository.save(paymentItemPaid);
 
                         let totalAmountDebts = debts.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
                         totalAmountDebts += Number(item.debt.aplicableAmount);
-                        console.log(`Total ${totalAmountDebts} - Deuda ${Number(debt.amount)} = Result  ${Number(debt.amount) - totalAmountDebts}`);
+                        console.log(`Total ${totalAmountDebts} - Deuda ${Number(debt.amount)} = Result ${Number(debt.amount) - totalAmountDebts}`);
                         if (totalAmountDebts >= Number(debt.amount)) {
                             debt.status = 'C';
                             debt.dueDate = getTodayDateAndConvertToDate();
-                            await this.paymentRepository.save(debt);
+                          //  await this.paymentRepository.save(debt);
                         }
                     }
                 }

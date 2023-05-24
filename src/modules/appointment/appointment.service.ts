@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 import { format, formatISO } from 'date-fns';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { HandleException, NotFoundCustomException, NotFoundType, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
-import { BLOCK_CALENDAR, capitalizeAllCharacters, formatDate, formatDateToWhatsapp, getDayName, getDiff, getRandomInt, getTodayDate, getTodayDateAndConvertToDate, getTodaySimpleDate, STATUS_ACTIVE, STATUS_CANCELLED, STATUS_FINISHED, STATUS_FINISHED_APPOINTMENT_OR_CALL, STATUS_NOT_ATTENDED, STATUS_PROCESS, STATUS_SOLVED, UNBLOCK_CALENDAR } from 'src/utils/general.functions.utils';
+import { BLOCK_CALENDAR, capitalizeAllCharacters, formatDate, formatDateToWhatsapp, getDayName, getDiff, getRandomInt, getSimpleTodayDate, getTodayDate, getTodayDateAndConvertToDate, getTodaySimpleDate, STATUS_ACTIVE, STATUS_CANCELLED, STATUS_FINISHED, STATUS_FINISHED_APPOINTMENT_OR_CALL, STATUS_NOT_ATTENDED, STATUS_PROCESS, STATUS_SOLVED, UNBLOCK_CALENDAR } from 'src/utils/general.functions.utils';
 import { IsNull, Not, Repository } from 'typeorm';
 import { UserEntity } from '../auth/models/entities/user.entity';
 import { branchOfficeScheduleToEntity } from '../branch_office/extensions/branch.office.extensions';
@@ -31,6 +31,10 @@ import { AppointmentTimesEntity } from './models/appointment.times.entity';
 import { PaymentMethodEntity } from './models/payment.method.entity';
 import { ProspectEntity } from './models/prospect.entity';
 import { ServiceEntity } from './models/service.entity';
+import { AccountPayableEntity } from '../payment/models/account.payable.entity';
+import { AccountPayableOrigin } from '../payment/models/account.payable.entity';
+import { AccountPayableProviderType } from '../payment/models/account.payable.entity';
+import { AccountPayableDetailEntity } from '../payment/models/account.payable.detail.entity';
 
 @Injectable()
 export class AppointmentService {
@@ -60,6 +64,8 @@ export class AppointmentService {
     @InjectRepository(MovementsTypeEntity) private movementRepository: Repository<MovementsTypeEntity>,
     private readonly messageService: MessageService,
     @InjectRepository(CallLogEntity) private callLogRepository: Repository<CallLogEntity>,
+    @InjectRepository(AccountPayableEntity) private accountPayableRepository: Repository<AccountPayableEntity>,
+    @InjectRepository(AccountPayableDetailEntity) private accountPayableDetailRepository: Repository<AccountPayableDetailEntity>,
   ) { }
 
   getAppointmentsAvailability = async ({ branchOfficeName, dayName, date, filterHours }: AppointmentAvailabilityDTO): Promise<AvailableHoursDTO[]> => {
@@ -395,26 +401,230 @@ export class AppointmentService {
           await this.appointmentTimesRepository.save(item);
         }
 
-        //(body);
         await this.addAppointmentServices(body, appointment);
         await this.addAppointmentPayment(body, appointment);
 
-        //console.log(body.shouldAddAmount && Number(body.paid) >= Number(body.amount) && (Number(body.paid) - Number(body.amount)) > 0)
-
-        //   console.log(`Should add ${body.shouldAddAmount}, Amount ${body.amount}, Paid ${body.paid}`);
+        if (body.debts.length > 0) {
+          await this.processAppointmentDebts(body, appointment);
+        }
+        if (body.deposits.length > 0) {
+          await this.processAppointmentUpdateDeposits(body, appointment);
+        }
         if (body.shouldAddAmount && Number(body.paid) >= Number(body.amount) && (Number(body.paid) - Number(body.amount)) > 0) {
           await this.processAppointmentDeposits(body, appointment);
         }
+        await this.processAccountsToPay(body, appointment);
       }
-      await this.processAppointmentDebts(body, appointment);
-      await this.processAppointmentUpdateDeposits(body, appointment);
-
       const updatedAppointment = await this.appointmentRepository.save(appointment);
       return this.getAppointment(updatedAppointment);
     } catch (exception) {
       console.log(exception);
       HandleException.exception(exception);
     }
+  }
+
+  private processAccountsToPay = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
+    //console.log(body);
+    let totalAppointment = Number(body.amount);
+    let totalPayments = body.payments.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
+    const debtAmount = await this.getPatientDebts(body);
+    const depositsAmount = this.getPatientDeposits(body);
+
+    if (debtAmount > 0) {
+      totalPayments -= debtAmount;
+    }
+    if (depositsAmount > 0 && totalPayments < totalAppointment) {
+      totalPayments += depositsAmount;
+    }
+    console.log(`Appointment: ${totalAppointment} - Payment: ${totalPayments} Debts: ${debtAmount} - Deposits: ${depositsAmount}`)
+    const movement = await this.movementRepository.findOneBy({ name: 'Pago' });
+    console.log(`Total available`, totalPayments);
+    for await (const itemPay of body.payments) {
+      const paymentMethod = await this.paymentMethodRepository.findOneBy({ id: Number(itemPay.key) });
+      const commission = Number(itemPay.amount) * Number(paymentMethod.commission);
+      const taxes = commission * Number(paymentMethod.tax);
+      const totalImport = (commission + taxes);
+      console.log(`Commission $${commission} - Taxes $${taxes} - Import $${totalImport}`)
+      if (totalImport > 0) {
+        const bankAccount = new AccountPayableEntity();
+        bankAccount.origin = AccountPayableOrigin.APPOINTMENT;
+        // CLIP ID 7
+        bankAccount.providerId = 7;
+        bankAccount.providerName = "Clip"
+        bankAccount.providerType = AccountPayableProviderType.FINANCIAL;
+        if (totalPayments >= totalImport) {
+          bankAccount.status = "C";
+        } else {
+          bankAccount.status = "A";
+        }
+        bankAccount.amount = totalImport;
+        bankAccount.referenceId = appointment.id;
+        bankAccount.movementType = "A"
+        bankAccount.movementSign = "-1"
+        bankAccount.dueDate = getSimpleTodayDate();
+        bankAccount.branchId = appointment.branchId;
+        const newBankAccount = await this.accountPayableRepository.save(bankAccount);
+        console.log('Registramos banco', newBankAccount);
+
+        if (totalPayments > 0) {
+          const bankAccountDetail = new AccountPayableDetailEntity();
+          bankAccountDetail.branchId = appointment.branchId;
+          //CLIP
+          bankAccountDetail.providerId = 7;
+          bankAccountDetail.accountPayableId = newBankAccount.id;
+          bankAccountDetail.movementTypeApplicationId = movement.id;
+
+          if (totalPayments >= totalImport) {
+            bankAccountDetail.amount = totalImport;
+            totalPayments -= totalImport;
+          } else {
+            bankAccountDetail.amount = totalPayments;
+            totalPayments = 0;
+          }
+          bankAccountDetail.movementType = movement.type;
+          bankAccountDetail.sign = "1";
+          bankAccountDetail.order = 1;
+          await this.accountPayableDetailRepository.save(bankAccountDetail);
+          console.log('Registramos detail', bankAccountDetail);
+        }
+        totalAppointment -= totalImport;
+      }
+    }
+    console.log(`Total available bank`, totalPayments);
+
+    let totalLabCost = 0;
+    for await (const itemService of body.services) {
+      const service = await this.serviceRepository.findOneBy({ id: Number(itemService.serviceId) });
+      totalLabCost += Number(service.labCost) * Number(itemService.quantity);
+      if (totalLabCost > 0) {
+        const labAccount = new AccountPayableEntity();
+        labAccount.origin = AccountPayableOrigin.APPOINTMENT;
+        // Laboratorio ID 2
+        labAccount.providerId = 2;
+        labAccount.providerName = "Ignea"
+        labAccount.providerType = AccountPayableProviderType.LABS;
+        if (totalPayments >= totalLabCost) {
+          labAccount.status = "C";
+        } else {
+          labAccount.status = "A";
+        }
+        labAccount.amount = totalLabCost;
+        labAccount.referenceId = appointment.id;
+        labAccount.movementType = "A"
+        labAccount.movementSign = "-1"
+        labAccount.dueDate = getSimpleTodayDate();
+        labAccount.branchId = appointment.branchId;
+        const newlabAccount = await this.accountPayableRepository.save(labAccount);
+        console.log('Registramos laboratorio', newlabAccount);
+
+        if (totalPayments > 0) {
+          const labAccountDetail = new AccountPayableDetailEntity();
+          labAccountDetail.branchId = appointment.branchId;
+          //CLIP
+          labAccountDetail.providerId = 2;
+          labAccountDetail.accountPayableId = newlabAccount.id;
+          labAccountDetail.movementTypeApplicationId = movement.id;
+
+          if (totalPayments >= totalLabCost) {
+            labAccountDetail.amount = totalLabCost;
+            totalPayments -= totalLabCost;
+          } else {
+            labAccountDetail.amount = totalPayments;
+            totalPayments = 0;
+          }
+          labAccountDetail.movementType = movement.type;
+          labAccountDetail.sign = "1";
+          labAccountDetail.order = 1;
+          await this.accountPayableDetailRepository.save(labAccountDetail);
+          console.log('Registramos lab detail', labAccountDetail);
+        }
+        totalAppointment -= totalLabCost;
+      }
+    }
+    console.log(`Total available labs`, totalPayments);
+
+    const branchCommission = (totalAppointment * 55) / 100;
+    const branchCommissionDetail = (totalPayments * 55) / 100;
+    const dentistCommission = (totalAppointment * 45) / 100;
+    const dentistCommissionDetail = (totalPayments * 45) / 100;
+
+    //Clinica
+    const branchAccount = new AccountPayableEntity();
+    branchAccount.origin = AccountPayableOrigin.APPOINTMENT;
+    // Clinica dental id 1
+    branchAccount.providerId = 1;
+    branchAccount.providerName = "Clinica dental"
+    branchAccount.providerType = AccountPayableProviderType.BRANCH_OFFICE;
+    //Comision branchAccount 55
+    if (branchCommissionDetail >= branchCommission) {
+      branchAccount.status = "C";
+    } else {
+      branchAccount.status = "A";
+    }
+    branchAccount.amount = branchCommission;
+    branchAccount.referenceId = appointment.id;
+    branchAccount.movementType = "A"
+    branchAccount.movementSign = "-1"
+    branchAccount.dueDate = getSimpleTodayDate();
+    branchAccount.branchId = appointment.branchId;
+    const newbranchAccount = await this.accountPayableRepository.save(branchAccount);
+    console.log('Registramos pago a clinica', newbranchAccount);
+
+    if (totalPayments > 0) {
+      const branchAccountDetail = new AccountPayableDetailEntity();
+      branchAccountDetail.branchId = appointment.branchId;
+      //Cliinca dental id 1
+      branchAccountDetail.providerId = 1;
+      branchAccountDetail.accountPayableId = newbranchAccount.id;
+      branchAccountDetail.movementTypeApplicationId = movement.id;
+      branchAccountDetail.amount = branchCommissionDetail;
+      branchAccountDetail.movementType = movement.type;
+      branchAccountDetail.sign = "1";
+      branchAccountDetail.order = 1;
+      await this.accountPayableDetailRepository.save(branchAccountDetail);
+      console.log('Registramos clinica detail', branchAccountDetail);
+    }
+    console.log(`Total available clinica`, totalPayments);
+
+    //Clinica
+    const dentistAccount = new AccountPayableEntity();
+    dentistAccount.origin = AccountPayableOrigin.APPOINTMENT;
+    // Alejandra lopez 3 agregar un campo de employee id
+    dentistAccount.providerId = 3;
+    dentistAccount.providerName = "Alejandra Lopez"
+    dentistAccount.providerType = AccountPayableProviderType.DENTIST;
+    //Comision branchAccount 45
+    if (dentistCommissionDetail >= dentistCommission) {
+      dentistAccount.status = "C";
+    } else {
+      dentistAccount.status = "A";
+    }
+    dentistAccount.amount = dentistCommission;
+    dentistAccount.referenceId = appointment.id;
+    dentistAccount.movementType = "A"
+    dentistAccount.movementSign = "-1"
+    dentistAccount.dueDate = getSimpleTodayDate();
+    dentistAccount.branchId = appointment.branchId;
+    const newdentistAccount = await this.accountPayableRepository.save(dentistAccount);
+    console.log('Registramos pago a dentista', newdentistAccount);
+
+    if (totalPayments > 0) {
+      const dentistAccountDetail = new AccountPayableDetailEntity();
+      dentistAccountDetail.branchId = appointment.branchId;
+      //Alejandra lopez 3
+      dentistAccountDetail.providerId = 3;
+      dentistAccountDetail.accountPayableId = newdentistAccount.id;
+      dentistAccountDetail.movementTypeApplicationId = movement.id;
+      dentistAccountDetail.amount = dentistCommissionDetail;
+      dentistAccountDetail.movementType = movement.type;
+      dentistAccountDetail.sign = "1";
+      dentistAccountDetail.order = 1;
+      await this.accountPayableDetailRepository.save(dentistAccountDetail);
+      console.log('Registramos dentista detail', dentistAccountDetail);
+    }
+    totalPayments -= (branchCommissionDetail + dentistCommissionDetail)
+    //Siempre deberia quedar 0
+    console.log(`Total available`, totalPayments);
   }
 
   private addAppointmentServices = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
@@ -453,8 +663,6 @@ export class AppointmentService {
   private addAppointmentPayment = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
     const movement = await this.movementRepository.findOneBy({ name: 'Cita' });
     const deposits = this.getPatientDeposits(body);
-    //(deposits)
-    //console.log(`Amount ${body.amount} - Paid ${body.paid}`);
     let status = 'A';
     if (Number(body.paid) >= Number(body.amount)) {
       status = 'C'
@@ -469,8 +677,6 @@ export class AppointmentService {
     payment.status = status;
     payment.branchOfficeId = appointment.branchId;
     payment.dentistId = appointment.dentistId;
-    //(`Cita payment`, payment);
-
     const newPayment = await this.paymentRepository.save(payment);
 
     let index = 1;
@@ -494,7 +700,6 @@ export class AppointmentService {
       paymentItem.branchOfficeId = appointment.branchId;
       paymentItem.dentistId = appointment.dentistId;
       index += 1;
-      //(`Detail`, paymentItem)
       await this.paymentDetailRepository.save(paymentItem);
     }
   }
@@ -502,18 +707,20 @@ export class AppointmentService {
   private processAppointmentDeposits = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
     const totalDebts = await this.getPatientDebts(body);
     const movementPay = await this.movementRepository.findOneBy({ name: 'Anticipo' });
-    const paymentDeposit = new PaymentEntity();
-    paymentDeposit.patientId = appointment.patientId;
-    paymentDeposit.referenceId = appointment.id;
-    paymentDeposit.movementTypeId = movementPay?.id ?? 3;
-    paymentDeposit.amount = Number(body.paid) - Number(body.amount) - totalDebts;
-    paymentDeposit.movementType = movementPay?.type ?? 'A';
-    paymentDeposit.movementSign = '1';
-    paymentDeposit.status = 'A';
-    paymentDeposit.branchOfficeId = appointment.branchId;
-    paymentDeposit.dentistId = appointment.dentistId;
-    //('Registramos abono', paymentDeposit)
-    await this.paymentRepository.save(paymentDeposit);
+    const totalAmount = Number(body.paid) - Number(body.amount) - totalDebts;
+    if (totalAmount > 0) {
+      const paymentDeposit = new PaymentEntity();
+      paymentDeposit.patientId = appointment.patientId;
+      paymentDeposit.referenceId = appointment.id;
+      paymentDeposit.movementTypeId = movementPay?.id ?? 3;
+      paymentDeposit.amount = totalAmount;
+      paymentDeposit.movementType = movementPay?.type ?? 'A';
+      paymentDeposit.movementSign = '1';
+      paymentDeposit.status = 'A';
+      paymentDeposit.branchOfficeId = appointment.branchId;
+      paymentDeposit.dentistId = appointment.dentistId;
+      await this.paymentRepository.save(paymentDeposit);
+    }
   }
 
 
@@ -524,17 +731,13 @@ export class AppointmentService {
       const activeDepositDetails = await this.paymentDetailRepository.findBy({ paymentId: deposit.id });
       const totalActiveDeposits = activeDepositDetails.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
       if (activeDeposit != null) {
-
         if (Number(deposit.amount) == Number(body.paid) && Number(body.paid) >= Number(body.amount)) {
           activeDeposit.status = 'A';
         } else {
           activeDeposit.status = 'C';
         }
         activeDeposit.dueDate = getTodayDateAndConvertToDate();
-        //activeDeposit.referenceId = appointment.id;
         await this.paymentRepository.save(activeDeposit);
-
-
 
         const paymentItemDeposit = new PaymentDetailEntity();
         paymentItemDeposit.patientId = activeDeposit.patientId;
@@ -554,8 +757,6 @@ export class AppointmentService {
         paymentItemDeposit.order = 1;
         paymentItemDeposit.branchOfficeId = appointment.branchId;
         paymentItemDeposit.dentistId = appointment.dentistId;
-        // console.log(paymentItemDeposit);
-        // console.log(activeDeposit)
         await this.paymentDetailRepository.save(paymentItemDeposit);
       }
     }
@@ -575,43 +776,76 @@ export class AppointmentService {
   }
 
   private getPatientDeposits = (body: UpdateAppointmentStatusDTO): number => {
-    return body.deposits.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
+    return body.deposits.filter((value, _) => value.isAplicable == true).map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
   }
 
   private processAppointmentDebts = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
     const patientPaid = Number(body.paid) - Number(body.amount);
+    let availableAmount = patientPaid;
+    const movement = await this.movementRepository.findOneBy({ name: 'Pago' });
+
     for await (const debt of body.debts) {
       let totalDebt = 0;
       const debtDetail = await this.paymentDetailRepository.findBy({ paymentId: debt.id });
+
       for await (const item of debtDetail) {
         totalDebt += Number(item.amount);
       }
-
       const toPaid = Number(debt.amount) - totalDebt;
       if (patientPaid >= toPaid) {
         debt.status = 'C';
         debt.dueDate = getTodayDateAndConvertToDate();
-        //console.log(debt);
         await this.paymentRepository.save(debt);
-        const paymentItemPaid = new PaymentDetailEntity();
-        paymentItemPaid.patientId = debt.patientId;
-        paymentItemPaid.paymentId = debt.id;
-        paymentItemPaid.referenceId = debt.id;
-        paymentItemPaid.movementTypeApplicationId = 1;
-        paymentItemPaid.movementType = 'C'
-        paymentItemPaid.amount = toPaid;
-        paymentItemPaid.paymentMethodId = body.payments[body.payments.length - 1].key;
-        paymentItemPaid.sign = '1'
-        paymentItemPaid.order = debtDetail.length + 1;
-        paymentItemPaid.branchOfficeId = appointment.branchId;
-        paymentItemPaid.dentistId = appointment.dentistId;
-        // console.log(paymentItemPaid);
-        await this.paymentDetailRepository.save(paymentItemPaid);
-      } else {
-        console.log('Nothing in debts updated')
+      }
+      const paymentItemPaid = new PaymentDetailEntity();
+      paymentItemPaid.patientId = debt.patientId;
+      paymentItemPaid.paymentId = debt.id;
+      paymentItemPaid.referenceId = debt.id;
+      paymentItemPaid.movementTypeApplicationId = 1;
+      paymentItemPaid.movementType = 'C'
+      paymentItemPaid.amount = patientPaid;
+      paymentItemPaid.paymentMethodId = body.payments[body.payments.length - 1].key;
+      paymentItemPaid.sign = '1'
+      paymentItemPaid.order = debtDetail.length + 1;
+      paymentItemPaid.branchOfficeId = appointment.branchId;
+      paymentItemPaid.dentistId = appointment.dentistId;
+      await this.paymentDetailRepository.save(paymentItemPaid);
+
+      //Pago por cuentas por pagar
+      const debtsAccount = await this.accountPayableRepository.findBy({ referenceId: debt.referenceId, status: 'A' });
+      for await (const debtAccount of debtsAccount) {
+        if (availableAmount > 0) {
+          const debtsAccountDetails = await this.accountPayableDetailRepository.findBy({ accountPayableId: debtAccount.id });
+          const totalDebtsAccount = debtsAccountDetails.map((value, _) => value.amount).reduce((a, b) => a + b, 0);
+
+          const amountToPay = (debtAccount.amount - totalDebtsAccount);
+          if (availableAmount >= amountToPay) {
+            debtAccount.status = 'C';
+            debtAccount.dueDate = getSimpleTodayDate();
+            await this.accountPayableRepository.save(debtAccount);
+          }
+          const debAccount = new AccountPayableDetailEntity();
+          debAccount.branchId = debtAccount.branchId;
+          debAccount.providerId = debtAccount.providerId;
+          debAccount.accountPayableId = debtAccount.id;
+          debAccount.movementTypeApplicationId = movement.id;
+          if (availableAmount >= amountToPay) {
+            debAccount.amount = amountToPay;
+            availableAmount -= amountToPay;
+          } else {
+            debAccount.amount = availableAmount;
+            availableAmount -= availableAmount;
+          }
+          debAccount.movementType = movement.type;
+          debAccount.sign = "1";
+          debAccount.order = debtsAccountDetails.length + 1;
+          await this.accountPayableDetailRepository.save(debAccount);
+        }
       }
     }
   }
+
+
 
   rescheduleAppointmentDentist = async ({ id, date, time, branchName, nofity, blockCalendar, comments }: RescheduleAppointmentDTO): Promise<GetAppointmentDetailDTO> => {
     try {
@@ -794,6 +1028,7 @@ export class AppointmentService {
         appointment: date.toString().split("T")[0],
         time: time.simpleTime,
         patientId: Number(patientId),
+        status: STATUS_ACTIVE
       });
 
       if (exists != null) throw new ValidationException(ValidationExceptionType.APPOINTMENT_EXISTS);
@@ -1042,6 +1277,8 @@ export class AppointmentService {
       }
       call.branchId = appointment.branchId;
       call.branchName = appointment.branchName;
+      call.callCatalogName = catalog.name;
+
 
       const today = new Date();
       today.setDate(today.getDate() + 1);
@@ -1073,6 +1310,7 @@ export class AppointmentService {
           call.caltalogId = callPad.id;
           call.dueDate = getTodaySimpleDate();
           call.result = CallResult.CALL;
+          call.callCatalogName = callPad.name;
           await this.callRepository.save(call);
           //  console.log(`Llamada registrada`);
         }
