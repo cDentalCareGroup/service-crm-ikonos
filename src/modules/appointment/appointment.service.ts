@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 import { format, formatISO } from 'date-fns';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { HandleException, NotFoundCustomException, NotFoundType, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
-import { BLOCK_CALENDAR, capitalizeAllCharacters, formatDate, formatDateToWhatsapp, getDayName, getDiff, getRandomInt, getSimpleTodayDate, getTodayDate, getTodayDateAndConvertToDate, getTodaySimpleDate, STATUS_ACTIVE, STATUS_CANCELLED, STATUS_FINISHED, STATUS_FINISHED_APPOINTMENT_OR_CALL, STATUS_NOT_ATTENDED, STATUS_PROCESS, STATUS_SOLVED, UNBLOCK_CALENDAR } from 'src/utils/general.functions.utils';
+import { ACTIVE_PAYMENT, BLOCK_CALENDAR, capitalizeAllCharacters, CLOSE_PAYMENT, formatDate, formatDateToWhatsapp, getDayName, getDiff, getRandomInt, getSimpleTodayDate, getTodayDate, getTodayDateAndConvertToDate, getTodaySimpleDate, STATUS_ACTIVE, STATUS_CANCELLED, STATUS_FINISHED, STATUS_FINISHED_APPOINTMENT_OR_CALL, STATUS_NOT_ATTENDED, STATUS_PROCESS, STATUS_SOLVED, UNBLOCK_CALENDAR } from 'src/utils/general.functions.utils';
 import { IsNull, Not, Repository } from 'typeorm';
 import { UserEntity } from '../auth/models/entities/user.entity';
 import { branchOfficeScheduleToEntity } from '../branch_office/extensions/branch.office.extensions';
@@ -453,9 +453,9 @@ export class AppointmentService {
         bankAccount.providerName = "Clip"
         bankAccount.providerType = AccountPayableProviderType.FINANCIAL;
         if (totalPayments >= totalImport) {
-          bankAccount.status = "C";
+          bankAccount.status = CLOSE_PAYMENT;
         } else {
-          bankAccount.status = "A";
+          bankAccount.status = ACTIVE_PAYMENT;
         }
         bankAccount.amount = totalImport;
         bankAccount.referenceId = appointment.id;
@@ -504,9 +504,9 @@ export class AppointmentService {
         labAccount.providerName = "Ignea"
         labAccount.providerType = AccountPayableProviderType.LABS;
         if (totalPayments >= totalLabCost) {
-          labAccount.status = "C";
+          labAccount.status = CLOSE_PAYMENT;
         } else {
-          labAccount.status = "A";
+          labAccount.status = ACTIVE_PAYMENT;
         }
         labAccount.amount = totalLabCost;
         labAccount.referenceId = appointment.id;
@@ -557,9 +557,9 @@ export class AppointmentService {
     branchAccount.providerType = AccountPayableProviderType.BRANCH_OFFICE;
     //Comision branchAccount 55
     if (branchCommissionDetail >= branchCommission) {
-      branchAccount.status = "C";
+      branchAccount.status = CLOSE_PAYMENT;
     } else {
-      branchAccount.status = "A";
+      branchAccount.status = ACTIVE_PAYMENT;
     }
     branchAccount.amount = branchCommission;
     branchAccount.referenceId = appointment.id;
@@ -595,9 +595,9 @@ export class AppointmentService {
     dentistAccount.providerType = AccountPayableProviderType.DENTIST;
     //Comision branchAccount 45
     if (dentistCommissionDetail >= dentistCommission) {
-      dentistAccount.status = "C";
+      dentistAccount.status = CLOSE_PAYMENT;
     } else {
-      dentistAccount.status = "A";
+      dentistAccount.status = ACTIVE_PAYMENT;
     }
     dentistAccount.amount = dentistCommission;
     dentistAccount.referenceId = appointment.id;
@@ -663,16 +663,16 @@ export class AppointmentService {
   private addAppointmentPayment = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
     const movement = await this.movementRepository.findOneBy({ name: 'Cita' });
     const deposits = this.getPatientDeposits(body);
-    let status = 'A';
+    let status = ACTIVE_PAYMENT;
     if (Number(body.paid) >= Number(body.amount)) {
-      status = 'C'
+      status = CLOSE_PAYMENT;
     }
     const payment = new PaymentEntity();
     payment.patientId = appointment.patientId;
     payment.referenceId = appointment.id;
     payment.movementTypeId = movement?.id ?? 2;
     payment.amount = Number(body.amount);
-    payment.movementType = movement?.type ?? 'C';
+    payment.movementType = movement?.type ?? CLOSE_PAYMENT;
     payment.movementSign = '1';
     payment.status = status;
     payment.branchOfficeId = appointment.branchId;
@@ -692,7 +692,7 @@ export class AppointmentService {
       paymentItem.paymentId = newPayment.id;
       paymentItem.referenceId = appointment.id;
       paymentItem.movementTypeApplicationId = movement?.id ?? 2;
-      paymentItem.movementType = 'A'
+      paymentItem.movementType = ACTIVE_PAYMENT
       paymentItem.amount = payAmount;
       paymentItem.paymentMethodId = paymentDetail.key;
       paymentItem.sign = '-1'
@@ -716,7 +716,7 @@ export class AppointmentService {
       paymentDeposit.amount = totalAmount;
       paymentDeposit.movementType = movementPay?.type ?? 'A';
       paymentDeposit.movementSign = '1';
-      paymentDeposit.status = 'A';
+      paymentDeposit.status = ACTIVE_PAYMENT;
       paymentDeposit.branchOfficeId = appointment.branchId;
       paymentDeposit.dentistId = appointment.dentistId;
       await this.paymentRepository.save(paymentDeposit);
@@ -732,9 +732,9 @@ export class AppointmentService {
       const totalActiveDeposits = activeDepositDetails.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
       if (activeDeposit != null) {
         if (Number(deposit.amount) == Number(body.paid) && Number(body.paid) >= Number(body.amount)) {
-          activeDeposit.status = 'A';
+          activeDeposit.status = ACTIVE_PAYMENT;
         } else {
-          activeDeposit.status = 'C';
+          activeDeposit.status = CLOSE_PAYMENT;
         }
         activeDeposit.dueDate = getTodayDateAndConvertToDate();
         await this.paymentRepository.save(activeDeposit);
@@ -793,7 +793,7 @@ export class AppointmentService {
       }
       const toPaid = Number(debt.amount) - totalDebt;
       if (patientPaid >= toPaid) {
-        debt.status = 'C';
+        debt.status = CLOSE_PAYMENT;
         debt.dueDate = getTodayDateAndConvertToDate();
         await this.paymentRepository.save(debt);
       }
@@ -812,15 +812,15 @@ export class AppointmentService {
       await this.paymentDetailRepository.save(paymentItemPaid);
 
       //Pago por cuentas por pagar
-      const debtsAccount = await this.accountPayableRepository.findBy({ referenceId: debt.referenceId, status: 'A' });
+      const debtsAccount = await this.accountPayableRepository.findBy({ referenceId: debt.referenceId, status: ACTIVE_PAYMENT });
       for await (const debtAccount of debtsAccount) {
         if (availableAmount > 0) {
           const debtsAccountDetails = await this.accountPayableDetailRepository.findBy({ accountPayableId: debtAccount.id });
-          const totalDebtsAccount = debtsAccountDetails.map((value, _) => value.amount).reduce((a, b) => a + b, 0);
+          const totalDebtsAccount = debtsAccountDetails.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
 
           const amountToPay = (debtAccount.amount - totalDebtsAccount);
           if (availableAmount >= amountToPay) {
-            debtAccount.status = 'C';
+            debtAccount.status = CLOSE_PAYMENT;
             debtAccount.dueDate = getSimpleTodayDate();
             await this.accountPayableRepository.save(debtAccount);
           }

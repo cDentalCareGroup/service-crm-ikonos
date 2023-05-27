@@ -117,7 +117,12 @@ const STATUS_AUTOMATIC = 'automatic'
 const BLOCK_CALENDAR = 1
 const UNBLOCK_CALENDAR = 0
 
+const ACTIVE_PAYMENT = "A"
+const CLOSE_PAYMENT = "C"
+
 export {
+        ACTIVE_PAYMENT,
+        CLOSE_PAYMENT,
         STATUS_MANUAL,
         STATUS_AUTOMATIC,
         isNumber,

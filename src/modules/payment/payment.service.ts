@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { HandleException } from 'src/common/exceptions/general.exception';
-import { getTodayDateAndConvertToDate } from 'src/utils/general.functions.utils';
+import { ACTIVE_PAYMENT, CLOSE_PAYMENT, getSimpleTodayDate, getTodayDateAndConvertToDate } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { AppointmentService } from '../appointment/appointment.service';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';
@@ -9,6 +9,8 @@ import { MovementsTypeEntity } from './models/movements.type.entity';
 import { RegisterPaymentDTO } from './models/payment.dto';
 import { PaymentEntity } from './models/payment.entity';
 import { PaymentDetailEntity } from './payment.detail.entity';
+import { AccountPayableEntity } from './models/account.payable.entity';
+import { AccountPayableDetailEntity } from './models/account.payable.detail.entity';
 
 @Injectable()
 export class PaymentService {
@@ -19,6 +21,8 @@ export class PaymentService {
         @InjectRepository(PaymentEntity) private paymentRepository: Repository<PaymentEntity>,
         @InjectRepository(PaymentDetailEntity) private paymentDetailRepository: Repository<PaymentDetailEntity>,
         @InjectRepository(MovementsTypeEntity) private movementsTypeRepository: Repository<MovementsTypeEntity>,
+        @InjectRepository(AccountPayableEntity) private accountPayableRepository: Repository<AccountPayableEntity>,
+        @InjectRepository(AccountPayableDetailEntity) private accountPayableDetailRepository: Repository<AccountPayableDetailEntity>,
         private appointmentService: AppointmentService
     ) { }
 
@@ -101,10 +105,10 @@ export class PaymentService {
 
             // console.log(body)
             const movementDeposit = await this.movementsTypeRepository.findOneBy({ name: 'Anticipo' });
-            const deposits = await this.paymentRepository.findBy({ patientId: body.patientId, status: 'A', movementTypeId: movementDeposit.id });
+            const deposits = await this.paymentRepository.findBy({ patientId: body.patientId, status: ACTIVE_PAYMENT, movementTypeId: movementDeposit.id });
 
             const movementDebts = await this.movementsTypeRepository.findOneBy({ name: 'Cita' });
-            const debts = await this.paymentRepository.findBy({ patientId: body.patientId, status: 'A', movementTypeId: movementDebts.id });
+            const debts = await this.paymentRepository.findBy({ patientId: body.patientId, status: ACTIVE_PAYMENT, movementTypeId: movementDebts.id });
 
             let arrayDepostis = [];
 
@@ -150,13 +154,13 @@ export class PaymentService {
                 paymentDeposit.amount = Number(body.amount);
                 paymentDeposit.movementType = movement.type;
                 paymentDeposit.movementSign = '1';
-                paymentDeposit.status = 'A';
+                paymentDeposit.status = ACTIVE_PAYMENT;
                 return await this.paymentRepository.save(paymentDeposit);
             } else if (movement != null && movement.name.toLowerCase() == 'pago') {
                 for await (const item of body.debts) {
                     const debt = await this.paymentRepository.findOneBy({ id: item.debt.id });
                     const debts = await this.paymentDetailRepository.findBy({ paymentId: debt.id });
-                    
+
                     if (debt != null) {
                         const paymentItemPaid = new PaymentDetailEntity();
                         paymentItemPaid.patientId = debt.patientId;
@@ -170,15 +174,47 @@ export class PaymentService {
                         paymentItemPaid.order = debts.length + 1;
                         paymentItemPaid.branchOfficeId = debt.branchOfficeId;
                         paymentItemPaid.dentistId = debt.dentistId;
-                      //  await this.paymentDetailRepository.save(paymentItemPaid);
+                        await this.paymentDetailRepository.save(paymentItemPaid);
 
                         let totalAmountDebts = debts.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
                         totalAmountDebts += Number(item.debt.aplicableAmount);
-                        console.log(`Total ${totalAmountDebts} - Deuda ${Number(debt.amount)} = Result ${Number(debt.amount) - totalAmountDebts}`);
+                        console.log(`Total ${totalAmountDebts} - Deuda ${Number(debt.amount)} - Result ${Number(debt.amount) - totalAmountDebts} - Applicable ${Number(item.debt.aplicableAmount)}`);
                         if (totalAmountDebts >= Number(debt.amount)) {
                             debt.status = 'C';
                             debt.dueDate = getTodayDateAndConvertToDate();
-                          //  await this.paymentRepository.save(debt);
+                            await this.paymentRepository.save(debt);
+                        }
+
+                        let availableAmount = Number(item.debt.aplicableAmount);
+                        const debtsAccount = await this.accountPayableRepository.findBy({ referenceId: debt.referenceId, status: ACTIVE_PAYMENT });
+                        for await (const debtAccount of debtsAccount) {
+                            if (availableAmount > 0) {
+                                const debtsAccountDetails = await this.accountPayableDetailRepository.findBy({ accountPayableId: debtAccount.id });
+                                const totalDebtsAccount = debtsAccountDetails.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
+                                const amountToPay = (debtAccount.amount - totalDebtsAccount);
+
+                                if (availableAmount >= amountToPay) {
+                                    debtAccount.status = CLOSE_PAYMENT;
+                                    debtAccount.dueDate = getSimpleTodayDate();
+                                    await this.accountPayableRepository.save(debtAccount);
+                                }
+                                const debAccount = new AccountPayableDetailEntity();
+                                debAccount.branchId = debtAccount.branchId;
+                                debAccount.providerId = debtAccount.providerId;
+                                debAccount.accountPayableId = debtAccount.id;
+                                debAccount.movementTypeApplicationId = movement.id;
+                                if (availableAmount >= amountToPay) {
+                                    debAccount.amount = amountToPay;
+                                    availableAmount -= amountToPay;
+                                } else {
+                                    debAccount.amount = availableAmount;
+                                    availableAmount -= availableAmount;
+                                }
+                                debAccount.movementType = movement.type;
+                                debAccount.sign = "1";
+                                debAccount.order = debtsAccountDetails.length + 1;
+                                await this.accountPayableDetailRepository.save(debAccount);
+                            }
                         }
                     }
                 }

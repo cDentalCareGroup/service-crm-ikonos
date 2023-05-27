@@ -19,7 +19,7 @@ export class AppService {
   }
   async getHello() {
     return {
-      'version': `Version 1.0.48.0-${process.env.ENV_NAME}`,
+      'version': `Version 1.0.48.1-${process.env.ENV_NAME}`,
       'today Date': getTodayDate(),
       'simple Today Date': getSimpleTodayDate(),
       'today Simple Date': getTodaySimpleDate(),
@@ -28,7 +28,6 @@ export class AppService {
         'WS': process.env.WTS_API_URL,
         'INSTANCE': process.env.WTS_INSTANCE_ID
       },
-      'notes':'update cron and no show appointments'
     }
   }
 }
