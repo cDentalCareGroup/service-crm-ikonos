@@ -95,8 +95,10 @@ const getMonthName = (date: Date): string => {
 
 const formatDateToWhatsapp = (date: string): string => {
         const newDate = new Date(date);
-        const dayOfMonth = newDate.getDate() + 1;
-        const dayName = getDayName(newDate);
+        const dayDate = new Date(date);
+        newDate.setDate(newDate.getDate() + 1)
+        const dayOfMonth = newDate.getDate();
+        const dayName = getDayName(dayDate);
         const monthName = getMonthName(newDate);
         const year = newDate.getFullYear();
         return `${dayName} ${dayOfMonth}, ${monthName} ${year}`;
