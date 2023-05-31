@@ -31,7 +31,7 @@ export class CallsService {
 
     getCalls = async (body: GetCallsDateDTO) => {
         try {
-            const result = await this.callRepository.find({ order: { dueDate: { direction: 'ASC',  } }, where: { status: STATUS_ACTIVE, dueDate: body.date } });
+            const result = await this.callRepository.find({ order: { dueDate: { direction: 'ASC', } }, where: { status: STATUS_ACTIVE, dueDate: body.date } });
             let data: GetCallsDTO[] = [];
             for await (const call of result) {
                 let patient: PatientEntity;
@@ -110,7 +110,7 @@ export class CallsService {
 
     registerCall = async ({ patientId, description, date, type, name, phone, email, prospectId, callId, appointmentId, branchOfficeId }: RegisterCallDTO) => {
         try {
-           
+
             const call = new CallEntity();
             if (name != null && name != '' && phone != null && phone != '') {
                 const prospect = new ProspectEntity();
@@ -128,6 +128,10 @@ export class CallsService {
             call.description = description;
             call.dueDate = date;
             call.caltalogId = Number(type);
+            const catalog = await this.catalogRepository.findOneBy({ id: Number(type) });
+            if (catalog != undefined && catalog != null) {
+                call.callCatalogName = catalog.name;
+            }
             call.status = STATUS_ACTIVE;
             call.result = CallResult.CALL;
 
@@ -160,7 +164,7 @@ export class CallsService {
 
     getCallDetail = async ({ patientId, prospectId }: GetCallDetailDTO) => {
         try {
-          //  console.log(prospectId);
+            //  console.log(prospectId);
             if (patientId != null && patientId != 0) {
                 console.log(`Is patient`, patientId)
                 const patient = await this.patientRepository.findOneBy({ id: patientId });

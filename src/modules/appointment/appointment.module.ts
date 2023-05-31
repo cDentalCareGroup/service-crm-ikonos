@@ -31,6 +31,8 @@ import { AppointmentTimesEntity } from './models/appointment.times.entity';
 import { PaymentMethodEntity } from './models/payment.method.entity';
 import { ProspectEntity } from './models/prospect.entity';
 import { ServiceEntity } from './models/service.entity';
+import { AccountPayableEntity } from '../payment/models/account.payable.entity';
+import { AccountPayableDetailEntity } from '../payment/models/account.payable.detail.entity';
 
 @Module({
   imports: [
@@ -57,7 +59,9 @@ import { ServiceEntity } from './models/service.entity';
       PaymentDetailEntity,
       CallLogEntity,
       PatientOriginEntity,
-      MovementsTypeEntity
+      MovementsTypeEntity,
+      AccountPayableEntity,
+      AccountPayableDetailEntity
     ]),
     EmailModule,
     HttpModule,

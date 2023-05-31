@@ -8,10 +8,12 @@ import { PaymentEntity } from './models/payment.entity';
 import { PaymentController } from './payment.controller';
 import { PaymentDetailEntity } from './payment.detail.entity';
 import { PaymentService } from './payment.service';
+import { AccountPayableEntity } from './models/account.payable.entity';
+import { AccountPayableDetailEntity } from './models/account.payable.detail.entity';
 
 @Module({
     imports: [ConfigModule.forRoot(),
-    TypeOrmModule.forFeature([PaymentEntity, AppointmentEntity, PaymentDetailEntity, MovementsTypeEntity]),
+    TypeOrmModule.forFeature([PaymentEntity, AppointmentEntity, PaymentDetailEntity, MovementsTypeEntity,AccountPayableEntity, AccountPayableDetailEntity]),
         AppointmentModule
     ],
     providers: [PaymentService],

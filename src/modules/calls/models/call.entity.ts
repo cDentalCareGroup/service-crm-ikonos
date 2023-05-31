@@ -95,6 +95,24 @@ export class CallEntity {
     })
     branchName: string;
 
+    @Column({
+        name: 'call_catalog_name',
+        type: 'varchar',
+    })
+    callCatalogName: string;
+
+    @Column({
+        name: 'employee_id',
+        type: 'int',
+    })
+    employeeId: number;
+
+    @Column({
+        name: 'user',
+        type: 'varchar',
+    })
+    username: string;
+    
 }
 
 

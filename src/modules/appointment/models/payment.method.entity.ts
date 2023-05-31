@@ -9,4 +9,16 @@ export class PaymentMethodEntity {
         type: 'varchar',
     })
     name: string;
+
+    @Column({
+        name: 'commission',
+        type: 'decimal',
+    })
+    commission: number;
+
+    @Column({
+        name: 'tax',
+        type: 'decimal',
+    })
+    tax: number;
 }
