@@ -413,7 +413,7 @@ export class AppointmentService {
         if (body.shouldAddAmount && Number(body.paid) >= Number(body.amount) && (Number(body.paid) - Number(body.amount)) > 0) {
           await this.processAppointmentDeposits(body, appointment);
         }
-        await this.processAccountsToPay(body, appointment);
+       // await this.processAccountsToPay(body, appointment);
       }
       const updatedAppointment = await this.appointmentRepository.save(appointment);
       return this.getAppointment(updatedAppointment);
