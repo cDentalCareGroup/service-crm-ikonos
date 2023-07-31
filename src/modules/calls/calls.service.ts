@@ -133,7 +133,6 @@ export class CallsService {
                 call.callCatalogName = catalog.name;
             }
             call.status = STATUS_ACTIVE;
-            call.result = CallResult.CALL;
 
             if (appointmentId != null && appointmentId > 0) {
                 call.appointmentId = appointmentId;
@@ -151,6 +150,7 @@ export class CallsService {
                     resolvedCall.status = STATUS_SOLVED;
                     resolvedCall.effectiveDate = getTodayDate()
                     resolvedCall.comments = `${resolvedCall?.comments ?? '-'} \n Llamada resuelta ${new Date()} terminada con llamada`;
+                    resolvedCall.result = CallResult.CALL;
                     await this.callRepository.save(resolvedCall);
                 }
                 await this.updateCallLog(callId, 'call');
@@ -164,12 +164,10 @@ export class CallsService {
 
     getCallDetail = async ({ patientId, prospectId }: GetCallDetailDTO) => {
         try {
-            //  console.log(prospectId);
             if (patientId != null && patientId != 0) {
-                console.log(`Is patient`, patientId)
                 const patient = await this.patientRepository.findOneBy({ id: patientId });
                 const calls = await this.callRepository.findBy({ patientId: patient.id });
-                const appointments = await this.appointmentRepository.findBy({ patientId: patient.id });
+                const appointments = await this.appointmentRepository.find({ where: { patientId: patient.id }, order: { appointment: 'DESC' } });
 
                 let data: any[] = [];
                 for await (const item of calls) {
@@ -195,9 +193,9 @@ export class CallsService {
                     'appointments': appointmentData
                 }
             } else {
-                console.log(`Is prospect`, prospectId)
+                //console.log(`Is prospect`, prospectId)
                 const prospect = await this.prospectRepository.findOneBy({ id: prospectId });
-                const calls = await this.callRepository.findBy({ prospectId: prospect.id });
+                const calls = await this.callRepository.find({ where: { prospectId: prospect.id }, order: { dueDate: 'DESC' } });
                 let data: any[] = [];
                 for await (const item of calls) {
                     const catalog = await this.catalogRepository.findOneBy({ id: item.caltalogId });

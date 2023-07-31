@@ -31,9 +31,9 @@ export class TaskServiceService {
   // }
 
 
-  @Cron('0 30 9 * * 0-6')
-  async handleReminderPad() {
-    console.log(`Executing job handleReminderPad at ${new Date()}`);
-    await this.appointmentService.reminderPad();
-  }
+  // @Cron('0 30 9 * * 0-6')
+  // async handleReminderPad() {
+  //   console.log(`Executing job handleReminderPad at ${new Date()}`);
+  //   await this.appointmentService.reminderPad();
+  // }
 }
