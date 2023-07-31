@@ -425,6 +425,9 @@ export class AppointmentService {
 
   private processAccountsToPay = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
     //console.log(body);
+
+    //CAMBIAR LOS SIGNOS DE 1 Y -1 A LOS QUE RESTAN, AGREGAR DOS REGISTROS MAS EL % DE LO QUE SE PAGO EN CLIP
+    //L 45% DE LO QUE PAGO EN CLIP PARA DENTISTA Y EL %55 DE LO QUE PAGO EN CLIP PARA LA CLINICA
     let totalAppointment = Number(body.amount);
     let totalPayments = body.payments.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
     const debtAmount = await this.getPatientDebts(body);
@@ -460,7 +463,7 @@ export class AppointmentService {
         bankAccount.amount = totalImport;
         bankAccount.referenceId = appointment.id;
         bankAccount.movementType = "A"
-        bankAccount.movementSign = "-1"
+        bankAccount.movementSign = "1"
         bankAccount.dueDate = getSimpleTodayDate();
         bankAccount.branchId = appointment.branchId;
         const newBankAccount = await this.accountPayableRepository.save(bankAccount);
@@ -482,9 +485,12 @@ export class AppointmentService {
             totalPayments = 0;
           }
           bankAccountDetail.movementType = movement.type;
-          bankAccountDetail.sign = "1";
+          bankAccountDetail.sign = "-1";
           bankAccountDetail.order = 1;
           await this.accountPayableDetailRepository.save(bankAccountDetail);
+          await this.processDentistBranchCommissionByBank(
+            bankAccountDetail.amount, newBankAccount.id, newBankAccount.branchId, totalPayments >= totalImport
+          );
           console.log('Registramos detail', bankAccountDetail);
         }
         totalAppointment -= totalImport;
@@ -511,7 +517,7 @@ export class AppointmentService {
         labAccount.amount = totalLabCost;
         labAccount.referenceId = appointment.id;
         labAccount.movementType = "A"
-        labAccount.movementSign = "-1"
+        labAccount.movementSign = "1"
         labAccount.dueDate = getSimpleTodayDate();
         labAccount.branchId = appointment.branchId;
         const newlabAccount = await this.accountPayableRepository.save(labAccount);
@@ -533,7 +539,7 @@ export class AppointmentService {
             totalPayments = 0;
           }
           labAccountDetail.movementType = movement.type;
-          labAccountDetail.sign = "1";
+          labAccountDetail.sign = "-1";
           labAccountDetail.order = 1;
           await this.accountPayableDetailRepository.save(labAccountDetail);
           console.log('Registramos lab detail', labAccountDetail);
@@ -565,7 +571,7 @@ export class AppointmentService {
     dentistAccount.amount = dentistCommission;
     dentistAccount.referenceId = appointment.id;
     dentistAccount.movementType = "A"
-    dentistAccount.movementSign = "-1"
+    dentistAccount.movementSign = "1"
     dentistAccount.dueDate = getSimpleTodayDate();
     dentistAccount.branchId = appointment.branchId;
     const newdentistAccount = await this.accountPayableRepository.save(dentistAccount);
@@ -580,7 +586,7 @@ export class AppointmentService {
       dentistAccountDetail.movementTypeApplicationId = movement.id;
       dentistAccountDetail.amount = dentistCommissionDetail;
       dentistAccountDetail.movementType = movement.type;
-      dentistAccountDetail.sign = "1";
+      dentistAccountDetail.sign = "-1";
       dentistAccountDetail.order = 1;
       await this.accountPayableDetailRepository.save(dentistAccountDetail);
       console.log('Registramos dentista detail', dentistAccountDetail);
@@ -603,7 +609,7 @@ export class AppointmentService {
     branchAccount.amount = branchCommission;
     branchAccount.referenceId = appointment.id;
     branchAccount.movementType = "A"
-    branchAccount.movementSign = "-1"
+    branchAccount.movementSign = "1"
     branchAccount.dueDate = getSimpleTodayDate();
     branchAccount.branchId = appointment.branchId;
     const newbranchAccount = await this.accountPayableRepository.save(branchAccount);
@@ -618,7 +624,7 @@ export class AppointmentService {
       branchAccountDetail.movementTypeApplicationId = movement.id;
       branchAccountDetail.amount = branchCommissionDetail;
       branchAccountDetail.movementType = movement.type;
-      branchAccountDetail.sign = "1";
+      branchAccountDetail.sign = "-1";
       branchAccountDetail.order = 1;
       await this.accountPayableDetailRepository.save(branchAccountDetail);
       console.log('Registramos clinica detail', branchAccountDetail);
@@ -629,6 +635,70 @@ export class AppointmentService {
     console.log(`Total available`, totalPayments);
   }
 
+
+  processDentistBranchCommissionByBank = async (amount: number, reference: number, branchId: number, isClose: boolean) => {
+    const branch = new AccountPayableEntity();
+    branch.origin = AccountPayableOrigin.APPOINTMENT;
+    branch.providerId = 1;
+    branch.providerName = "Clinica dental"
+    branch.providerType = AccountPayableProviderType.BRANCH_OFFICE;
+    if (isClose) {
+      branch.status = CLOSE_PAYMENT;
+    } else {
+      branch.status = ACTIVE_PAYMENT;
+    }
+    const branchCommission = (amount * 55) / 100;
+    branch.amount = branchCommission;
+    branch.referenceId = reference;
+    branch.movementType = 'A'
+    branch.movementSign = '-1'
+    branch.branchId = branchId;
+    branch.dueDate = getSimpleTodayDate();
+    const newBranch = await this.accountPayableRepository.save(branch);
+
+    const branchDetail = new AccountPayableDetailEntity();
+    branchDetail.branchId = branchId;
+    branchDetail.providerId = 1;
+    branchDetail.accountPayableId = newBranch.id;
+    branchDetail.movementTypeApplicationId = 1
+    branchDetail.amount = branchCommission;
+    branchDetail.movementType = 'C'
+    branchDetail.sign = "-1";
+    branchDetail.order = 1;
+    await this.accountPayableDetailRepository.save(branchDetail);
+
+
+    const dentistCommission = (amount * 45) / 100;
+    const dentist = new AccountPayableEntity();
+    dentist.origin = AccountPayableOrigin.APPOINTMENT;
+    dentist.providerId = 3;
+    dentist.providerName = "Alejandra Lopez"
+    dentist.providerType =  AccountPayableProviderType.DENTIST;
+    if (isClose) {
+      dentist.status = CLOSE_PAYMENT;
+    } else {
+      dentist.status = ACTIVE_PAYMENT;
+    }
+    dentist.amount = dentistCommission;
+    dentist.referenceId = reference;
+    dentist.movementType = 'A'
+    dentist.movementSign = '-1'
+    dentist.branchId = branchId;
+    dentist.dueDate = getSimpleTodayDate();
+    const newDentist = await this.accountPayableRepository.save(dentist);
+
+    const dentistDetail = new AccountPayableDetailEntity();
+    dentistDetail.branchId = branchId;
+    dentistDetail.providerId = 3;
+    dentistDetail.accountPayableId = newDentist.id;
+    dentistDetail.movementTypeApplicationId = 1
+    dentistDetail.amount = dentistCommission;
+    dentistDetail.movementType = 'C'
+    dentistDetail.sign = "-1";
+    dentistDetail.order = 1;
+    await this.accountPayableDetailRepository.save(dentistDetail);
+
+  }
   private addAppointmentServices = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
     for await (const service of body.services) {
       const appointmentDetail = new AppointmentDetailEntity();

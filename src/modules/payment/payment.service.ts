@@ -211,7 +211,7 @@ export class PaymentService {
                                     availableAmount -= availableAmount;
                                 }
                                 debAccount.movementType = movement.type;
-                                debAccount.sign = "1";
+                                debAccount.sign = "-1";
                                 debAccount.order = debtsAccountDetails.length + 1;
                                 await this.accountPayableDetailRepository.save(debAccount);
                             }
