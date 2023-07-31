@@ -185,37 +185,37 @@ export class PaymentService {
                             await this.paymentRepository.save(debt);
                         }
 
-                        let availableAmount = Number(item.debt.aplicableAmount);
-                        const debtsAccount = await this.accountPayableRepository.findBy({ referenceId: debt.referenceId, status: ACTIVE_PAYMENT });
-                        for await (const debtAccount of debtsAccount) {
-                            if (availableAmount > 0) {
-                                const debtsAccountDetails = await this.accountPayableDetailRepository.findBy({ accountPayableId: debtAccount.id });
-                                const totalDebtsAccount = debtsAccountDetails.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
-                                const amountToPay = (debtAccount.amount - totalDebtsAccount);
+                        // let availableAmount = Number(item.debt.aplicableAmount);
+                        // const debtsAccount = await this.accountPayableRepository.findBy({ referenceId: debt.referenceId, status: ACTIVE_PAYMENT });
+                        // for await (const debtAccount of debtsAccount) {
+                        //     if (availableAmount > 0) {
+                        //         const debtsAccountDetails = await this.accountPayableDetailRepository.findBy({ accountPayableId: debtAccount.id });
+                        //         const totalDebtsAccount = debtsAccountDetails.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
+                        //         const amountToPay = (debtAccount.amount - totalDebtsAccount);
 
-                                if (availableAmount >= amountToPay) {
-                                    debtAccount.status = CLOSE_PAYMENT;
-                                    debtAccount.dueDate = getSimpleTodayDate();
-                                    await this.accountPayableRepository.save(debtAccount);
-                                }
-                                const debAccount = new AccountPayableDetailEntity();
-                                debAccount.branchId = debtAccount.branchId;
-                                debAccount.providerId = debtAccount.providerId;
-                                debAccount.accountPayableId = debtAccount.id;
-                                debAccount.movementTypeApplicationId = movement.id;
-                                if (availableAmount >= amountToPay) {
-                                    debAccount.amount = amountToPay;
-                                    availableAmount -= amountToPay;
-                                } else {
-                                    debAccount.amount = availableAmount;
-                                    availableAmount -= availableAmount;
-                                }
-                                debAccount.movementType = movement.type;
-                                debAccount.sign = "-1";
-                                debAccount.order = debtsAccountDetails.length + 1;
-                                await this.accountPayableDetailRepository.save(debAccount);
-                            }
-                        }
+                        //         if (availableAmount >= amountToPay) {
+                        //             debtAccount.status = CLOSE_PAYMENT;
+                        //             debtAccount.dueDate = getSimpleTodayDate();
+                        //             await this.accountPayableRepository.save(debtAccount);
+                        //         }
+                        //         const debAccount = new AccountPayableDetailEntity();
+                        //         debAccount.branchId = debtAccount.branchId;
+                        //         debAccount.providerId = debtAccount.providerId;
+                        //         debAccount.accountPayableId = debtAccount.id;
+                        //         debAccount.movementTypeApplicationId = movement.id;
+                        //         if (availableAmount >= amountToPay) {
+                        //             debAccount.amount = amountToPay;
+                        //             availableAmount -= amountToPay;
+                        //         } else {
+                        //             debAccount.amount = availableAmount;
+                        //             availableAmount -= availableAmount;
+                        //         }
+                        //         debAccount.movementType = movement.type;
+                        //         debAccount.sign = "-1";
+                        //         debAccount.order = debtsAccountDetails.length + 1;
+                        //         await this.accountPayableDetailRepository.save(debAccount);
+                        //     }
+                        // }
                     }
                 }
             } else {
