@@ -423,282 +423,282 @@ export class AppointmentService {
     }
   }
 
-  private processAccountsToPay = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
-    //console.log(body);
+  // private processAccountsToPay = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
+  //   //console.log(body);
 
-    //CAMBIAR LOS SIGNOS DE 1 Y -1 A LOS QUE RESTAN, AGREGAR DOS REGISTROS MAS EL % DE LO QUE SE PAGO EN CLIP
-    //L 45% DE LO QUE PAGO EN CLIP PARA DENTISTA Y EL %55 DE LO QUE PAGO EN CLIP PARA LA CLINICA
-    let totalAppointment = Number(body.amount);
-    let totalPayments = body.payments.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
-    const debtAmount = await this.getPatientDebts(body);
-    const depositsAmount = this.getPatientDeposits(body);
+  //   //CAMBIAR LOS SIGNOS DE 1 Y -1 A LOS QUE RESTAN, AGREGAR DOS REGISTROS MAS EL % DE LO QUE SE PAGO EN CLIP
+  //   //L 45% DE LO QUE PAGO EN CLIP PARA DENTISTA Y EL %55 DE LO QUE PAGO EN CLIP PARA LA CLINICA
+  //   let totalAppointment = Number(body.amount);
+  //   let totalPayments = body.payments.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
+  //   const debtAmount = await this.getPatientDebts(body);
+  //   const depositsAmount = this.getPatientDeposits(body);
 
-    if (debtAmount > 0) {
-      totalPayments -= debtAmount;
-    }
-    if (depositsAmount > 0 && totalPayments < totalAppointment) {
-      totalPayments += depositsAmount;
-    }
-    console.log(`Appointment: ${totalAppointment} - Payment: ${totalPayments} Debts: ${debtAmount} - Deposits: ${depositsAmount}`)
-    const movement = await this.movementRepository.findOneBy({ name: 'Pago' });
-    console.log(`Total available`, totalPayments);
-    for await (const itemPay of body.payments) {
-      const paymentMethod = await this.paymentMethodRepository.findOneBy({ id: Number(itemPay.key) });
-      const commission = Number(itemPay.amount) * Number(paymentMethod.commission);
-      const taxes = commission * Number(paymentMethod.tax);
-      const totalImport = (commission + taxes);
-      console.log(`Commission $${commission} - Taxes $${taxes} - Import $${totalImport}`)
-      if (totalImport > 0) {
-        const bankAccount = new AccountPayableEntity();
-        bankAccount.origin = AccountPayableOrigin.APPOINTMENT;
-        // CLIP ID 7
-        bankAccount.providerId = 7;
-        bankAccount.providerName = "Clip"
-        bankAccount.providerType = AccountPayableProviderType.FINANCIAL;
-        if (totalPayments >= totalImport) {
-          bankAccount.status = CLOSE_PAYMENT;
-        } else {
-          bankAccount.status = ACTIVE_PAYMENT;
-        }
-        bankAccount.amount = totalImport;
-        bankAccount.referenceId = appointment.id;
-        bankAccount.movementType = "A"
-        bankAccount.movementSign = "1"
-        bankAccount.dueDate = getSimpleTodayDate();
-        bankAccount.branchId = appointment.branchId;
-        const newBankAccount = await this.accountPayableRepository.save(bankAccount);
-        console.log('Registramos banco', newBankAccount);
+  //   if (debtAmount > 0) {
+  //     totalPayments -= debtAmount;
+  //   }
+  //   if (depositsAmount > 0 && totalPayments < totalAppointment) {
+  //     totalPayments += depositsAmount;
+  //   }
+  //   console.log(`Appointment: ${totalAppointment} - Payment: ${totalPayments} Debts: ${debtAmount} - Deposits: ${depositsAmount}`)
+  //   const movement = await this.movementRepository.findOneBy({ name: 'Pago' });
+  //   console.log(`Total available`, totalPayments);
+  //   for await (const itemPay of body.payments) {
+  //     const paymentMethod = await this.paymentMethodRepository.findOneBy({ id: Number(itemPay.key) });
+  //     const commission = Number(itemPay.amount) * Number(paymentMethod.commission);
+  //     const taxes = commission * Number(paymentMethod.tax);
+  //     const totalImport = (commission + taxes);
+  //     console.log(`Commission $${commission} - Taxes $${taxes} - Import $${totalImport}`)
+  //     if (totalImport > 0) {
+  //       const bankAccount = new AccountPayableEntity();
+  //       bankAccount.origin = AccountPayableOrigin.APPOINTMENT;
+  //       // CLIP ID 7
+  //       bankAccount.providerId = 7;
+  //       bankAccount.providerName = "Clip"
+  //       bankAccount.providerType = AccountPayableProviderType.FINANCIAL;
+  //       if (totalPayments >= totalImport) {
+  //         bankAccount.status = CLOSE_PAYMENT;
+  //       } else {
+  //         bankAccount.status = ACTIVE_PAYMENT;
+  //       }
+  //       bankAccount.amount = totalImport;
+  //       bankAccount.referenceId = appointment.id;
+  //       bankAccount.movementType = "A"
+  //       bankAccount.movementSign = "1"
+  //       bankAccount.dueDate = getSimpleTodayDate();
+  //       bankAccount.branchId = appointment.branchId;
+  //       const newBankAccount = await this.accountPayableRepository.save(bankAccount);
+  //       console.log('Registramos banco', newBankAccount);
 
-        if (totalPayments > 0) {
-          const bankAccountDetail = new AccountPayableDetailEntity();
-          bankAccountDetail.branchId = appointment.branchId;
-          //CLIP
-          bankAccountDetail.providerId = 7;
-          bankAccountDetail.accountPayableId = newBankAccount.id;
-          bankAccountDetail.movementTypeApplicationId = movement.id;
+  //       if (totalPayments > 0) {
+  //         const bankAccountDetail = new AccountPayableDetailEntity();
+  //         bankAccountDetail.branchId = appointment.branchId;
+  //         //CLIP
+  //         bankAccountDetail.providerId = 7;
+  //         bankAccountDetail.accountPayableId = newBankAccount.id;
+  //         bankAccountDetail.movementTypeApplicationId = movement.id;
 
-          if (totalPayments >= totalImport) {
-            bankAccountDetail.amount = totalImport;
-            totalPayments -= totalImport;
-          } else {
-            bankAccountDetail.amount = totalPayments;
-            totalPayments = 0;
-          }
-          bankAccountDetail.movementType = movement.type;
-          bankAccountDetail.sign = "-1";
-          bankAccountDetail.order = 1;
-          await this.accountPayableDetailRepository.save(bankAccountDetail);
-          await this.processDentistBranchCommissionByBank(
-            bankAccountDetail.amount, newBankAccount.id, newBankAccount.branchId, totalPayments >= totalImport
-          );
-          console.log('Registramos detail', bankAccountDetail);
-        }
-        totalAppointment -= totalImport;
-      }
-    }
-    console.log(`Total available bank`, totalPayments);
+  //         if (totalPayments >= totalImport) {
+  //           bankAccountDetail.amount = totalImport;
+  //           totalPayments -= totalImport;
+  //         } else {
+  //           bankAccountDetail.amount = totalPayments;
+  //           totalPayments = 0;
+  //         }
+  //         bankAccountDetail.movementType = movement.type;
+  //         bankAccountDetail.sign = "-1";
+  //         bankAccountDetail.order = 1;
+  //         await this.accountPayableDetailRepository.save(bankAccountDetail);
+  //         await this.processDentistBranchCommissionByBank(
+  //           bankAccountDetail.amount, newBankAccount.id, newBankAccount.branchId, totalPayments >= totalImport
+  //         );
+  //         console.log('Registramos detail', bankAccountDetail);
+  //       }
+  //       totalAppointment -= totalImport;
+  //     }
+  //   }
+  //   console.log(`Total available bank`, totalPayments);
 
-    let totalLabCost = 0;
-    for await (const itemService of body.services) {
-      const service = await this.serviceRepository.findOneBy({ id: Number(itemService.serviceId) });
-      totalLabCost += Number(service.labCost) * Number(itemService.quantity);
-      if (totalLabCost > 0) {
-        const labAccount = new AccountPayableEntity();
-        labAccount.origin = AccountPayableOrigin.APPOINTMENT;
-        // Laboratorio ID 2
-        labAccount.providerId = 2;
-        labAccount.providerName = "Ignea"
-        labAccount.providerType = AccountPayableProviderType.LABS;
-        if (totalPayments >= totalLabCost) {
-          labAccount.status = CLOSE_PAYMENT;
-        } else {
-          labAccount.status = ACTIVE_PAYMENT;
-        }
-        labAccount.amount = totalLabCost;
-        labAccount.referenceId = appointment.id;
-        labAccount.movementType = "A"
-        labAccount.movementSign = "1"
-        labAccount.dueDate = getSimpleTodayDate();
-        labAccount.branchId = appointment.branchId;
-        const newlabAccount = await this.accountPayableRepository.save(labAccount);
-        console.log('Registramos laboratorio', newlabAccount);
+  //   let totalLabCost = 0;
+  //   for await (const itemService of body.services) {
+  //     const service = await this.serviceRepository.findOneBy({ id: Number(itemService.serviceId) });
+  //     totalLabCost += Number(service.labCost) * Number(itemService.quantity);
+  //     if (totalLabCost > 0) {
+  //       const labAccount = new AccountPayableEntity();
+  //       labAccount.origin = AccountPayableOrigin.APPOINTMENT;
+  //       // Laboratorio ID 2
+  //       labAccount.providerId = 2;
+  //       labAccount.providerName = "Ignea"
+  //       labAccount.providerType = AccountPayableProviderType.LABS;
+  //       if (totalPayments >= totalLabCost) {
+  //         labAccount.status = CLOSE_PAYMENT;
+  //       } else {
+  //         labAccount.status = ACTIVE_PAYMENT;
+  //       }
+  //       labAccount.amount = totalLabCost;
+  //       labAccount.referenceId = appointment.id;
+  //       labAccount.movementType = "A"
+  //       labAccount.movementSign = "1"
+  //       labAccount.dueDate = getSimpleTodayDate();
+  //       labAccount.branchId = appointment.branchId;
+  //       const newlabAccount = await this.accountPayableRepository.save(labAccount);
+  //       console.log('Registramos laboratorio', newlabAccount);
 
-        if (totalPayments > 0) {
-          const labAccountDetail = new AccountPayableDetailEntity();
-          labAccountDetail.branchId = appointment.branchId;
-          //CLIP
-          labAccountDetail.providerId = 2;
-          labAccountDetail.accountPayableId = newlabAccount.id;
-          labAccountDetail.movementTypeApplicationId = movement.id;
+  //       if (totalPayments > 0) {
+  //         const labAccountDetail = new AccountPayableDetailEntity();
+  //         labAccountDetail.branchId = appointment.branchId;
+  //         //CLIP
+  //         labAccountDetail.providerId = 2;
+  //         labAccountDetail.accountPayableId = newlabAccount.id;
+  //         labAccountDetail.movementTypeApplicationId = movement.id;
 
-          if (totalPayments >= totalLabCost) {
-            labAccountDetail.amount = totalLabCost;
-            totalPayments -= totalLabCost;
-          } else {
-            labAccountDetail.amount = totalPayments;
-            totalPayments = 0;
-          }
-          labAccountDetail.movementType = movement.type;
-          labAccountDetail.sign = "-1";
-          labAccountDetail.order = 1;
-          await this.accountPayableDetailRepository.save(labAccountDetail);
-          console.log('Registramos lab detail', labAccountDetail);
-        }
-        totalAppointment -= totalLabCost;
-      }
-    }
-    console.log(`Total available labs`, totalPayments);
+  //         if (totalPayments >= totalLabCost) {
+  //           labAccountDetail.amount = totalLabCost;
+  //           totalPayments -= totalLabCost;
+  //         } else {
+  //           labAccountDetail.amount = totalPayments;
+  //           totalPayments = 0;
+  //         }
+  //         labAccountDetail.movementType = movement.type;
+  //         labAccountDetail.sign = "-1";
+  //         labAccountDetail.order = 1;
+  //         await this.accountPayableDetailRepository.save(labAccountDetail);
+  //         console.log('Registramos lab detail', labAccountDetail);
+  //       }
+  //       totalAppointment -= totalLabCost;
+  //     }
+  //   }
+  //   console.log(`Total available labs`, totalPayments);
 
-    const branchCommission = (totalAppointment * 55) / 100;
-    const branchCommissionDetail = (totalPayments * 55) / 100;
-    const dentistCommission = (totalAppointment * 45) / 100;
-    const dentistCommissionDetail = (totalPayments * 45) / 100;
-
-
-    //Clinica
-    const dentistAccount = new AccountPayableEntity();
-    dentistAccount.origin = AccountPayableOrigin.APPOINTMENT;
-    // Alejandra lopez 3 agregar un campo de employee id
-    dentistAccount.providerId = 3;
-    dentistAccount.providerName = "Alejandra Lopez"
-    dentistAccount.providerType = AccountPayableProviderType.DENTIST;
-    //Comision branchAccount 45
-    if (dentistCommissionDetail >= dentistCommission) {
-      dentistAccount.status = CLOSE_PAYMENT;
-    } else {
-      dentistAccount.status = ACTIVE_PAYMENT;
-    }
-    dentistAccount.amount = dentistCommission;
-    dentistAccount.referenceId = appointment.id;
-    dentistAccount.movementType = "A"
-    dentistAccount.movementSign = "1"
-    dentistAccount.dueDate = getSimpleTodayDate();
-    dentistAccount.branchId = appointment.branchId;
-    const newdentistAccount = await this.accountPayableRepository.save(dentistAccount);
-    console.log('Registramos pago a dentista', newdentistAccount);
-
-    if (totalPayments > 0) {
-      const dentistAccountDetail = new AccountPayableDetailEntity();
-      dentistAccountDetail.branchId = appointment.branchId;
-      //Alejandra lopez 3
-      dentistAccountDetail.providerId = 3;
-      dentistAccountDetail.accountPayableId = newdentistAccount.id;
-      dentistAccountDetail.movementTypeApplicationId = movement.id;
-      dentistAccountDetail.amount = dentistCommissionDetail;
-      dentistAccountDetail.movementType = movement.type;
-      dentistAccountDetail.sign = "-1";
-      dentistAccountDetail.order = 1;
-      await this.accountPayableDetailRepository.save(dentistAccountDetail);
-      console.log('Registramos dentista detail', dentistAccountDetail);
-    }
-    console.log(`Total available dentist`, totalPayments);
-
-    //Clinica
-    const branchAccount = new AccountPayableEntity();
-    branchAccount.origin = AccountPayableOrigin.APPOINTMENT;
-    // Clinica dental id 1
-    branchAccount.providerId = 1;
-    branchAccount.providerName = "Clinica dental"
-    branchAccount.providerType = AccountPayableProviderType.BRANCH_OFFICE;
-    //Comision branchAccount 55
-    if (branchCommissionDetail >= branchCommission) {
-      branchAccount.status = CLOSE_PAYMENT;
-    } else {
-      branchAccount.status = ACTIVE_PAYMENT;
-    }
-    branchAccount.amount = branchCommission;
-    branchAccount.referenceId = appointment.id;
-    branchAccount.movementType = "A"
-    branchAccount.movementSign = "1"
-    branchAccount.dueDate = getSimpleTodayDate();
-    branchAccount.branchId = appointment.branchId;
-    const newbranchAccount = await this.accountPayableRepository.save(branchAccount);
-    console.log('Registramos pago a clinica', newbranchAccount);
-
-    if (totalPayments > 0) {
-      const branchAccountDetail = new AccountPayableDetailEntity();
-      branchAccountDetail.branchId = appointment.branchId;
-      //Cliinca dental id 1
-      branchAccountDetail.providerId = 1;
-      branchAccountDetail.accountPayableId = newbranchAccount.id;
-      branchAccountDetail.movementTypeApplicationId = movement.id;
-      branchAccountDetail.amount = branchCommissionDetail;
-      branchAccountDetail.movementType = movement.type;
-      branchAccountDetail.sign = "-1";
-      branchAccountDetail.order = 1;
-      await this.accountPayableDetailRepository.save(branchAccountDetail);
-      console.log('Registramos clinica detail', branchAccountDetail);
-    }
-
-    totalPayments -= (branchCommissionDetail + dentistCommissionDetail)
-    //Siempre deberia quedar 0
-    console.log(`Total available`, totalPayments);
-  }
+  //   const branchCommission = (totalAppointment * 55) / 100;
+  //   const branchCommissionDetail = (totalPayments * 55) / 100;
+  //   const dentistCommission = (totalAppointment * 45) / 100;
+  //   const dentistCommissionDetail = (totalPayments * 45) / 100;
 
 
-  processDentistBranchCommissionByBank = async (amount: number, reference: number, branchId: number, isClose: boolean) => {
-    const branch = new AccountPayableEntity();
-    branch.origin = AccountPayableOrigin.APPOINTMENT;
-    branch.providerId = 1;
-    branch.providerName = "Clinica dental"
-    branch.providerType = AccountPayableProviderType.BRANCH_OFFICE;
-    if (isClose) {
-      branch.status = CLOSE_PAYMENT;
-    } else {
-      branch.status = ACTIVE_PAYMENT;
-    }
-    const branchCommission = (amount * 55) / 100;
-    branch.amount = branchCommission;
-    branch.referenceId = reference;
-    branch.movementType = 'A'
-    branch.movementSign = '-1'
-    branch.branchId = branchId;
-    branch.dueDate = getSimpleTodayDate();
-    const newBranch = await this.accountPayableRepository.save(branch);
+  //   //Clinica
+  //   const dentistAccount = new AccountPayableEntity();
+  //   dentistAccount.origin = AccountPayableOrigin.APPOINTMENT;
+  //   // Alejandra lopez 3 agregar un campo de employee id
+  //   dentistAccount.providerId = 3;
+  //   dentistAccount.providerName = "Alejandra Lopez"
+  //   dentistAccount.providerType = AccountPayableProviderType.DENTIST;
+  //   //Comision branchAccount 45
+  //   if (dentistCommissionDetail >= dentistCommission) {
+  //     dentistAccount.status = CLOSE_PAYMENT;
+  //   } else {
+  //     dentistAccount.status = ACTIVE_PAYMENT;
+  //   }
+  //   dentistAccount.amount = dentistCommission;
+  //   dentistAccount.referenceId = appointment.id;
+  //   dentistAccount.movementType = "A"
+  //   dentistAccount.movementSign = "1"
+  //   dentistAccount.dueDate = getSimpleTodayDate();
+  //   dentistAccount.branchId = appointment.branchId;
+  //   const newdentistAccount = await this.accountPayableRepository.save(dentistAccount);
+  //   console.log('Registramos pago a dentista', newdentistAccount);
 
-    const branchDetail = new AccountPayableDetailEntity();
-    branchDetail.branchId = branchId;
-    branchDetail.providerId = 1;
-    branchDetail.accountPayableId = newBranch.id;
-    branchDetail.movementTypeApplicationId = 1
-    branchDetail.amount = branchCommission;
-    branchDetail.movementType = 'C'
-    branchDetail.sign = "-1";
-    branchDetail.order = 1;
-    await this.accountPayableDetailRepository.save(branchDetail);
+  //   if (totalPayments > 0) {
+  //     const dentistAccountDetail = new AccountPayableDetailEntity();
+  //     dentistAccountDetail.branchId = appointment.branchId;
+  //     //Alejandra lopez 3
+  //     dentistAccountDetail.providerId = 3;
+  //     dentistAccountDetail.accountPayableId = newdentistAccount.id;
+  //     dentistAccountDetail.movementTypeApplicationId = movement.id;
+  //     dentistAccountDetail.amount = dentistCommissionDetail;
+  //     dentistAccountDetail.movementType = movement.type;
+  //     dentistAccountDetail.sign = "-1";
+  //     dentistAccountDetail.order = 1;
+  //     await this.accountPayableDetailRepository.save(dentistAccountDetail);
+  //     console.log('Registramos dentista detail', dentistAccountDetail);
+  //   }
+  //   console.log(`Total available dentist`, totalPayments);
+
+  //   //Clinica
+  //   const branchAccount = new AccountPayableEntity();
+  //   branchAccount.origin = AccountPayableOrigin.APPOINTMENT;
+  //   // Clinica dental id 1
+  //   branchAccount.providerId = 1;
+  //   branchAccount.providerName = "Clinica dental"
+  //   branchAccount.providerType = AccountPayableProviderType.BRANCH_OFFICE;
+  //   //Comision branchAccount 55
+  //   if (branchCommissionDetail >= branchCommission) {
+  //     branchAccount.status = CLOSE_PAYMENT;
+  //   } else {
+  //     branchAccount.status = ACTIVE_PAYMENT;
+  //   }
+  //   branchAccount.amount = branchCommission;
+  //   branchAccount.referenceId = appointment.id;
+  //   branchAccount.movementType = "A"
+  //   branchAccount.movementSign = "1"
+  //   branchAccount.dueDate = getSimpleTodayDate();
+  //   branchAccount.branchId = appointment.branchId;
+  //   const newbranchAccount = await this.accountPayableRepository.save(branchAccount);
+  //   console.log('Registramos pago a clinica', newbranchAccount);
+
+  //   if (totalPayments > 0) {
+  //     const branchAccountDetail = new AccountPayableDetailEntity();
+  //     branchAccountDetail.branchId = appointment.branchId;
+  //     //Cliinca dental id 1
+  //     branchAccountDetail.providerId = 1;
+  //     branchAccountDetail.accountPayableId = newbranchAccount.id;
+  //     branchAccountDetail.movementTypeApplicationId = movement.id;
+  //     branchAccountDetail.amount = branchCommissionDetail;
+  //     branchAccountDetail.movementType = movement.type;
+  //     branchAccountDetail.sign = "-1";
+  //     branchAccountDetail.order = 1;
+  //     await this.accountPayableDetailRepository.save(branchAccountDetail);
+  //     console.log('Registramos clinica detail', branchAccountDetail);
+  //   }
+
+  //   totalPayments -= (branchCommissionDetail + dentistCommissionDetail)
+  //   //Siempre deberia quedar 0
+  //   console.log(`Total available`, totalPayments);
+  // }
 
 
-    const dentistCommission = (amount * 45) / 100;
-    const dentist = new AccountPayableEntity();
-    dentist.origin = AccountPayableOrigin.APPOINTMENT;
-    dentist.providerId = 3;
-    dentist.providerName = "Alejandra Lopez"
-    dentist.providerType =  AccountPayableProviderType.DENTIST;
-    if (isClose) {
-      dentist.status = CLOSE_PAYMENT;
-    } else {
-      dentist.status = ACTIVE_PAYMENT;
-    }
-    dentist.amount = dentistCommission;
-    dentist.referenceId = reference;
-    dentist.movementType = 'A'
-    dentist.movementSign = '-1'
-    dentist.branchId = branchId;
-    dentist.dueDate = getSimpleTodayDate();
-    const newDentist = await this.accountPayableRepository.save(dentist);
+  // processDentistBranchCommissionByBank = async (amount: number, reference: number, branchId: number, isClose: boolean) => {
+  //   const branch = new AccountPayableEntity();
+  //   branch.origin = AccountPayableOrigin.APPOINTMENT;
+  //   branch.providerId = 1;
+  //   branch.providerName = "Clinica dental"
+  //   branch.providerType = AccountPayableProviderType.BRANCH_OFFICE;
+  //   if (isClose) {
+  //     branch.status = CLOSE_PAYMENT;
+  //   } else {
+  //     branch.status = ACTIVE_PAYMENT;
+  //   }
+  //   const branchCommission = (amount * 55) / 100;
+  //   branch.amount = branchCommission;
+  //   branch.referenceId = reference;
+  //   branch.movementType = 'A'
+  //   branch.movementSign = '-1'
+  //   branch.branchId = branchId;
+  //   branch.dueDate = getSimpleTodayDate();
+  //   const newBranch = await this.accountPayableRepository.save(branch);
 
-    const dentistDetail = new AccountPayableDetailEntity();
-    dentistDetail.branchId = branchId;
-    dentistDetail.providerId = 3;
-    dentistDetail.accountPayableId = newDentist.id;
-    dentistDetail.movementTypeApplicationId = 1
-    dentistDetail.amount = dentistCommission;
-    dentistDetail.movementType = 'C'
-    dentistDetail.sign = "-1";
-    dentistDetail.order = 1;
-    await this.accountPayableDetailRepository.save(dentistDetail);
+  //   const branchDetail = new AccountPayableDetailEntity();
+  //   branchDetail.branchId = branchId;
+  //   branchDetail.providerId = 1;
+  //   branchDetail.accountPayableId = newBranch.id;
+  //   branchDetail.movementTypeApplicationId = 1
+  //   branchDetail.amount = branchCommission;
+  //   branchDetail.movementType = 'C'
+  //   branchDetail.sign = "-1";
+  //   branchDetail.order = 1;
+  //   await this.accountPayableDetailRepository.save(branchDetail);
 
-  }
+
+  //   const dentistCommission = (amount * 45) / 100;
+  //   const dentist = new AccountPayableEntity();
+  //   dentist.origin = AccountPayableOrigin.APPOINTMENT;
+  //   dentist.providerId = 3;
+  //   dentist.providerName = "Alejandra Lopez"
+  //   dentist.providerType =  AccountPayableProviderType.DENTIST;
+  //   if (isClose) {
+  //     dentist.status = CLOSE_PAYMENT;
+  //   } else {
+  //     dentist.status = ACTIVE_PAYMENT;
+  //   }
+  //   dentist.amount = dentistCommission;
+  //   dentist.referenceId = reference;
+  //   dentist.movementType = 'A'
+  //   dentist.movementSign = '-1'
+  //   dentist.branchId = branchId;
+  //   dentist.dueDate = getSimpleTodayDate();
+  //   const newDentist = await this.accountPayableRepository.save(dentist);
+
+  //   const dentistDetail = new AccountPayableDetailEntity();
+  //   dentistDetail.branchId = branchId;
+  //   dentistDetail.providerId = 3;
+  //   dentistDetail.accountPayableId = newDentist.id;
+  //   dentistDetail.movementTypeApplicationId = 1
+  //   dentistDetail.amount = dentistCommission;
+  //   dentistDetail.movementType = 'C'
+  //   dentistDetail.sign = "-1";
+  //   dentistDetail.order = 1;
+  //   await this.accountPayableDetailRepository.save(dentistDetail);
+
+  // }
   private addAppointmentServices = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
     for await (const service of body.services) {
       const appointmentDetail = new AppointmentDetailEntity();
@@ -853,8 +853,8 @@ export class AppointmentService {
 
   private processAppointmentDebts = async (body: UpdateAppointmentStatusDTO, appointment: AppointmentEntity) => {
     const patientPaid = Number(body.paid) - Number(body.amount);
-    let availableAmount = patientPaid;
-    const movement = await this.movementRepository.findOneBy({ name: 'Pago' });
+    //let availableAmount = patientPaid;
+    //const movement = await this.movementRepository.findOneBy({ name: 'Pago' });
 
     for await (const debt of body.debts) {
       let totalDebt = 0;
@@ -884,36 +884,36 @@ export class AppointmentService {
       await this.paymentDetailRepository.save(paymentItemPaid);
 
       //Pago por cuentas por pagar
-      const debtsAccount = await this.accountPayableRepository.findBy({ referenceId: debt.referenceId, status: ACTIVE_PAYMENT });
-      for await (const debtAccount of debtsAccount) {
-        if (availableAmount > 0) {
-          const debtsAccountDetails = await this.accountPayableDetailRepository.findBy({ accountPayableId: debtAccount.id });
-          const totalDebtsAccount = debtsAccountDetails.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
+      // const debtsAccount = await this.accountPayableRepository.findBy({ referenceId: debt.referenceId, status: ACTIVE_PAYMENT });
+      // for await (const debtAccount of debtsAccount) {
+      //   if (availableAmount > 0) {
+      //     const debtsAccountDetails = await this.accountPayableDetailRepository.findBy({ accountPayableId: debtAccount.id });
+      //     const totalDebtsAccount = debtsAccountDetails.map((value, _) => Number(value.amount)).reduce((a, b) => a + b, 0);
 
-          const amountToPay = (debtAccount.amount - totalDebtsAccount);
-          if (availableAmount >= amountToPay) {
-            debtAccount.status = CLOSE_PAYMENT;
-            debtAccount.dueDate = getSimpleTodayDate();
-            await this.accountPayableRepository.save(debtAccount);
-          }
-          const debAccount = new AccountPayableDetailEntity();
-          debAccount.branchId = debtAccount.branchId;
-          debAccount.providerId = debtAccount.providerId;
-          debAccount.accountPayableId = debtAccount.id;
-          debAccount.movementTypeApplicationId = movement.id;
-          if (availableAmount >= amountToPay) {
-            debAccount.amount = amountToPay;
-            availableAmount -= amountToPay;
-          } else {
-            debAccount.amount = availableAmount;
-            availableAmount -= availableAmount;
-          }
-          debAccount.movementType = movement.type;
-          debAccount.sign = "1";
-          debAccount.order = debtsAccountDetails.length + 1;
-          await this.accountPayableDetailRepository.save(debAccount);
-        }
-      }
+      //     const amountToPay = (debtAccount.amount - totalDebtsAccount);
+      //     if (availableAmount >= amountToPay) {
+      //       debtAccount.status = CLOSE_PAYMENT;
+      //       debtAccount.dueDate = getSimpleTodayDate();
+      //       await this.accountPayableRepository.save(debtAccount);
+      //     }
+      //     const debAccount = new AccountPayableDetailEntity();
+      //     debAccount.branchId = debtAccount.branchId;
+      //     debAccount.providerId = debtAccount.providerId;
+      //     debAccount.accountPayableId = debtAccount.id;
+      //     debAccount.movementTypeApplicationId = movement.id;
+      //     if (availableAmount >= amountToPay) {
+      //       debAccount.amount = amountToPay;
+      //       availableAmount -= amountToPay;
+      //     } else {
+      //       debAccount.amount = availableAmount;
+      //       availableAmount -= availableAmount;
+      //     }
+      //     debAccount.movementType = movement.type;
+      //     debAccount.sign = "1";
+      //     debAccount.order = debtsAccountDetails.length + 1;
+      //     await this.accountPayableDetailRepository.save(debAccount);
+      //   }
+      // }
     }
   }
 
