@@ -204,11 +204,11 @@ export class AppointmentService {
       }
 
       const response = await this.appointmentRepository.save(entity);
-      await this.messageService.sendWhatsAppConfirmation(
-        new SendWhatsappConfirmationDTO(
-          phone, branchName, `${formatDateToWhatsapp(response.appointment)} - ${time.time}`
-        )
-      );
+      // await this.messageService.sendWhatsAppConfirmation(
+      //   new SendWhatsappConfirmationDTO(
+      //     phone, branchName, `${formatDateToWhatsapp(response.appointment)} - ${time.time}`
+      //   )
+      // );
 
       return response.folio;
     } catch (exception) {
@@ -952,21 +952,21 @@ export class AppointmentService {
         await this.appointmentTimesRepository.save(item);
       }
 
-      if (nofity == true) {
-        if (response.patient != null && response.patient != undefined) {
-          await this.messageService.sendWhatsAppRescheduleAppointment(
-            new SendWhatsappConfirmationDTO(
-              response.patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(updatedAppointment.appointment)} - ${time.time}`
-            )
-          );
-        } else {
-          await this.messageService.sendWhatsAppRescheduleAppointment(
-            new SendWhatsappConfirmationDTO(
-              response.prospect.primaryContact, branchOffice.name, `${formatDateToWhatsapp(updatedAppointment.appointment)} - ${time.time}`
-            )
-          );
-        }
-      }
+      // if (nofity == true) {
+      //   if (response.patient != null && response.patient != undefined) {
+      //     await this.messageService.sendWhatsAppRescheduleAppointment(
+      //       new SendWhatsappConfirmationDTO(
+      //         response.patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(updatedAppointment.appointment)} - ${time.time}`
+      //       )
+      //     );
+      //   } else {
+      //     await this.messageService.sendWhatsAppRescheduleAppointment(
+      //       new SendWhatsappConfirmationDTO(
+      //         response.prospect.primaryContact, branchOffice.name, `${formatDateToWhatsapp(updatedAppointment.appointment)} - ${time.time}`
+      //       )
+      //     );
+      //   }
+      // }
 
       return response;
     } catch (exception) {
@@ -985,21 +985,21 @@ export class AppointmentService {
         const updatedAppointment = await this.appointmentRepository.save(appointment);
         const response = await this.getAppointment(updatedAppointment);
 
-        if (response.patient != null && response.patient != undefined) {
-          await this.messageService.sendWhatsAppCancelAppointment(
-            new SendWhatsappConfirmationDTO(
-              response.patient.primaryContact, ``, ``
-            )
-          );
+        // if (response.patient != null && response.patient != undefined) {
+        //   await this.messageService.sendWhatsAppCancelAppointment(
+        //     new SendWhatsappConfirmationDTO(
+        //       response.patient.primaryContact, ``, ``
+        //     )
+        //   );
 
-        } else {
-          await this.messageService.sendWhatsAppCancelAppointment(
-            new SendWhatsappConfirmationDTO(
-              response.prospect.primaryContact, ``, ``
-            )
-          );
+        // } else {
+        //   await this.messageService.sendWhatsAppCancelAppointment(
+        //     new SendWhatsappConfirmationDTO(
+        //       response.prospect.primaryContact, ``, ``
+        //     )
+        //   );
 
-        }
+        // }
       }
       return 200;
     } catch (exception) {
@@ -1143,13 +1143,13 @@ export class AppointmentService {
         await this.appointmentServiceRepository.save(service);
       }
 
-      if (nofity == true) {
-        await this.messageService.sendWhatsAppNextAppointment(
-          new SendWhatsappConfirmationDTO(
-            patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${time.time}`
-          )
-        );
-      }
+      // if (nofity == true) {
+      //   await this.messageService.sendWhatsAppNextAppointment(
+      //     new SendWhatsappConfirmationDTO(
+      //       patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${time.time}`
+      //     )
+      //   );
+      // }
 
       let updatedAppointment = await this.getAppointment(response);
       return updatedAppointment;
@@ -1274,21 +1274,21 @@ export class AppointmentService {
         }
         const branchOffice = await this.branchOfficeRepository.findOneBy({ id: appointment.branchId });
 
-        if (patient != null && patient != undefined) {
-          await this.messageService.sendWhatsAppConfirmation(
-            new SendWhatsappConfirmationDTO(
-              patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(appointment.appointment)} - ${appointment.time}`
-            )
-          );
+        // if (patient != null && patient != undefined) {
+        //   await this.messageService.sendWhatsAppConfirmation(
+        //     new SendWhatsappConfirmationDTO(
+        //       patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(appointment.appointment)} - ${appointment.time}`
+        //     )
+        //   );
 
-        } else {
-          await this.messageService.sendWhatsAppConfirmation(
-            new SendWhatsappConfirmationDTO(
-              prospect.primaryContact, branchOffice.name, `${formatDateToWhatsapp(appointment.appointment)} - ${appointment.time}`
-            )
-          );
+        // } else {
+        //   await this.messageService.sendWhatsAppConfirmation(
+        //     new SendWhatsappConfirmationDTO(
+        //       prospect.primaryContact, branchOffice.name, `${formatDateToWhatsapp(appointment.appointment)} - ${appointment.time}`
+        //     )
+        //   );
 
-        }
+        // }
       }
       return failureEmails;
     } catch (exception) {
@@ -1441,7 +1441,7 @@ export class AppointmentService {
 
   testWhatsappMessage = async (body: SendWhatsappConfirmationDTO) => {
     try {
-      await this.messageService.sendWhatsAppConfirmation(body);
+      //await this.messageService.sendWhatsAppConfirmation(body);
     } catch (error) {
       console.log(`Error sending whatsapp message : ${error}`);
       return {};
@@ -1497,22 +1497,22 @@ export class AppointmentService {
       entity.blockCalendar = body.blockCalendar ? BLOCK_CALENDAR : UNBLOCK_CALENDAR;
       const response = await this.appointmentRepository.save(entity);
 
-      if (body.nofity != null && body.nofity == true) {
-        if (prospect != null && prospect != undefined) {
-          await this.messageService.sendWhatsAppConfirmation(
-            new SendWhatsappConfirmationDTO(
-              prospect.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${body.time.time}`
-            )
-          );
-        } else {
-          const patient = await this.patientRepository.findOneBy({ id: body.patientId });
-          await this.messageService.sendWhatsAppConfirmation(
-            new SendWhatsappConfirmationDTO(
-              patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${body.time.time}`
-            )
-          );
-        }
-      }
+      // if (body.nofity != null && body.nofity == true) {
+      //   if (prospect != null && prospect != undefined) {
+      //     await this.messageService.sendWhatsAppConfirmation(
+      //       new SendWhatsappConfirmationDTO(
+      //         prospect.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${body.time.time}`
+      //       )
+      //     );
+      //   } else {
+      //     const patient = await this.patientRepository.findOneBy({ id: body.patientId });
+      //     await this.messageService.sendWhatsAppConfirmation(
+      //       new SendWhatsappConfirmationDTO(
+      //         patient.primaryContact, branchOffice.name, `${formatDateToWhatsapp(response.appointment)} - ${body.time.time}`
+      //       )
+      //     );
+      //   }
+      // }
 
       if (body.callId != null && body.callId > 0) {
         const call = await this.callRepository.findOneBy({ id: body.callId });
@@ -1541,7 +1541,7 @@ export class AppointmentService {
         return;
       }
       if (body != null && body.type == 'text') {
-        this.messageService.checkTextMessages(body);
+       // this.messageService.checkTextMessages(body);
       }
     } catch (error) {
       console.log(error);
