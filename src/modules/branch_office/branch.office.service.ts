@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { HandleException } from 'src/common/exceptions/general.exception';
-import { getDiff, STATUS_ACTIVE, STATUS_FINISHED, STATUS_NOT_ATTENDED, STATUS_PROCESS } from 'src/utils/general.functions.utils';
+import { STATUS_ACTIVE, STATUS_FINISHED, STATUS_NOT_ATTENDED, STATUS_PROCESS } from 'src/utils/general.functions.utils';
 import {  Repository } from 'typeorm';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';
 import { ScheduleBranchOfficeInfoDTO, SchedulesEmployeeDTO } from '../employee/models/employee.dto';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { branchOfficeScheduleToEntity, branchOfficesToEntity, registerBranchOfficeScheduleToEntity } from './extensions/branch.office.extensions';
-import { BranchOfficeSchedulesByIdDTO, BranchOfficeSchedulesDTO, DeleteBranchOfficeScheduleDTO, GetBranchOfficeScheduleDTO, RegisterBranchOfficeScheduleDTO, setFullDate, UpdateAvailableTimeStatusDTO } from './models/branch.office.dto';
+import { BranchOfficeSchedulesByIdDTO, BranchOfficeSchedulesDTO, DeleteBranchOfficeScheduleDTO, GetBranchOfficeScheduleDTO, RegisterBranchOfficeScheduleDTO, UpdateAvailableTimeStatusDTO } from './models/branch.office.dto';
 import { BranchOfficeEmployeeSchedule } from './models/branch.office.employee.entity';
 import { AppointmentStatistic, BranchOfficeEntity } from './models/branch.office.entity';
 import { BranchOfficeScheduleEntity } from './models/branch.office.schedule.entity';

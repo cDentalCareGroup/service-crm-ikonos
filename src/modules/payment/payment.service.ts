@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { HandleException } from 'src/common/exceptions/general.exception';
-import { ACTIVE_PAYMENT, CLOSE_PAYMENT, getSimpleTodayDate, getTodayDateAndConvertToDate } from 'src/utils/general.functions.utils';
+import { ACTIVE_PAYMENT, getTodayDateAndConvertToDate } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { AppointmentService } from '../appointment/appointment.service';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';

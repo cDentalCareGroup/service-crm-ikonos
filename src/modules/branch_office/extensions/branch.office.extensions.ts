@@ -1,4 +1,3 @@
-import { formatInTimeZone } from "date-fns-tz";
 import { STATUS_ACTIVE } from "src/utils/general.functions.utils";
 import { RegisterBranchOfficeScheduleDTO } from "../models/branch.office.dto";
 import { BranchOfficeEntity } from "../models/branch.office.entity";

@@ -1,12 +1,8 @@
 import { HttpService } from "@nestjs/axios";
-import { Body, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { FirebaseAdmin, InjectFirebaseAdmin } from "nestjs-firebase";
-import { lastValueFrom } from "rxjs";
-import { HandleException } from "src/common/exceptions/general.exception";
 import { Repository } from "typeorm";
-import { SendWhatsappConfirmationDTO, SendWhatsappSimpleTextDTO } from "../appointment/models/appointment.dto";
-import { branchOfficesToMessage } from "../branch_office/extensions/branch.office.extensions";
 import { BranchOfficeEntity } from "../branch_office/models/branch.office.entity";
 import { EmployeeEntity } from "../employee/models/employee.entity";
 

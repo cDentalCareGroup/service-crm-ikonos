@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { async } from 'rxjs';
 import { HandleException, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
 import { capitalizeAllCharacters } from 'src/utils/general.functions.utils';
 import { SecurityUtil } from 'src/utils/security.util';

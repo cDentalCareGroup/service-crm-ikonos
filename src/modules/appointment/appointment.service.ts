@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
-import { format, formatISO } from 'date-fns';
+import { formatISO } from 'date-fns';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { HandleException, NotFoundCustomException, NotFoundType, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
-import { ACTIVE_PAYMENT, BLOCK_CALENDAR, capitalizeAllCharacters, CLOSE_PAYMENT, formatDate, formatDateToWhatsapp, getDayName, getDiff, getRandomInt, getSimpleTodayDate, getTodayDate, getTodayDateAndConvertToDate, getTodaySimpleDate, STATUS_ACTIVE, STATUS_CANCELLED, STATUS_FINISHED, STATUS_FINISHED_APPOINTMENT_OR_CALL, STATUS_NOT_ATTENDED, STATUS_PROCESS, STATUS_SOLVED, UNBLOCK_CALENDAR } from 'src/utils/general.functions.utils';
+import { ACTIVE_PAYMENT, BLOCK_CALENDAR, capitalizeAllCharacters, CLOSE_PAYMENT, formatDate, formatDateToWhatsapp, getDiff, getRandomInt, getTodayDate, getTodayDateAndConvertToDate, getTodaySimpleDate, STATUS_ACTIVE, STATUS_CANCELLED, STATUS_FINISHED, STATUS_FINISHED_APPOINTMENT_OR_CALL, STATUS_NOT_ATTENDED, STATUS_PROCESS, STATUS_SOLVED, UNBLOCK_CALENDAR } from 'src/utils/general.functions.utils';
 import { IsNull, Not, Repository } from 'typeorm';
 import { UserEntity } from '../auth/models/entities/user.entity';
 import { branchOfficeScheduleToEntity } from '../branch_office/extensions/branch.office.extensions';
@@ -31,9 +31,7 @@ import { AppointmentTimesEntity } from './models/appointment.times.entity';
 import { PaymentMethodEntity } from './models/payment.method.entity';
 import { ProspectEntity } from './models/prospect.entity';
 import { ServiceEntity } from './models/service.entity';
-import { AccountPayableEntity } from '../payment/models/account.payable.entity';
-import { AccountPayableOrigin } from '../payment/models/account.payable.entity';
-import { AccountPayableProviderType } from '../payment/models/account.payable.entity';
+import { AccountPayableEntity } from '../payment/models/account.payable.entity';;
 import { AccountPayableDetailEntity } from '../payment/models/account.payable.detail.entity';
 
 @Injectable()

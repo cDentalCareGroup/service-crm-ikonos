@@ -1,5 +1,5 @@
 import { BranchOfficeEmployeeSchedule } from "src/modules/branch_office/models/branch.office.employee.entity";
-import { RegisterScheduleeEmployeeDTO, RegisterScheduleesEmployeesDTO } from "../models/employee.dto";
+import { RegisterScheduleeEmployeeDTO } from "../models/employee.dto";
 import { EmployeeEntity } from "../models/employee.entity";
 
 

@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { AppointmentService } from 'src/modules/appointment/appointment.service';
-import { EmailService } from 'src/modules/email/email.service';
 
 @Injectable()
 export class TaskServiceService {

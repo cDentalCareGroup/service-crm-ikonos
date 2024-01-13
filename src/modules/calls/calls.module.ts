@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppointmentModule } from '../appointment/appointment.module';
-import { AppointmentService } from '../appointment/appointment.service';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';
 import { ProspectEntity } from '../appointment/models/prospect.entity';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
