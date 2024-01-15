@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { BranchOfficeController } from './branch.office.controller';

@@ -1,4 +1,3 @@
-import { STATUS_ACTIVE } from "src/utils/general.functions.utils";
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 export enum AccountPayableOrigin {

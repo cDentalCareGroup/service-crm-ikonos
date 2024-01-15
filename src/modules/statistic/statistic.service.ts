@@ -1,12 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { randomInt } from 'crypto';
-import { isPast, isToday } from 'date-fns';
-import { async } from 'rxjs';
+import { isPast } from 'date-fns';
 import { HandleException } from 'src/common/exceptions/general.exception';
 import { getSimpleTodayDate, getTodayDate, STATUS_ACTIVE, STATUS_FINISHED, STATUS_SOLVED } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
-import { AppointmentService } from '../appointment/appointment.service';
 import { AppointmentDetailEntity } from '../appointment/models/appointment.detail.entity';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';
 import { ProspectEntity } from '../appointment/models/prospect.entity';

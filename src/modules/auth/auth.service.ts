@@ -15,7 +15,6 @@ import { UserEntity, UserResponse } from './models/entities/user.entity';
 import { Rol, RolEntity, UserRolEntity } from './models/entities/rol.entity';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { UserLogsEntity } from './models/entities/user.logs.entity';
-import { async } from 'rxjs';
 
 @Injectable()
 export class AuthService {
