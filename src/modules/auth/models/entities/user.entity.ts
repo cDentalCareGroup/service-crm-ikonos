@@ -2,10 +2,8 @@ import {
   Column,
   PrimaryGeneratedColumn,
   Entity,
-  OneToOne,
-  JoinColumn,
 } from 'typeorm';
-import { Rol, RolEntity } from './rol.entity';
+import { Rol } from './rol.entity';
 
 @Entity('employee')
 export class UserEntity {

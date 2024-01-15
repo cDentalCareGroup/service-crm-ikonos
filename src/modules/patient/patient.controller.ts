@@ -1,6 +1,5 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
-import { GetPatientsByFilter } from './models/get.patients.by.filter';
 import { GetPatientByIdDTO, GetPatientsByBranchOfficeDTO, GetPatientsByFilterDTO, RegisterPatientDTO, UpdatePatientDTO, UpdatePatientStatus } from './models/patient.dto';
 import { PatientEntity } from './models/patient.entity';
 import { GetColoniesDTO, PatientService, UpdateLatLngDTO } from './patient.service';

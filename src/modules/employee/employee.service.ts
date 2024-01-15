@@ -9,7 +9,6 @@ import {
   ValidationExceptionType,
 } from 'src/common/exceptions/general.exception';
 import { Repository } from 'typeorm';
-import { DeleteBranchOfficeScheduleDTO } from '../branch_office/models/branch.office.dto';
 import { BranchOfficeEmployeeSchedule } from '../branch_office/models/branch.office.employee.entity';
 import { registerScheduleEmployeeToEntity } from './extensions/employee.extensions';
 import { DeleteEmployeeScheduleDTO, GetEmployeeById, GetEmployeesByScheduleDTO, GetEmployeesByTypeDTO, RegisterEmployeeDTO, RegisterScheduleesEmployeesDTO, UpdateEmployeeDTO } from './models/employee.dto';
@@ -19,7 +18,7 @@ import { SecurityUtil, } from 'src/utils/security.util';
 import { EmployeeRoleEntity } from './models/employee.rol.entity';
 import { RolEntity } from '../auth/models/entities/rol.entity';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
-import { capitalizeAllCharacters, capitalizeFirstLetter } from 'src/utils/general.functions.utils';
+import { capitalizeAllCharacters } from 'src/utils/general.functions.utils';
 
 @Injectable()
 export class EmployeeService {

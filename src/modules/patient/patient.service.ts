@@ -2,7 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { formatISO } from 'date-fns';
-import { catchError, lastValueFrom, map } from 'rxjs';
+import { lastValueFrom, map } from 'rxjs';
 import {
   HandleException,
   NotFoundCustomException,
@@ -10,7 +10,7 @@ import {
   ValidationException,
   ValidationExceptionType,
 } from 'src/common/exceptions/general.exception';
-import { capitalizeAllCharacters, capitalizeFirstLetter, isNumber, STATUS_ABANDOMENT, STATUS_ACTIVE } from 'src/utils/general.functions.utils';
+import { capitalizeAllCharacters, isNumber, STATUS_ABANDOMENT, STATUS_ACTIVE } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { ServiceEntity } from '../appointment/models/service.entity';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
