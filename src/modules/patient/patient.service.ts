@@ -10,7 +10,7 @@ import {
   ValidationException,
   ValidationExceptionType,
 } from 'src/common/exceptions/general.exception';
-import { capitalizeAllCharacters, isNumber, STATUS_ABANDOMENT, STATUS_ACTIVE } from 'src/utils/general.functions.utils';
+import { capitalizeAllCharacters, isNumber, STATUS_ABANDOMENT, STATUS_ACTIVE, STATUS_INACTIVE, STATUS_DISABLED } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { ServiceEntity } from '../appointment/models/service.entity';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
@@ -30,6 +30,7 @@ import { PatientEntity } from './models/patient.entity';
 import { PatientOrganizationEntity } from './models/patient.organization.entity';
 import { PatientOriginEntity } from './models/patient.origin.entity';
 
+
 @Injectable()
 export class PatientService {
   constructor(
@@ -44,6 +45,34 @@ export class PatientService {
     @InjectRepository(PadComponenEntity) private padComponentRepository: Repository<PadComponenEntity>,
     private readonly httpService: HttpService
   ) { }
+
+  getPatientsByStatus = async (status: string): Promise<PatientEntity[]> => {
+    try {
+      let results: PatientEntity[] = [];
+      switch (status) {
+        case STATUS_ACTIVE:
+          results = await this.patientRepository.find({
+            where: { status: STATUS_ACTIVE },
+          });
+          break;
+        case STATUS_INACTIVE:
+          results = await this.patientRepository.find({
+            where: { status: STATUS_INACTIVE },
+          });
+          break;
+        case STATUS_DISABLED:
+          results = await this.patientRepository.find({
+            where: { status: STATUS_DISABLED },
+          });
+          break;
+        default:
+          throw new Error('Estado no válido');
+      }
+      return results;
+    } catch (exception) {
+      HandleException.exception(exception);
+    }
+  };
 
   getAllPatients = async (): Promise<PatientEntity[]> => {
     try {
