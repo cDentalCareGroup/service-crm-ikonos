@@ -75,7 +75,7 @@ export class PatientController {
     async updateLatLng (@Body() body: UpdateLatLngDTO) {
         return this.patientService.updateLatLng(body);
     }
-    // Nueva ruta para obtener pacientes por estado
+    
     @Post('getPatient/filter-by-status')
     async getPatientsByStatus(@Body() body: { status: string }): Promise<PatientEntity[]> {
         const { status } = body;

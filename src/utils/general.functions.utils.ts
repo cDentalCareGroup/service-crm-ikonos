@@ -107,6 +107,7 @@ const formatDateToWhatsapp = (date: string): string => {
 const STATUS_ACTIVE = 'active'
 const STATUS_PROCESS = 'process'
 const STATUS_INACTIVE = 'inactive'
+const STATUS_DISABLED = 'disabled'
 const STATUS_FINISHED = 'finished'
 const STATUS_NOT_ATTENDED = 'not-attended'
 const STATUS_CANCELLED = 'cancelled'
@@ -138,6 +139,7 @@ export {
         formatDateToWhatsapp,
         STATUS_ACTIVE,
         STATUS_INACTIVE,
+        STATUS_DISABLED,
         STATUS_FINISHED,
         STATUS_NOT_ATTENDED,
         STATUS_CANCELLED,

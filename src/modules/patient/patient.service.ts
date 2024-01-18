@@ -46,24 +46,23 @@ export class PatientService {
     private readonly httpService: HttpService
   ) { }
 
-  // Método para obtener pacientes por estado
   getPatientsByStatus = async (status: string): Promise<PatientEntity[]> => {
     try {
       let results: PatientEntity[] = [];
       switch (status) {
         case STATUS_ACTIVE:
           results = await this.patientRepository.find({
-            where: { status: 'active' },
+            where: { status: STATUS_ACTIVE },
           });
           break;
         case STATUS_INACTIVE:
           results = await this.patientRepository.find({
-            where: { status: 'inactive' },
+            where: { status: STATUS_INACTIVE },
           });
           break;
         case STATUS_DISABLED:
           results = await this.patientRepository.find({
-            where: { status: 'disabled' },
+            where: { status: STATUS_DISABLED },
           });
           break;
         default:
