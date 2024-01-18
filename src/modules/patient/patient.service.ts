@@ -71,7 +71,6 @@ export class PatientService {
       }
       return results;
     } catch (exception) {
-      console.log(exception);
       HandleException.exception(exception);
     }
   };
