@@ -16,7 +16,6 @@ import { CallEntity, CallResult } from '../calls/models/call.entity';
 import { CallLogEntity } from '../calls/models/call.log.entity';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
-import { MessageService } from '../messages/message.service';
 import { PadComponentUsedEntity } from '../pad/models/pad.component.used.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { PatientOriginEntity } from '../patient/models/patient.origin.entity';
@@ -60,7 +59,6 @@ export class AppointmentService {
     @InjectRepository(PadComponentUsedEntity) private padComponentUsedRepository: Repository<PadComponentUsedEntity>,
     @InjectRepository(PatientOriginEntity) private patientOriginRepository: Repository<PatientOriginEntity>,
     @InjectRepository(MovementsTypeEntity) private movementRepository: Repository<MovementsTypeEntity>,
-    private readonly messageService: MessageService,
     @InjectRepository(CallLogEntity) private callLogRepository: Repository<CallLogEntity>,
     @InjectRepository(AccountPayableEntity) private accountPayableRepository: Repository<AccountPayableEntity>,
     @InjectRepository(AccountPayableDetailEntity) private accountPayableDetailRepository: Repository<AccountPayableDetailEntity>,

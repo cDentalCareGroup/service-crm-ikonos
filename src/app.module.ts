@@ -4,13 +4,10 @@ import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import typeOrmConfig from './config/type.orm.config';
 import { ConfigModule } from '@nestjs/config';
-import { MailerModule } from '@nestjs-modules/mailer';
-import { mail } from './utils/mail.utils';
 import { BranchOfficeModule } from './modules/branch_office/branch.office.module';
 import { EmployeeModule } from './modules/employee/employee.module';
 import { StatisticModule } from './modules/statistic/statistic.module';
 import { AppointmentModule } from './modules/appointment/appointment.module';
-import { EmailModule } from './modules/email/email.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TaskServiceService } from './task-service/task-service.service';
 import { FirebaseModule } from 'nestjs-firebase';
@@ -31,17 +28,6 @@ import { OrganizationModule } from './modules/organization/organization.module';
     ConfigModule.forRoot(),
     typeOrmConfig,
     AuthModule,
-    MailerModule.forRoot({
-      transport: {
-        host: mail.host,
-        port: mail.port,
-        secure: true,
-        auth: {
-          user: mail.auth.user,
-          pass: mail.auth.pass
-        }
-      }
-    }),
     FirebaseModule.forRoot({
       googleApplicationCredential: './cdentalcaregroupfirebase.json'
     }),
@@ -51,7 +37,6 @@ import { OrganizationModule } from './modules/organization/organization.module';
     EmployeeModule,
     StatisticModule,
     AppointmentModule,
-    EmailModule,
     HttpModule,
     CallsModule,
     PadModule,
