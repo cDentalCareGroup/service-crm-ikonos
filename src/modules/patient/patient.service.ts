@@ -118,38 +118,6 @@ export class PatientService {
     }
   };
 
-  // private getLatLngFromPostalCode = async (): Promise<any> => {
-  //   try {
-  //     const API_KEY = process.env.GOOGLE_API_KEY;
-  //     const CP = 62158;
-  //     const COUNTRY = 'MX';
-
-  //     const request = this.http
-  //       .get(
-  //         `https://maps.googleapis.com/maps/api/geocode/json?components=postal_code:${CP}|country:${COUNTRY}&key=${API_KEY}`,
-  //       )
-  //       .pipe(map((res) => res.data.results))
-  //       .pipe(catchError(() => null));
-  //     const response = await lastValueFrom(request);
-  //     if (
-  //       response != null &&
-  //       (response as Array<any>) != null &&
-  //       (response as Array<any>).length > 0
-  //     ) {
-  //       const address = (response as Array<any>)[0];
-  //       return {
-  //         lat: address.geometry.location.lat,
-  //         lng: address.geometry.location.lng,
-  //         address: address.formatted_address,
-  //       };
-  //     }
-
-  //     return { lat: 0, lng: 0, address: 'EMPTY' };
-  //   } catch (exception) {
-  //     console.log(exception);
-  //     return { lat: 0, lng: 0, address: 'EMPTY' };
-  //   }
-  // };
 
   getPatientsByFilter = async ({ queries }: GetPatientsByFilterDTO): Promise<PatientEntity[]> => {
     try {
