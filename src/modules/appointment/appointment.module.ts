@@ -28,6 +28,7 @@ import { ProspectEntity } from './models/prospect.entity';
 import { ServiceEntity } from './models/service.entity';
 import { AccountPayableEntity } from '../payment/models/account.payable.entity';
 import { AccountPayableDetailEntity } from '../payment/models/account.payable.detail.entity';
+import { FirebaseModule } from 'src/firebase/firebase.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { AccountPayableDetailEntity } from '../payment/models/account.payable.de
       AccountPayableDetailEntity
     ]),
     HttpModule,
+    FirebaseModule
   ],
   controllers: [AppointmentController],
   providers: [AppointmentService],

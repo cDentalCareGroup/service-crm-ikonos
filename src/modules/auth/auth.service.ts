@@ -13,7 +13,6 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { UserEntity, UserResponse } from './models/entities/user.entity';
 import { Rol, RolEntity, UserRolEntity } from './models/entities/rol.entity';
-import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { UserLogsEntity } from './models/entities/user.logs.entity';
 
 @Injectable()
@@ -22,7 +21,6 @@ export class AuthService {
     @InjectRepository(UserEntity) private userRepository: Repository<UserEntity>,
     @InjectRepository(RolEntity) private rolRepository: Repository<RolEntity>,
     @InjectRepository(UserRolEntity) private userRolRepository: Repository<UserRolEntity>,
-    @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin,
     @InjectRepository(UserLogsEntity) private userLogsRepository: Repository<UserLogsEntity>,
     private jtwService: JwtService,
   ) { }

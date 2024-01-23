@@ -10,7 +10,6 @@ import { StatisticModule } from './modules/statistic/statistic.module';
 import { AppointmentModule } from './modules/appointment/appointment.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TaskServiceService } from './task-service/task-service.service';
-import { FirebaseModule } from 'nestjs-firebase';
 import { PatientModule } from './modules/patient/patient.module';
 import { HttpModule } from '@nestjs/axios';
 import { CallsModule } from './modules/calls/calls.module';
@@ -20,6 +19,7 @@ import { ProspectModule } from './modules/prospect/prospect.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { OriginsModule } from './modules/origins/origins.module';
 import { OrganizationModule } from './modules/organization/organization.module';
+import { FirebaseModule } from './firebase/firebase.module';
 
 
 
@@ -28,9 +28,6 @@ import { OrganizationModule } from './modules/organization/organization.module';
     ConfigModule.forRoot(),
     typeOrmConfig,
     AuthModule,
-    FirebaseModule.forRoot({
-      googleApplicationCredential: './cdentalcaregroupfirebase.json'
-    }),
     ScheduleModule.forRoot(),
     PatientModule,
     BranchOfficeModule,
@@ -45,6 +42,7 @@ import { OrganizationModule } from './modules/organization/organization.module';
     PaymentModule,
     OriginsModule,
     OrganizationModule,
+    FirebaseModule,
   ],
   controllers: [AppController],
   providers: [AppService, TaskServiceService],
