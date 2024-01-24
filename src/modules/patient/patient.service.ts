@@ -207,6 +207,19 @@ export class PatientService {
     }
   }
 
+  getPatientBirthDate = (dateString: string): Date => {
+    try {
+      const parts = dateString.split('-');
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      return new Date(year, month, day);
+    } catch (error) {
+      console.log(error);
+      HandleException.exception(error);
+    }
+  };
+
   updatePatient = async (body: UpdatePatientDTO) => {
     try {
       const patient = await this.patientRepository.findOneBy({ id: body.patientId });
@@ -214,11 +227,7 @@ export class PatientService {
         patient.name = capitalizeAllCharacters(body.name);
         patient.lastname = capitalizeAllCharacters(body.lastname);
         patient.secondLastname = capitalizeAllCharacters(body.secondLastname);
-        const parts = body.birthDate.split('-');
-        const year = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1;
-        const day = parseInt(parts[2], 10);
-        patient.birthDay = new Date(year, month, day);
+        patient.birthDay = this.getPatientBirthDate(body.birthDate);
         patient.gender = body.gender;
         patient.maritalStatus = body.civilStatus;
         patient.street = capitalizeAllCharacters(body.street);
