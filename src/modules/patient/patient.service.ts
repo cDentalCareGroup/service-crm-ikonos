@@ -214,7 +214,11 @@ export class PatientService {
         patient.name = capitalizeAllCharacters(body.name);
         patient.lastname = capitalizeAllCharacters(body.lastname);
         patient.secondLastname = capitalizeAllCharacters(body.secondLastname);
-        patient.birthDay = new Date(body.birthDate);
+        const parts = body.birthDate.split('-');
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        patient.birthDay = new Date(year, month, day);
         patient.gender = body.gender;
         patient.maritalStatus = body.civilStatus;
         patient.street = capitalizeAllCharacters(body.street);

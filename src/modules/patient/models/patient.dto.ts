@@ -42,7 +42,7 @@ export class RegisterPatientDTO {
     description: 'branch office name or id',
     example: '1 | Las palmas',
   })
-  birthDate: string;
+  birthDate: Date;
 
   @ApiProperty({
     description: 'branch office name or id',
