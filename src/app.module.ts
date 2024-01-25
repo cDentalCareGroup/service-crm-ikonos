@@ -23,8 +23,7 @@ import { ProspectModule } from './modules/prospect/prospect.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { OriginsModule } from './modules/origins/origins.module';
 import { OrganizationModule } from './modules/organization/organization.module';
-
-
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -38,12 +37,12 @@ import { OrganizationModule } from './modules/organization/organization.module';
         secure: true,
         auth: {
           user: mail.auth.user,
-          pass: mail.auth.pass
-        }
-      }
+          pass: mail.auth.pass,
+        },
+      },
     }),
     FirebaseModule.forRoot({
-      googleApplicationCredential: './cdentalcaregroupfirebase.json'
+      googleApplicationCredential: './cdentalcaregroupfirebase.json',
     }),
     ScheduleModule.forRoot(),
     PatientModule,
@@ -60,10 +59,9 @@ import { OrganizationModule } from './modules/organization/organization.module';
     PaymentModule,
     OriginsModule,
     OrganizationModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService, TaskServiceService],
 })
 export class AppModule {}
-
-

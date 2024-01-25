@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { AppointmentEntity } from "src/modules/appointment/models/appointment.entity";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('patient')
 export class PatientEntity {
@@ -272,5 +273,8 @@ export class PatientEntity {
     type: 'varchar'
   })
   comments: string;
+  
+  @OneToMany(() => AppointmentEntity, appointment => appointment.patientId)
+  appointments: AppointmentEntity[];
 
 }

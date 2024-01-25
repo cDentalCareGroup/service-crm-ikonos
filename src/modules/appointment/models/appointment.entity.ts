@@ -1,5 +1,6 @@
 import { CallEntity } from "src/modules/calls/models/call.entity";
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { PatientEntity } from "src/modules/patient/models/patient.entity";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('appointment')
 export class AppointmentEntity {
@@ -306,4 +307,11 @@ export class AppointmentEntity {
   //   // @OneToOne(() => Employees)
   //   // @JoinColumn({ name: 'receptionist_id' })
   //   // receptionist: Employees;
+
+//   @ManyToOne(() => PatientEntity, patient => patient.appointments)
+// patient: PatientEntity;
+
+@ManyToOne(() => PatientEntity, patient => patient.appointments)
+@JoinColumn({ name: 'patient_id' }) // Asegúrate de que el nombre de la columna sea correcto
+patient: PatientEntity;
 }
