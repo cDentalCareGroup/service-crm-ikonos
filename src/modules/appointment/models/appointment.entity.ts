@@ -311,7 +311,4 @@ export class AppointmentEntity {
 //   @ManyToOne(() => PatientEntity, patient => patient.appointments)
 // patient: PatientEntity;
 
-@ManyToOne(() => PatientEntity, patient => patient.appointments)
-@JoinColumn({ name: 'patient_id' }) // Asegúrate de que el nombre de la columna sea correcto
-patient: PatientEntity;
 }

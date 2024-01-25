@@ -274,7 +274,5 @@ export class PatientEntity {
   })
   comments: string;
   
-  @OneToMany(() => AppointmentEntity, appointment => appointment.patientId)
-  appointments: AppointmentEntity[];
 
 }

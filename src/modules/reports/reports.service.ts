@@ -1,14 +1,10 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { GetPatientAppointmentsReportsDTO } from './models/reports.dto';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';
-import { GetPatientAppointmentsReportsDTO } from './models/reports.dto';
-import {
-  HandleException,
-  ValidationException,
-  ValidationExceptionType,
-} from 'src/common/exceptions/general.exception';
+import { HandleException, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
 
 @Injectable()
 export class ReportsService {
@@ -21,14 +17,15 @@ export class ReportsService {
 
   async findBetweenDates(dates: GetPatientAppointmentsReportsDTO): Promise<any[]> {
     try {
-        const startDate = new Date(dates.startedAt);
-        const endDate = new Date(dates.finishedAt);
+      const startDate = new Date(dates.startedAt);
+      const endDate = new Date(dates.finishedAt);
       if (startDate > endDate) {
         throw new ValidationException(ValidationExceptionType.ERROR_DATES);
       }
-      return this.appointmentRepository
+
+      const result = await this.appointmentRepository
         .createQueryBuilder('appointment')
-        .innerJoin('appointment.patient', 'patient')
+        .innerJoin('patient', 'patient', 'patient.id = appointment.patientId')
         .where('appointment.appointment BETWEEN :startDate AND :endDate', {
           startDate,
           endDate,
@@ -39,7 +36,9 @@ export class ReportsService {
           'patient.lastname',
           'appointment.appointment',
         ])
-        .getMany();
+        .getRawMany();
+
+      return result;
     } catch (error) {
       HandleException.exception(error);
     }

@@ -27,20 +27,6 @@ import { FirebaseModule } from './firebase/firebase.module';
     ConfigModule.forRoot(),
     typeOrmConfig,
     AuthModule,
-    MailerModule.forRoot({
-      transport: {
-        host: mail.host,
-        port: mail.port,
-        secure: true,
-        auth: {
-          user: mail.auth.user,
-          pass: mail.auth.pass,
-        },
-      },
-    }),
-    FirebaseModule.forRoot({
-      googleApplicationCredential: './cdentalcaregroupfirebase.json',
-    }),
     ScheduleModule.forRoot(),
     PatientModule,
     BranchOfficeModule,
