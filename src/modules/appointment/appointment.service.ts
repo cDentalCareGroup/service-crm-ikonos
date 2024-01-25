@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { formatISO } from 'date-fns';
-import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { HandleException, NotFoundCustomException, NotFoundType, ValidationException, ValidationExceptionType } from 'src/common/exceptions/general.exception';
 import { ACTIVE_PAYMENT, BLOCK_CALENDAR, capitalizeAllCharacters, CLOSE_PAYMENT, formatDate, formatDateToWhatsapp, getDiff, getRandomInt, getTodayDate, getTodayDateAndConvertToDate, getTodaySimpleDate, STATUS_ACTIVE, STATUS_CANCELLED, STATUS_FINISHED, STATUS_FINISHED_APPOINTMENT_OR_CALL, STATUS_NOT_ATTENDED, STATUS_PROCESS, STATUS_SOLVED, UNBLOCK_CALENDAR } from 'src/utils/general.functions.utils';
 import { IsNull, Not, Repository } from 'typeorm';
@@ -16,7 +15,6 @@ import { CallEntity, CallResult } from '../calls/models/call.entity';
 import { CallLogEntity } from '../calls/models/call.log.entity';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
-import { MessageService } from '../messages/message.service';
 import { PadComponentUsedEntity } from '../pad/models/pad.component.used.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { PatientOriginEntity } from '../patient/models/patient.origin.entity';
@@ -33,6 +31,8 @@ import { ProspectEntity } from './models/prospect.entity';
 import { ServiceEntity } from './models/service.entity';
 import { AccountPayableEntity } from '../payment/models/account.payable.entity';;
 import { AccountPayableDetailEntity } from '../payment/models/account.payable.detail.entity';
+import { FirebaseService } from 'src/firebase/firebase.service';
+import { FirebaseRequestDTO } from 'src/firebase/firebase.request.dto';
 
 @Injectable()
 export class AppointmentService {
@@ -47,7 +47,6 @@ export class AppointmentService {
     @InjectRepository(UserEntity) private userRepository: Repository<UserEntity>,
     @InjectRepository(BranchOfficeEmployeeSchedule) private branchOfficeEmployeeScheduleRepository: Repository<BranchOfficeEmployeeSchedule>,
     @InjectRepository(EmployeeTypeEntity) private employeeTypeRepository: Repository<EmployeeTypeEntity>,
-    @InjectFirebaseAdmin() private readonly firebase: FirebaseAdmin,
     @InjectRepository(ServiceEntity) private serviceRepository: Repository<ServiceEntity>,
     @InjectRepository(PaymentMethodEntity) private paymentMethodRepository: Repository<PaymentMethodEntity>,
     @InjectRepository(PaymentDetailEntity) private paymentDetailRepository: Repository<PaymentDetailEntity>,
@@ -60,10 +59,10 @@ export class AppointmentService {
     @InjectRepository(PadComponentUsedEntity) private padComponentUsedRepository: Repository<PadComponentUsedEntity>,
     @InjectRepository(PatientOriginEntity) private patientOriginRepository: Repository<PatientOriginEntity>,
     @InjectRepository(MovementsTypeEntity) private movementRepository: Repository<MovementsTypeEntity>,
-    private readonly messageService: MessageService,
     @InjectRepository(CallLogEntity) private callLogRepository: Repository<CallLogEntity>,
     @InjectRepository(AccountPayableEntity) private accountPayableRepository: Repository<AccountPayableEntity>,
     @InjectRepository(AccountPayableDetailEntity) private accountPayableDetailRepository: Repository<AccountPayableDetailEntity>,
+    private firebaseService: FirebaseService
   ) { }
 
   getAppointmentsAvailability = async ({ branchOfficeName, dayName, date, filterHours }: AppointmentAvailabilityDTO): Promise<AvailableHoursDTO[]> => {
@@ -1184,20 +1183,15 @@ export class AppointmentService {
     try {
       const appointment = await this.appointmentRepository.findOneBy({ folio: folio });
       const employee = await this.employeeRepository.findOneBy({ branchOfficeId: appointment.branchId, typeId: 10 });
-      //   const employee = await this.employeeRepository.findOneBy({ id: 21 });
-      const message = {
-        notification: {
-          title: `Cita Folio: ${appointment.folio}`,
-          body: 'Cita recibida.'
-        },
-        data: {
-          type: 'QR',
-          folio: appointment.folio
-        },
-        token: employee.token
-      };
-      await this.firebase.messaging.send(message);
-      console.log(`Notification sent`);
+      await this.firebaseService.sendNewAppointment(
+        new FirebaseRequestDTO(
+          employee.token,
+          `Cita Folio: ${appointment.folio}`,
+          'Cita recibida.',
+          'QR',
+          appointment.folio
+        )
+      );
       return 200;
     } catch (exception) {
       console.log(`Error sending notification ${exception}`);
@@ -1658,20 +1652,6 @@ export class AppointmentService {
         return appointments;
       }
       return [];
-    } catch (error) {
-      HandleException.exception(error);
-    }
-  }
-
-  getAllAppointmentByBranchOfficeTest = async (body: GetAppointmentsByBranchOfficeDTO) => {
-    try {
-      const data = [];
-      const appointments = await this.appointmentRepository.findBy({ branchId: Number(body.id), status: body.status, appointment: '2023-05-11' });
-      // for await (const appointment of appointments) {
-      //   const result = await this.getAppointment(appointment);
-      //  // data.push(result);
-      // }      
-      return appointments;
     } catch (error) {
       HandleException.exception(error);
     }

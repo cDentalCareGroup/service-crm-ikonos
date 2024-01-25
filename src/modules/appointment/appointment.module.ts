@@ -9,10 +9,8 @@ import { BranchOfficeScheduleEntity } from '../branch_office/models/branch.offic
 import { CallCatalogEntity } from '../calls/models/call.catalog.entity';
 import { CallEntity } from '../calls/models/call.entity';
 import { CallLogEntity } from '../calls/models/call.log.entity';
-import { EmailModule } from '../email/email.module';
 import { EmployeeEntity } from '../employee/models/employee.entity';
 import { EmployeeTypeEntity } from '../employee/models/employee.type.entity';
-import { MessageService } from '../messages/message.service';
 import { PadComponentUsedEntity } from '../pad/models/pad.component.used.entity';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { PatientOriginEntity } from '../patient/models/patient.origin.entity';
@@ -30,6 +28,7 @@ import { ProspectEntity } from './models/prospect.entity';
 import { ServiceEntity } from './models/service.entity';
 import { AccountPayableEntity } from '../payment/models/account.payable.entity';
 import { AccountPayableDetailEntity } from '../payment/models/account.payable.detail.entity';
+import { FirebaseModule } from 'src/firebase/firebase.module';
 
 @Module({
   imports: [
@@ -60,11 +59,11 @@ import { AccountPayableDetailEntity } from '../payment/models/account.payable.de
       AccountPayableEntity,
       AccountPayableDetailEntity
     ]),
-    EmailModule,
     HttpModule,
+    FirebaseModule
   ],
   controllers: [AppointmentController],
-  providers: [AppointmentService, MessageService],
+  providers: [AppointmentService],
   exports: [AppointmentService]
 })
 export class AppointmentModule { }

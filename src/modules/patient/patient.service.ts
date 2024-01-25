@@ -10,7 +10,7 @@ import {
   ValidationException,
   ValidationExceptionType,
 } from 'src/common/exceptions/general.exception';
-import { capitalizeAllCharacters, isNumber, STATUS_ABANDOMENT, STATUS_ACTIVE } from 'src/utils/general.functions.utils';
+import { capitalizeAllCharacters, isNumber, STATUS_ABANDOMENT, STATUS_ACTIVE, STATUS_INACTIVE, STATUS_DISABLED } from 'src/utils/general.functions.utils';
 import { Repository } from 'typeorm';
 import { ServiceEntity } from '../appointment/models/service.entity';
 import { BranchOfficeEntity } from '../branch_office/models/branch.office.entity';
@@ -30,6 +30,7 @@ import { PatientEntity } from './models/patient.entity';
 import { PatientOrganizationEntity } from './models/patient.organization.entity';
 import { PatientOriginEntity } from './models/patient.origin.entity';
 
+
 @Injectable()
 export class PatientService {
   constructor(
@@ -44,6 +45,34 @@ export class PatientService {
     @InjectRepository(PadComponenEntity) private padComponentRepository: Repository<PadComponenEntity>,
     private readonly httpService: HttpService
   ) { }
+
+  getPatientsByStatus = async (status: string): Promise<PatientEntity[]> => {
+    try {
+      let results: PatientEntity[] = [];
+      switch (status) {
+        case STATUS_ACTIVE:
+          results = await this.patientRepository.find({
+            where: { status: STATUS_ACTIVE },
+          });
+          break;
+        case STATUS_INACTIVE:
+          results = await this.patientRepository.find({
+            where: { status: STATUS_INACTIVE },
+          });
+          break;
+        case STATUS_DISABLED:
+          results = await this.patientRepository.find({
+            where: { status: STATUS_DISABLED },
+          });
+          break;
+        default:
+          throw new Error('Estado no válido');
+      }
+      return results;
+    } catch (exception) {
+      HandleException.exception(exception);
+    }
+  };
 
   getAllPatients = async (): Promise<PatientEntity[]> => {
     try {
@@ -89,38 +118,6 @@ export class PatientService {
     }
   };
 
-  // private getLatLngFromPostalCode = async (): Promise<any> => {
-  //   try {
-  //     const API_KEY = process.env.GOOGLE_API_KEY;
-  //     const CP = 62158;
-  //     const COUNTRY = 'MX';
-
-  //     const request = this.http
-  //       .get(
-  //         `https://maps.googleapis.com/maps/api/geocode/json?components=postal_code:${CP}|country:${COUNTRY}&key=${API_KEY}`,
-  //       )
-  //       .pipe(map((res) => res.data.results))
-  //       .pipe(catchError(() => null));
-  //     const response = await lastValueFrom(request);
-  //     if (
-  //       response != null &&
-  //       (response as Array<any>) != null &&
-  //       (response as Array<any>).length > 0
-  //     ) {
-  //       const address = (response as Array<any>)[0];
-  //       return {
-  //         lat: address.geometry.location.lat,
-  //         lng: address.geometry.location.lng,
-  //         address: address.formatted_address,
-  //       };
-  //     }
-
-  //     return { lat: 0, lng: 0, address: 'EMPTY' };
-  //   } catch (exception) {
-  //     console.log(exception);
-  //     return { lat: 0, lng: 0, address: 'EMPTY' };
-  //   }
-  // };
 
   getPatientsByFilter = async ({ queries }: GetPatientsByFilterDTO): Promise<PatientEntity[]> => {
     try {
@@ -210,6 +207,19 @@ export class PatientService {
     }
   }
 
+  getPatientBirthDate = (dateString: string): Date => {
+    try {
+      const parts = dateString.split('-');
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      return new Date(year, month, day);
+    } catch (error) {
+      console.log(error);
+      HandleException.exception(error);
+    }
+  };
+
   updatePatient = async (body: UpdatePatientDTO) => {
     try {
       const patient = await this.patientRepository.findOneBy({ id: body.patientId });
@@ -217,7 +227,7 @@ export class PatientService {
         patient.name = capitalizeAllCharacters(body.name);
         patient.lastname = capitalizeAllCharacters(body.lastname);
         patient.secondLastname = capitalizeAllCharacters(body.secondLastname);
-        patient.birthDay = new Date(body.birthDate);
+        patient.birthDay = this.getPatientBirthDate(body.birthDate);
         patient.gender = body.gender;
         patient.maritalStatus = body.civilStatus;
         patient.street = capitalizeAllCharacters(body.street);

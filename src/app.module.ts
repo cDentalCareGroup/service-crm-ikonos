@@ -4,16 +4,12 @@ import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import typeOrmConfig from './config/type.orm.config';
 import { ConfigModule } from '@nestjs/config';
-import { MailerModule } from '@nestjs-modules/mailer';
-import { mail } from './utils/mail.utils';
 import { BranchOfficeModule } from './modules/branch_office/branch.office.module';
 import { EmployeeModule } from './modules/employee/employee.module';
 import { StatisticModule } from './modules/statistic/statistic.module';
 import { AppointmentModule } from './modules/appointment/appointment.module';
-import { EmailModule } from './modules/email/email.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TaskServiceService } from './task-service/task-service.service';
-import { FirebaseModule } from 'nestjs-firebase';
 import { PatientModule } from './modules/patient/patient.module';
 import { HttpModule } from '@nestjs/axios';
 import { CallsModule } from './modules/calls/calls.module';
@@ -24,6 +20,7 @@ import { PaymentModule } from './modules/payment/payment.module';
 import { OriginsModule } from './modules/origins/origins.module';
 import { OrganizationModule } from './modules/organization/organization.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { FirebaseModule } from './firebase/firebase.module';
 
 @Module({
   imports: [
@@ -50,7 +47,6 @@ import { ReportsModule } from './modules/reports/reports.module';
     EmployeeModule,
     StatisticModule,
     AppointmentModule,
-    EmailModule,
     HttpModule,
     CallsModule,
     PadModule,
@@ -60,6 +56,7 @@ import { ReportsModule } from './modules/reports/reports.module';
     OriginsModule,
     OrganizationModule,
     ReportsModule,
+    FirebaseModule,
   ],
   controllers: [AppController],
   providers: [AppService, TaskServiceService],
