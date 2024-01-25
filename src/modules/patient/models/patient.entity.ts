@@ -42,19 +42,6 @@ export class PatientEntity {
   })
   number: string;
 
-  // @Column({
-  //   name: 'city_id',
-  //   type: 'int',
-  // })
-  // cityId: number;
-
-  // @Column({
-  //   name: 'county_id',
-  //   type: 'int',
-  // })
-  // countyId: number;
-
-
   @Column({
     name: 'colony',
     type: 'varchar',
@@ -98,13 +85,6 @@ export class PatientEntity {
   })
   email: string;
 
-  // @Column({
-  //   name: 'folio',
-  //   type: 'varchar',
-  //   length: 45,
-  // })
-  // folio: string;
-
   @Column({
     name: 'folio_historico',
     type: 'varchar',
@@ -131,9 +111,6 @@ export class PatientEntity {
   })
   currentBranchOfficeId: number;
 
-  
-  // FCV 22Nov22 se agregan campos para analisis de datos
-
   @Column({
     name:     'country',
     type:     'char',
@@ -148,14 +125,6 @@ export class PatientEntity {
     comment:  'siglas del estado seleccionado, ej: mor, cdmx, bcs, etc',
   })
   state: string;
-
-  // @Column({
-  //   name:     'state_id',
-  //   type:     'int',
-   
-  //   comment:  'siglas del estado seleccionado, ej: mor, cdmx, bcs, etc',
-  // })
-  // stateId: number;
 
   @Column({
     name:       'lat',
@@ -181,14 +150,6 @@ export class PatientEntity {
     comment:  'ejemplo: activo, perdido, fallecio, noMolestar',
   })
   status: string;
-
-  // @Column({
-  //   name:     'idEstatus',
-  //   comment:  '1 o 2 o 3',
-  // })
-  // patientStatus: number;
-
-
 
   @Column({
     name:     'start_date',

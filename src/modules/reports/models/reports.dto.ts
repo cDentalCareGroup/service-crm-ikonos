@@ -1,13 +1,13 @@
 import { ApiProperty } from "@nestjs/swagger";
 export class GetPatientAppointmentsReportDTO {
     @ApiProperty({
-        description: 'La fecha de inicio del rango de fechas',
+        description: 'The start date of the date range',
         example: '2023-01-01'
     })
     startedAt: string;
 
     @ApiProperty({
-        description: 'La fecha de fin del rango de fechas',
+        description: 'The end date of the date range',
         example: '2023-01-03'
     })
     finishedAt: string;
