@@ -308,7 +308,5 @@ export class AppointmentEntity {
   //   // @JoinColumn({ name: 'receptionist_id' })
   //   // receptionist: Employees;
 
-//   @ManyToOne(() => PatientEntity, patient => patient.appointments)
-// patient: PatientEntity;
 
 }
