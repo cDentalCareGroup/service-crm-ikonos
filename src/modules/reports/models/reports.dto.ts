@@ -1,4 +1,4 @@
-export class DatesDTO {
+export class GetPatientAppointmentsReportsDTO {
   startedAt: string;
   finishedAt: string;
 }

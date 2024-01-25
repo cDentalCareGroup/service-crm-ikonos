@@ -3,6 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PatientEntity } from '../patient/models/patient.entity';
 import { AppointmentEntity } from '../appointment/models/appointment.entity';
+import { GetPatientAppointmentsReportsDTO } from './models/reports.dto';
+import {
+  HandleException,
+  ValidationException,
+  ValidationExceptionType,
+} from 'src/common/exceptions/general.exception';
 
 @Injectable()
 export class ReportsService {
@@ -13,29 +19,29 @@ export class ReportsService {
     private appointmentRepository: Repository<AppointmentEntity>,
   ) {}
 
-  async findBetweenDates(
-    startDateString: string,
-    endDateString: string,
-  ): Promise<any[]> {
+  async findBetweenDates(dates: GetPatientAppointmentsReportsDTO): Promise<any[]> {
     try {
-      const startDate = new Date(startDateString);
-      const endDate = new Date(endDateString);
+        const startDate = new Date(dates.startedAt);
+        const endDate = new Date(dates.finishedAt);
       if (startDate > endDate) {
-        throw new BadRequestException(
-          'La fecha de inicio debe ser menor o igual a la fecha de fin',
-        );
+        throw new ValidationException(ValidationExceptionType.ERROR_DATES);
       }
       return this.appointmentRepository
-        .createQueryBuilder('a')
-        .innerJoin('a.patient', 'p')
-        .where('a.appointment BETWEEN :startDate AND :endDate', {
+        .createQueryBuilder('appointment')
+        .innerJoin('appointment.patient', 'patient')
+        .where('appointment.appointment BETWEEN :startDate AND :endDate', {
           startDate,
           endDate,
         })
-        .select(['p.name', 'p.primaryContact', 'p.lastname', 'a.appointment'])
+        .select([
+          'patient.name',
+          'patient.primaryContact',
+          'patient.lastname',
+          'appointment.appointment',
+        ])
         .getMany();
     } catch (error) {
-      console.log(error);
+      HandleException.exception(error);
     }
   }
 }
