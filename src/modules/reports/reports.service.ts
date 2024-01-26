@@ -27,14 +27,14 @@ export class ReportsService {
         .createQueryBuilder('appointment')
         .innerJoin('patient', 'patient', 'patient.id = appointment.patientId')
         .where('appointment.appointment BETWEEN :startDate AND :endDate', {
-          startDate,
-          endDate,
+           startDate,
+           endDate,
         })
         .select([
-          'patient.name',
-          'patient.primaryContact',
-          'patient.lastname',
-          'appointment.appointment',
+          'patient.name AS name',
+          'patient.primaryContact AS primaryContact',
+          'patient.lastname AS lastname',
+          'DATE_FORMAT(appointment.appointment, "%Y-%m-%d") AS appointment',
         ])
         .getRawMany();
 
