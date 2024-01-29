@@ -19,9 +19,8 @@ import { ProspectModule } from './modules/prospect/prospect.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { OriginsModule } from './modules/origins/origins.module';
 import { OrganizationModule } from './modules/organization/organization.module';
+import { ReportsModule } from './modules/reports/reports.module';
 import { FirebaseModule } from './firebase/firebase.module';
-
-
 
 @Module({
   imports: [
@@ -42,11 +41,10 @@ import { FirebaseModule } from './firebase/firebase.module';
     PaymentModule,
     OriginsModule,
     OrganizationModule,
+    ReportsModule,
     FirebaseModule,
   ],
   controllers: [AppController],
   providers: [AppService, TaskServiceService],
 })
 export class AppModule {}
-
-
