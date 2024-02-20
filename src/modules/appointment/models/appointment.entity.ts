@@ -1,5 +1,7 @@
 import { CallEntity } from "src/modules/calls/models/call.entity";
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { EmployeeEntity } from "../../employee/models/employee.entity"
+import { PatientEntity } from "../../patient/models/patient.entity"
 
 @Entity('appointment')
 export class AppointmentEntity {
@@ -177,4 +179,11 @@ export class AppointmentEntity {
   referralName?: string;
   referralId?: number;
 
+  @ManyToOne(type => EmployeeEntity, dentist => dentist.id)
+  @JoinColumn({ name: 'dentist_id' })
+  dentist: EmployeeEntity;
+
+  @ManyToOne(type => PatientEntity, patient => patient.id)
+  @JoinColumn({ name: 'patient_id' })
+  patient: PatientEntity;
 }

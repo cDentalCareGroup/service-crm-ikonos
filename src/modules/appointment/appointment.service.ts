@@ -22,7 +22,7 @@ import { MovementsTypeEntity } from '../payment/models/movements.type.entity';
 import { PaymentEntity } from '../payment/models/payment.entity';
 import { PaymentDetailEntity } from '../payment/payment.detail.entity';
 import { AppointmentDetailEntity } from './models/appointment.detail.entity';
-import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegiserAppointmentPatientDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, SendWhatsappSimpleTextDTO, ServiceDetail, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
+import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentDetailDTO2, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeDTO2, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegiserAppointmentPatientDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, SendWhatsappSimpleTextDTO, ServiceDetail, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 import { AppointmentEntity } from './models/appointment.entity';
 import { AppointmentServiceEntity } from './models/appointment.service.entity';
 import { AppointmentTimesEntity } from './models/appointment.times.entity';
@@ -1245,7 +1245,18 @@ export class AppointmentService {
     return new GetAppointmentDetailDTO(appointment, branchOffice, patient, prospect, dentist, services, extendedTimes);
   }
 
-
+  
+  getAppointmentCalendar = async (appointment: AppointmentEntity): Promise<GetAppointmentDetailDTO2> => {
+    return new GetAppointmentDetailDTO2({
+      id: appointment.id,
+      appointment: appointment.appointment,
+      time: appointment.time,
+      folio: appointment.folio,
+      dentist: appointment.dentist,
+      patient: appointment.patient,
+    });
+  };
+  
 
   appointmentReminders = async () => {
     try {
@@ -1656,4 +1667,49 @@ export class AppointmentService {
       HandleException.exception(error);
     }
   }
+
+  getAllAppointmentByBranchOfficeInfo = async (body: GetAppointmentsByBranchOfficeDTO2): Promise<GetAppointmentDetailDTO2[]> => {
+    try {
+      const data: GetAppointmentDetailDTO2[] = [];
+      const statuses = body.status || ['active', 'process'];
+      const appointments = await this.appointmentRepository.createQueryBuilder('appointment')
+        .leftJoinAndSelect('appointment.dentist', 'dentist')
+        .leftJoinAndSelect('appointment.patient', 'patient')
+        .select([
+          'appointment.id',
+          'appointment.appointment',
+          'appointment.time',
+          'appointment.folio',
+          'patient.primaryContact',
+          'patient.name',
+          'patient.lastname',
+          'patient.secondLastname',
+          'patient.id',
+          'dentist.name',
+          'dentist.lastname',
+          'dentist.secondLastname',
+          'dentist.dentistColor'
+        ])
+        .where('appointment.branchId = :branchId AND appointment.status IN (:status) AND appointment.appointment BETWEEN :date1 AND :date2', {
+          branchId: Number(body.id),
+          status: statuses,
+          date1: body.date1 || '',
+          date2: body.date2 || ''
+        })
+        .getMany();
+  
+      for await (const appointment of appointments) {
+        const result = await this.getAppointmentCalendar(appointment);
+        data.push(result);
+      }
+  
+      return data;
+    } catch (exception) {
+      console.log(exception);
+      HandleException.exception(exception);
+    }
+  }
+  
 }
+
+

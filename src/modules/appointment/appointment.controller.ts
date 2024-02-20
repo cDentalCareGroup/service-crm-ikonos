@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiBody } from '@nestjs/swagger';
 import { AppointmentService } from './appointment.service';
-import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentsByBranchOfficeDTO, GetNextAppointmentDetailDTO, RegiserAppointmentPatientDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
+import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentDetailDTO2, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeDTO2, GetNextAppointmentDetailDTO, RegiserAppointmentPatientDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 
 @Controller('appointment')
 export class AppointmentController {
@@ -42,6 +42,12 @@ export class AppointmentController {
     @ApiBody({ type: GetAppointmentsByBranchOfficeDTO })
     async getAllAppointmentByBranchOffice(@Body() body: GetAppointmentsByBranchOfficeDTO): Promise<GetAppointmentDetailDTO[]> {
         return this.appointmentService.getAllAppointmentByBranchOffice(body);
+    }
+
+    @Post('branchoffice/calendar')
+    @ApiBody({ type: GetAppointmentsByBranchOfficeDTO2 })
+    async getAllAppointmentByBranchOfficeInfo(@Body() body: GetAppointmentsByBranchOfficeDTO2): Promise<GetAppointmentDetailDTO2[]> {
+        return this.appointmentService.getAllAppointmentByBranchOfficeInfo(body);
     }
 
     @Post('register/dentist')

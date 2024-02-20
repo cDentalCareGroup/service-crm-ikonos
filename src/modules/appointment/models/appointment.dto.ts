@@ -107,6 +107,65 @@ export class GetAppointmentDetailDTO {
   }
 }
 
+export class GetAppointmentDetailDTO2 {
+  appointment: {
+    id: number;
+    appointment: string;
+    time: string;
+    folio: string;
+  };
+
+  patient?: {
+    id: number;
+    name: string;
+    lastname: string;
+    secondLastname: string;
+    primaryContact: string;
+  };
+
+  dentist?: {
+    id: number;
+    name: string;
+    lastname: string;
+    secondLastname: string;
+    dentistColor: string;
+  } | null;
+
+  constructor(appointment: {
+    id: number;
+    appointment: string;
+    time: string;
+    folio: string;
+    dentist: EmployeeEntity | null;
+    patient: PatientEntity;
+  }) {
+    this.appointment = {
+      id: appointment.id,
+      appointment: appointment.appointment,
+      time: appointment.time,
+      folio: appointment.folio,
+    };
+
+    this.patient = {
+      id: appointment.patient.id,
+      name: appointment.patient.name,
+      lastname: appointment.patient.lastname,
+      secondLastname: appointment.patient.secondLastname,
+      primaryContact: appointment.patient.primaryContact,
+    };
+
+    this.dentist = appointment.dentist
+      ? {
+          id: appointment.dentist.id,
+          name: appointment.dentist.name,
+          lastname: appointment.dentist.lastname,
+          secondLastname: appointment.dentist.secondLastname,
+          dentistColor: appointment.dentist.dentistColor,
+        }
+      : null;
+  }
+}
+
 export class GetNextAppointmentDetailDTO {
   appointment: GetAppointmentDetailDTO;
   services: ServiceDetail[];
@@ -127,6 +186,12 @@ export class GetAppointmentsByBranchOfficeDTO {
   date: string
 }
 
+export class GetAppointmentsByBranchOfficeDTO2 {
+  id: string | number;
+  status?: string;
+  date1: string;
+  date2: string
+}
 
 export class GetAppointmentsByBranchOfficeStatusDTO {
   id: string | number;
