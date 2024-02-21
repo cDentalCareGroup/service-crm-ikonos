@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiBody } from '@nestjs/swagger';
 import { AppointmentService } from './appointment.service';
-import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentDetailDTO2, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeDTO2, GetNextAppointmentDetailDTO, RegiserAppointmentPatientDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
+import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentDetailDTOCalendar, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeDTOCalendar, GetNextAppointmentDetailDTO, RegiserAppointmentPatientDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 
 @Controller('appointment')
 export class AppointmentController {
@@ -45,8 +45,8 @@ export class AppointmentController {
     }
 
     @Post('branchoffice/calendar')
-    @ApiBody({ type: GetAppointmentsByBranchOfficeDTO2 })
-    async getAllAppointmentByBranchOfficeInfo(@Body() body: GetAppointmentsByBranchOfficeDTO2): Promise<GetAppointmentDetailDTO2[]> {
+    @ApiBody({ type: GetAppointmentsByBranchOfficeDTOCalendar })
+    async getAllAppointmentByBranchOfficeInfo(@Body() body: GetAppointmentsByBranchOfficeDTOCalendar): Promise<GetAppointmentDetailDTOCalendar[]> {
         return this.appointmentService.getAllAppointmentByBranchOfficeInfo(body);
     }
 

@@ -107,7 +107,7 @@ export class GetAppointmentDetailDTO {
   }
 }
 
-export class GetAppointmentDetailDTO2 {
+export class GetAppointmentDetailDTOCalendar {
   appointment: {
     id: number;
     appointment: string;
@@ -186,7 +186,7 @@ export class GetAppointmentsByBranchOfficeDTO {
   date: string
 }
 
-export class GetAppointmentsByBranchOfficeDTO2 {
+export class GetAppointmentsByBranchOfficeDTOCalendar {
   id: string | number;
   status?: string;
   date1: string;

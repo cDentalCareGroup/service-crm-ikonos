@@ -22,7 +22,7 @@ import { MovementsTypeEntity } from '../payment/models/movements.type.entity';
 import { PaymentEntity } from '../payment/models/payment.entity';
 import { PaymentDetailEntity } from '../payment/payment.detail.entity';
 import { AppointmentDetailEntity } from './models/appointment.detail.entity';
-import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentDetailDTO2, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeDTO2, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegiserAppointmentPatientDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, SendWhatsappSimpleTextDTO, ServiceDetail, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
+import { AppointmentAvailabilityDTO, AppointmentAvailbilityByDentistDTO, AppointmentDetailDTO, AvailableHoursDTO, CancelAppointmentDTO, GetAppointmentDetailDTO, GetAppointmentDetailDTOCalendar, GetAppointmentsByBranchOfficeDTO, GetAppointmentsByBranchOfficeDTOCalendar, GetAppointmentsByBranchOfficeStatusDTO, GetNextAppointmentDetailDTO, RegiserAppointmentPatientDTO, RegisterAppointmentDentistDTO, RegisterAppointmentDTO, RegisterCallCenterAppointmentDTO, RegisterExtendAppointmentDTO, RegisterNextAppointmentDTO, RescheduleAppointmentDTO, SendNotificationDTO, SendWhatsappConfirmationDTO, SendWhatsappSimpleTextDTO, ServiceDetail, UpdateAppointmentStatusDTO, UpdateHasCabinetAppointmentDTO, UpdateHasLabsAppointmentDTO } from './models/appointment.dto';
 import { AppointmentEntity } from './models/appointment.entity';
 import { AppointmentServiceEntity } from './models/appointment.service.entity';
 import { AppointmentTimesEntity } from './models/appointment.times.entity';
@@ -1246,8 +1246,8 @@ export class AppointmentService {
   }
 
   
-  getAppointmentCalendar = async (appointment: AppointmentEntity): Promise<GetAppointmentDetailDTO2> => {
-    return new GetAppointmentDetailDTO2({
+  getAppointmentCalendar = async (appointment: AppointmentEntity): Promise<GetAppointmentDetailDTOCalendar> => {
+    return new GetAppointmentDetailDTOCalendar({
       id: appointment.id,
       appointment: appointment.appointment,
       time: appointment.time,
@@ -1668,10 +1668,10 @@ export class AppointmentService {
     }
   }
 
-  getAllAppointmentByBranchOfficeInfo = async (body: GetAppointmentsByBranchOfficeDTO2): Promise<GetAppointmentDetailDTO2[]> => {
+  getAllAppointmentByBranchOfficeInfo = async (body: GetAppointmentsByBranchOfficeDTOCalendar): Promise<GetAppointmentDetailDTOCalendar[]> => {
     try {
-      const data: GetAppointmentDetailDTO2[] = [];
-      const statuses = body.status || ['active', 'process'];
+      const data: GetAppointmentDetailDTOCalendar[] = [];
+      const params = body.status || ['active', 'process'];
       const appointments = await this.appointmentRepository.createQueryBuilder('appointment')
         .leftJoinAndSelect('appointment.dentist', 'dentist')
         .leftJoinAndSelect('appointment.patient', 'patient')
@@ -1692,7 +1692,7 @@ export class AppointmentService {
         ])
         .where('appointment.branchId = :branchId AND appointment.status IN (:status) AND appointment.appointment BETWEEN :date1 AND :date2', {
           branchId: Number(body.id),
-          status: statuses,
+          status: params,
           date1: body.date1 || '',
           date2: body.date2 || ''
         })
