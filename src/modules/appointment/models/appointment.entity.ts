@@ -1,5 +1,7 @@
 import { CallEntity } from "src/modules/calls/models/call.entity";
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { EmployeeEntity } from "src/modules/employee/models/employee.entity";
+import { PatientEntity } from "src/modules/patient/models/patient.entity";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('appointment')
 export class AppointmentEntity {
@@ -58,6 +60,7 @@ export class AppointmentEntity {
     type: 'varchar',
   })
   status: string;
+
 
   @Column({
     name: 'price_amount',
@@ -131,6 +134,7 @@ export class AppointmentEntity {
   })
   hasCabinet: number;
 
+
   @Column({
     name: 'next_appointment_id',
     type: 'int',
@@ -177,4 +181,11 @@ export class AppointmentEntity {
   referralName?: string;
   referralId?: number;
 
+  @ManyToOne(type => EmployeeEntity, dentist => dentist.id)
+  @JoinColumn({ name: 'dentist_id' })
+  dentist: EmployeeEntity;
+
+  @ManyToOne(type => PatientEntity, patient => patient.id)
+  @JoinColumn({ name: 'patient_id' })
+  patient: PatientEntity;
 }
